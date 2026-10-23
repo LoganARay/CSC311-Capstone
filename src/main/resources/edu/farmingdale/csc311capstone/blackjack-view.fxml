@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressBar?>
+<?import javafx.scene.control.Spinner?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane fx:id="root" prefHeight="640.0" prefWidth="900.0"
+            style="-fx-background-color: radial-gradient(center 50% 45%, radius 75%, #1e7a46, #0b3d22);"
+            xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+            fx:controller="edu.farmingdale.csc311capstone.BlackJack.BlackJackController">
+
+    <!-- Top bar: mode picker and bankroll -->
+    <top>
+        <VBox spacing="6.0" style="-fx-background-color: rgba(0,0,0,0.35);">
+            <padding><Insets bottom="10.0" left="14.0" right="14.0" top="10.0"/></padding>
+            <HBox alignment="CENTER_LEFT" spacing="10.0">
+                <Button onAction="#onMainMenu" text="Main Menu"/>
+                <Label text="Mode:" textFill="WHITE"/>
+                <ComboBox fx:id="modeBox" prefWidth="170.0"/>
+                <Button onAction="#onNewGame" text="New Game"/>
+                <Pane HBox.hgrow="ALWAYS"/>
+                <Label fx:id="roundLabel" textFill="#cfe8d6"/>
+                <Label fx:id="minBetLabel" textFill="#cfe8d6"/>
+                <Label fx:id="chipsLabel" textFill="GOLD">
+                    <font><Font name="System Bold" size="18.0"/></font>
+                </Label>
+            </HBox>
+            <Label fx:id="modeDescriptionLabel" textFill="#cfe8d6" wrapText="true"/>
+        </VBox>
+    </top>
+
+    <!-- Table -->
+    <center>
+        <VBox alignment="CENTER" spacing="14.0">
+            <Label fx:id="dealerLabel" text="Dealer" textFill="WHITE">
+                <font><Font name="System Bold" size="18.0"/></font>
+            </Label>
+            <HBox fx:id="dealerCards" alignment="CENTER" minHeight="110.0" spacing="10.0"/>
+
+            <Label fx:id="messageLabel" textFill="WHITE" wrapText="true" maxWidth="760.0">
+                <font><Font name="System Bold" size="20.0"/></font>
+            </Label>
+            <VBox fx:id="timerBox" alignment="CENTER" spacing="2.0">
+                <ProgressBar fx:id="timerBar" prefWidth="320.0" progress="1.0"/>
+                <Label fx:id="timerLabel" textFill="WHITE"/>
+            </VBox>
+
+            <HBox fx:id="playerCards" alignment="CENTER" minHeight="110.0" spacing="10.0"/>
+            <Label fx:id="playerLabel" text="You" textFill="WHITE">
+                <font><Font name="System Bold" size="18.0"/></font>
+            </Label>
+        </VBox>
+    </center>
+
+    <!-- Controls -->
+    <bottom>
+        <VBox alignment="CENTER" spacing="8.0" style="-fx-background-color: rgba(0,0,0,0.35);">
+            <padding><Insets bottom="12.0" left="14.0" right="14.0" top="12.0"/></padding>
+            <HBox alignment="CENTER" spacing="10.0">
+                <Label text="Bet $" textFill="WHITE"/>
+                <Spinner fx:id="betSpinner" prefWidth="100.0"/>
+                <Button fx:id="dealButton" defaultButton="true" onAction="#onDeal" prefWidth="100.0" text="Deal"/>
+                <Button fx:id="hitButton" onAction="#onHit" prefWidth="80.0" text="Hit"/>
+                <Button fx:id="standButton" onAction="#onStand" prefWidth="80.0" text="Stand"/>
+                <Button fx:id="doubleButton" onAction="#onDouble" prefWidth="110.0" text="Double Down"/>
+            </HBox>
+            <Label fx:id="statsLabel" textFill="#cfe8d6"/>
+        </VBox>
+    </bottom>
+</BorderPane>

@@ -1,14 +1,23 @@
 package edu.farmingdale.csc311capstone;
 
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.Label;
+import javafx.scene.Node;
 
+/**
+ * Main menu. Each game button calls a method here that swaps in that game's view.
+ * To hook up another game, add a method like {@link #openSnake} and set
+ * onAction="#yourMethod" on its button in hello-view.fxml.
+ */
 public class HelloController {
-    @FXML
-    private Label welcomeText;
 
     @FXML
-    protected void onHelloButtonClick() {
-        welcomeText.setText("Welcome to JavaFX Application!");
+    protected void openBlackjack(ActionEvent event) {
+        SceneSwitcher.switchTo((Node) event.getSource(), "blackjack-view.fxml", "Blackjack");
+    }
+
+    @FXML
+    protected void openSnake(ActionEvent event) {
+        SceneSwitcher.switchTo((Node) event.getSource(), "snake-view.fxml", "Snake");
     }
 }
