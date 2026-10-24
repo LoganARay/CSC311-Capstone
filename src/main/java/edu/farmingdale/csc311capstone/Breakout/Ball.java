@@ -5,10 +5,15 @@ public class Ball {
     private double y;
     private double radius;
 
+    private double velocityX;
+    private double velocityY;
+
     public Ball(double x, double y, double radius) {
         this.x = x;
         this.y = y;
         this.radius = radius;
+        this.velocityX = 3;
+        this.velocityY = -3;
     }
 
     public double getX() {
@@ -34,4 +39,19 @@ public class Ball {
     public void setRadius(double radius) {
         this.radius = radius;
     }
+
+    public double getVelocityX() {return this.velocityX;}
+
+    public double getVelocityY() {return this.velocityY;}
+
+
+    public void move() {
+        x += velocityX;
+        y += velocityY;
+    }
+
+    public void reverseX() {
+        velocityX = -velocityX;
+    }
+    public void reverseY() { velocityY = -velocityY; }
 }
