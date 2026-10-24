@@ -154,6 +154,29 @@ public class PongController {
 
         mechanics.moveBall(deltaTime);
 
+        mechanics.checkWallCollision(
+                gamePane.getPrefHeight(),
+                ball.getRadius()
+        );
+
+        mechanics.checkPaddleCollision(
+                leftPaddle.getX(),
+                leftPaddle.getY(),
+                leftPaddle.getWidth(),
+                leftPaddle.getHeight(),
+                ball.getRadius(),
+                true
+        );
+
+        mechanics.checkPaddleCollision(
+                rightPaddle.getX(),
+                rightPaddle.getY(),
+                rightPaddle.getWidth(),
+                rightPaddle.getHeight(),
+                ball.getRadius(),
+                false
+        );
+
         ball.setCenterX(mechanics.getBallX());
         ball.setCenterY(mechanics.getBallY());
     }

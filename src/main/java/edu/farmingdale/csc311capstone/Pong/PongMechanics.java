@@ -26,6 +26,49 @@ public class PongMechanics {
         ballY += ballVelocityY * deltaTime;
     }
 
+    public void checkWallCollision(double gameHeight, double ballRadius) {
+
+        if (ballY - ballRadius <= 0 && ballVelocityY < 0) {
+            ballY = ballRadius;
+            ballVelocityY = -ballVelocityY;
+        }
+
+        if (ballY + ballRadius >= gameHeight && ballVelocityY > 0) {
+            ballY = gameHeight - ballRadius;
+            ballVelocityY = -ballVelocityY;
+        }
+    }
+
+    public void checkPaddleCollision(double paddleX,
+                                     double paddleY,
+                                     double paddleWidth,
+                                     double paddleHeight,
+                                     double ballRadius,
+                                     boolean leftPaddle) {
+
+        boolean horizontalCollision =
+                ballX + ballRadius >= paddleX &&
+                        ballX - ballRadius <= paddleX + paddleWidth;
+
+        boolean verticalCollision =
+                ballY + ballRadius >= paddleY &&
+                        ballY - ballRadius <= paddleY + paddleHeight;
+
+        if (!horizontalCollision || !verticalCollision) {
+            return;
+        }
+
+        if (leftPaddle && ballVelocityX < 0) {
+            ballX = paddleX + paddleWidth + ballRadius;
+            ballVelocityX = -ballVelocityX;
+        }
+
+        if (!leftPaddle && ballVelocityX > 0) {
+            ballX = paddleX - ballRadius;
+            ballVelocityX = -ballVelocityX;
+        }
+    }
+
     public double getBallX() {
         return ballX;
     }
