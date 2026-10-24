@@ -10,6 +10,8 @@ import java.util.List;
  * Step 2 (movement): the cannon slides left and right and stops at the edges.
  * Step 3 (shooting): one shot on screen at a time. It destroys the first alien it touches
  * (adding that alien's points) or knocks a block out of a shield.
+ * Step 4 (marching): the formation jumps sideways, drops and turns around at the edges, and speeds up
+ * as aliens die. Aliens chew through shields they march into, and reaching the cannon's row ends the game.
  */
 public final class SpaceInvadersMechanics {
     public static final double PLAYFIELD_WIDTH = 560;
@@ -30,6 +32,10 @@ public final class SpaceInvadersMechanics {
     public static final double ALIEN_SPACING_Y = 32;
     public static final double FORMATION_START_X = 80;             // center of the top-left alien
     public static final double FORMATION_START_Y = 90;
+    public static final double ALIEN_STEP_X = 10;                  // the formation moves in little jumps
+    public static final double ALIEN_STEP_DOWN = 16;               // and drops when it reaches an edge
+    public static final double SLOWEST_STEP_TIME = 0.6;            // seconds between jumps with all 55 aliens
+    public static final double FASTEST_STEP_TIME = 0.03;           // the last alien races
 
     // Shields
     public static final int SHIELD_COUNT = 4;
@@ -42,6 +48,9 @@ public final class SpaceInvadersMechanics {
     private int wave = 1;
 
     private final List<Alien> aliens = new ArrayList<>();
+    private int marchDirection = 1;                                 // 1 = right, -1 = left
+    private double stepTimer = 0;
+    private boolean aliensLanded = false;
     private final List<Shield> shields = new ArrayList<>();
 
     public SpaceInvadersMechanics() {
@@ -53,11 +62,60 @@ public final class SpaceInvadersMechanics {
      * and fireHeld is true while the fire key is down.
      */
     public void update(double deltaSeconds, int dx, boolean fireHeld) {
+        if (isGameOver()) {
+            return;
+        }
         movePlayer(deltaSeconds, dx);
         if (fireHeld && playerShot == null) {
             playerShot = new Bullet(playerX, PLAYER_Y - PLAYER_HEIGHT / 2, -PLAYER_SHOT_SPEED);
         }
+        marchAliens(deltaSeconds);
         updateShot(deltaSeconds);
+    }
+
+    /** Time between formation jumps: slow with a full formation, faster as aliens die. */
+    public double getStepTime() {
+        double fraction = aliens.size() / (double) (ALIEN_ROWS * ALIEN_COLUMNS);
+        return FASTEST_STEP_TIME + (SLOWEST_STEP_TIME - FASTEST_STEP_TIME) * fraction;
+    }
+
+    private void marchAliens(double deltaSeconds) {
+        stepTimer += deltaSeconds;
+        while (stepTimer >= getStepTime() && !aliens.isEmpty()) {
+            stepTimer -= getStepTime();
+            stepFormation();
+        }
+    }
+
+    /** One jump sideways, or a drop and turn around if the next jump would leave the playfield. */
+    private void stepFormation() {
+        boolean hitsEdge = false;
+        for (Alien alien : aliens) {
+            double nextLeft = alien.getLeft() + marchDirection * ALIEN_STEP_X;
+            double nextRight = alien.getRight() + marchDirection * ALIEN_STEP_X;
+            if (nextLeft < 0 || nextRight > PLAYFIELD_WIDTH) {
+                hitsEdge = true;
+                break;
+            }
+        }
+        for (Alien alien : aliens) {
+            if (hitsEdge) {
+                alien.move(0, ALIEN_STEP_DOWN);
+            } else {
+                alien.move(marchDirection * ALIEN_STEP_X, 0);
+            }
+            // Aliens chew through shields they march into
+            for (Shield shield : shields) {
+                shield.erase(alien.getLeft(), alien.getTop(), Alien.WIDTH, Alien.HEIGHT);
+            }
+            // Reaching the cannon's row ends the game
+            if (alien.getBottom() >= PLAYER_Y - PLAYER_HEIGHT / 2) {
+                aliensLanded = true;
+            }
+        }
+        if (hitsEdge) {
+            marchDirection = -marchDirection;
+        }
     }
 
     private void movePlayer(double deltaSeconds, int dx) {
@@ -127,6 +185,11 @@ public final class SpaceInvadersMechanics {
         return playerShot;
     }
 
+    /** True once the aliens reach the cannon. Running out of lives is added in a later step. */
+    public boolean isGameOver() {
+        return aliensLanded;
+    }
+
     public int getLives() {
         return lives;
     }
@@ -181,6 +244,11 @@ public final class SpaceInvadersMechanics {
             this.y = y;
             this.type = type;
             this.column = column;
+        }
+
+        public void move(double dx, double dy) {
+            x += dx;
+            y += dy;
         }
 
         public double getLeft() {
@@ -305,6 +373,13 @@ public final class SpaceInvadersMechanics {
                 }
             }
             return false;
+        }
+
+        /** Knocks out every block the rectangle overlaps (used when aliens march through). */
+        public void erase(double rectLeft, double rectTop, double rectWidth, double rectHeight) {
+            while (hit(rectLeft, rectTop, rectWidth, rectHeight)) {
+                // keep clearing until nothing under the rectangle is left
+            }
         }
 
         public boolean isBlock(int row, int col) {

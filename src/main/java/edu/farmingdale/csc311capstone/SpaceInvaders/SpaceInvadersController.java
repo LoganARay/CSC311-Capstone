@@ -14,6 +14,9 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import javafx.scene.text.TextAlignment;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -22,7 +25,7 @@ import java.util.Set;
  * Connects spaceinvaders-view.fxml to {@link SpaceInvadersMechanics}: runs the game loop,
  * reads the keyboard and draws the game on a Canvas.
  *
- * Controls: Left/Right or A/D to move, Space to fire.
+ * Controls: Left/Right or A/D to move, Space to fire, Enter to play again after a game over.
  */
 public class SpaceInvadersController {
 
@@ -79,7 +82,10 @@ public class SpaceInvadersController {
         // Movement needs to know which keys are held down, so both presses and releases are tracked.
         scene.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
             heldKeys.add(e.getCode());
-            if (horizontalInput() != 0 || e.getCode() == KeyCode.SPACE) e.consume();
+            if (e.getCode() == KeyCode.ENTER && game.isGameOver()) {
+                game = new SpaceInvadersMechanics();
+            }
+            if (horizontalInput() != 0 || e.getCode() == KeyCode.SPACE || e.getCode() == KeyCode.ENTER) e.consume();
         });
         scene.addEventFilter(KeyEvent.KEY_RELEASED, e -> heldKeys.remove(e.getCode()));
         // Stop the loop when the player goes back to the menu.
@@ -122,6 +128,24 @@ public class SpaceInvadersController {
         g.strokeLine(0, groundY, canvas.getWidth(), groundY);
 
         drawHud();
+        if (game.isGameOver()) {
+            drawGameOver(g);
+        }
+    }
+
+    private void drawGameOver(GraphicsContext g) {
+        double w = canvas.getWidth();
+        double h = canvas.getHeight();
+        g.setFill(Color.web("#000000", 0.55));
+        g.fillRect(0, 0, w, h);
+        g.setTextAlign(TextAlignment.CENTER);
+        g.setFill(Color.RED);
+        g.setFont(Font.font("Monospaced", FontWeight.BOLD, 40));
+        g.fillText("GAME OVER", w / 2, h / 2 - 20);
+        g.setFill(Color.WHITE);
+        g.setFont(Font.font("Monospaced", 18));
+        g.fillText("Score: " + game.getScore() + "\nPress Enter to play again", w / 2, h / 2 + 20);
+        g.setTextAlign(TextAlignment.LEFT);
     }
 
     private void drawHud() {
