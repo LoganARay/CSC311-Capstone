@@ -47,10 +47,20 @@
         </Label>
 
         <Label fx:id="pelletsLabel"
-               layoutX="230"
+               layoutX="205"
                layoutY="450"
                text="Pellets Left: 109"
                textFill="WHITE">
+            <font>
+                <Font size="16"/>
+            </font>
+        </Label>
+
+        <Label fx:id="livesLabel"
+               layoutX="365"
+               layoutY="450"
+               text="Lives: 3"
+               textFill="YELLOW">
             <font>
                 <Font size="16"/>
             </font>
@@ -73,7 +83,7 @@
         <Label fx:id="statusLabel"
                layoutX="62"
                layoutY="495"
-               text="Use arrow keys to collect all pellets"
+               text="Avoid ghosts and collect all pellets!"
                textFill="YELLOW">
             <font>
                 <Font size="14"/>
