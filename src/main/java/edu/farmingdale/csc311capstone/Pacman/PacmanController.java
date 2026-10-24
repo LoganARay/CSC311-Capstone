@@ -3,6 +3,7 @@ package edu.farmingdale.csc311capstone.Pacman;
 import javafx.animation.AnimationTimer;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javafx.scene.control.Label;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
@@ -17,9 +18,19 @@ public class PacmanController {
     @FXML
     private Pane mazePane;
 
+    @FXML
+    private Label scoreLabel;
+
+    @FXML
+    private Label pelletsLabel;
+
+    @FXML
+    private Label statusLabel;
+
     private final PacmanMechanics mechanics = new PacmanMechanics();
 
     private Circle pacman;
+    private Circle[][] pelletNodes;
     private AnimationTimer gameLoop;
 
     private int rowDirection = 0;
@@ -36,12 +47,19 @@ public class PacmanController {
     @FXML
     private void initialize() {
 
+        mazePane.setFocusTraversable(true);
+
         renderMaze();
         createPacman();
+        updateLabels();
 
         gameLoop = new AnimationTimer() {
             @Override
             public void handle(long now) {
+
+                if (mechanics.isGameWon()) {
+                    return;
+                }
 
                 if (rowDirection == 0 && colDirection == 0) {
                     return;
@@ -96,7 +114,11 @@ public class PacmanController {
                                     resetDirection();
                                 } else {
                                     lastMoveTime = 0;
-                                    gameLoop.start();
+
+                                    if (!mechanics.isGameWon()) {
+                                        gameLoop.start();
+                                    }
+
                                     mazePane.requestFocus();
                                 }
                             }
@@ -119,6 +141,12 @@ public class PacmanController {
                 mechanics.getColumns() * TILE_SIZE,
                 mechanics.getRows() * TILE_SIZE
         );
+
+        pelletNodes = new Circle[
+                mechanics.getRows()
+                ][
+                mechanics.getColumns()
+                ];
 
         for (int row = 0; row < mechanics.getRows(); row++) {
 
@@ -150,6 +178,8 @@ public class PacmanController {
                     );
 
                     pellet.setFill(Color.LIGHTYELLOW);
+
+                    pelletNodes[row][col] = pellet;
                     mazePane.getChildren().add(pellet);
                 }
             }
@@ -177,6 +207,10 @@ public class PacmanController {
     }
 
     private void handleKeyPressed(KeyEvent event) {
+
+        if (mechanics.isGameWon()) {
+            return;
+        }
 
         switch (event.getCode()) {
             case UP -> {
@@ -249,9 +283,63 @@ public class PacmanController {
                 colDirection
         );
 
-        if (moved) {
-            updatePacmanPosition();
+        if (!moved) {
+            return;
         }
+
+        int row = mechanics.getPlayerRow();
+        int col = mechanics.getPlayerCol();
+
+        Circle pellet = pelletNodes[row][col];
+
+        if (pellet != null &&
+                mechanics.getTile(row, col) == PacmanMechanics.EMPTY) {
+
+            mazePane.getChildren().remove(pellet);
+            pelletNodes[row][col] = null;
+        }
+
+        updatePacmanPosition();
+        updateLabels();
+
+        if (mechanics.isGameWon()) {
+            gameLoop.stop();
+            resetDirection();
+
+            statusLabel.setText(
+                    "Maze cleared! Final score: " + mechanics.getScore()
+            );
+        }
+    }
+
+    private void updateLabels() {
+
+        scoreLabel.setText(
+                "Score: " + mechanics.getScore()
+        );
+
+        pelletsLabel.setText(
+                "Pellets Left: " + mechanics.getRemainingPellets()
+        );
+    }
+
+    @FXML
+    private void restartGame() {
+
+        gameLoop.stop();
+
+        mechanics.resetGame();
+        resetDirection();
+        lastMoveTime = 0;
+
+        renderMaze();
+        createPacman();
+        updateLabels();
+
+        statusLabel.setText("Use arrow keys to collect all pellets");
+
+        gameLoop.start();
+        mazePane.requestFocus();
     }
 
     private void resetDirection() {

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.Pane?>
@@ -9,7 +10,7 @@
             xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="edu.farmingdale.csc311capstone.Pacman.PacmanController"
             prefWidth="600.0"
-            prefHeight="480.0"
+            prefHeight="540.0"
             style="-fx-background-color: black;">
 
     <children>
@@ -34,6 +35,43 @@
               prefWidth="476"
               prefHeight="364"
               style="-fx-background-color: black;"/>
+
+        <Label fx:id="scoreLabel"
+               layoutX="62"
+               layoutY="450"
+               text="Score: 0"
+               textFill="WHITE">
+            <font>
+                <Font size="16"/>
+            </font>
+        </Label>
+
+        <Label fx:id="pelletsLabel"
+               layoutX="230"
+               layoutY="450"
+               text="Pellets Left: 109"
+               textFill="WHITE">
+            <font>
+                <Font size="16"/>
+            </font>
+        </Label>
+
+        <Button layoutX="445"
+                layoutY="446"
+                prefWidth="95"
+                prefHeight="32"
+                text="Restart"
+                onAction="#restartGame"/>
+
+        <Label fx:id="statusLabel"
+               layoutX="62"
+               layoutY="495"
+               text="Use arrow keys to collect all pellets"
+               textFill="YELLOW">
+            <font>
+                <Font size="14"/>
+            </font>
+        </Label>
 
     </children>
 
