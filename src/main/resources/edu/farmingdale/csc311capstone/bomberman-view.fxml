@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox alignment="CENTER" spacing="12.0" prefWidth="600.0" prefHeight="500.0"
+      xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="edu.farmingdale.csc311capstone.Bomberman.BombermanController">
+    <padding><Insets top="12.0" right="12.0" bottom="12.0" left="12.0"/></padding>
+    <Label text="Bomberman" style="-fx-font-size: 24px;"/>
+    <!-- Reserved grid space for the player, walls, and blocks. -->
+    <GridPane fx:id="gameArea" prefWidth="374.0" prefHeight="306.0"
+          minWidth="374.0" minHeight="306.0" maxWidth="374.0" maxHeight="306.0"
+          style="-fx-background-color: #f1f3f5; -fx-border-color: #777777;"/>
+    <Label fx:id="statusLabel" text="Static preview - gameplay coming later."/>
+    <HBox alignment="CENTER" spacing="12.0">
+        <Button text="Start" onAction="#handleStart"/>
+        <Button text="Back" onAction="#handleBack"/>
+    </HBox>
+</VBox>
