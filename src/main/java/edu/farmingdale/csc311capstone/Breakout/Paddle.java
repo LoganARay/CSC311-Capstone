@@ -44,4 +44,16 @@ public class Paddle {
     public void setHeight(double height) {
         this.height = height;
     }
+
+    public void move(double amount, double gameWidth) {
+        x += amount;
+
+        if (x < 0) {
+            x = 0;
+        }
+
+        if (x + width > gameWidth) {
+            x = gameWidth - width;
+        }
+    }
 }
