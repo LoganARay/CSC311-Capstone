@@ -6,17 +6,21 @@ import java.util.List;
 /**
  * Game rules and state for classic Space Invaders. Kept free of JavaFX so it can be unit tested.
  *
- * Step 1 (graphics): only the starting layout. The cannon, the alien formation and the shields
- * are placed where they belong so the controller can draw them. Nothing moves yet.
+ * Step 1 (graphics): the starting layout of the cannon, the alien formation and the shields.
+ * Step 2 (movement): the cannon slides left and right and stops at the edges.
+ * Step 3 (shooting): one shot on screen at a time. It destroys the first alien it touches
+ * (adding that alien's points) or knocks a block out of a shield.
  */
 public final class SpaceInvadersMechanics {
     public static final double PLAYFIELD_WIDTH = 560;
     public static final double PLAYFIELD_HEIGHT = 560;
 
-    // Player cannon: sits along the bottom
+    // Player cannon: moves left and right along the bottom
     public static final double PLAYER_WIDTH = 36;
     public static final double PLAYER_HEIGHT = 16;
     public static final double PLAYER_Y = PLAYFIELD_HEIGHT - 30;   // center of the cannon
+    public static final double PLAYER_SPEED = 220;                 // pixels per second
+    public static final double PLAYER_SHOT_SPEED = 500;            // only one shot on screen at a time
     public static final int STARTING_LIVES = 3;
 
     // Alien formation
@@ -32,6 +36,7 @@ public final class SpaceInvadersMechanics {
     public static final double SHIELD_TOP = PLAYER_Y - 80;
 
     private double playerX = PLAYFIELD_WIDTH / 2;
+    private Bullet playerShot = null;
     private int lives = STARTING_LIVES;
     private int score = 0;
     private int wave = 1;
@@ -41,6 +46,60 @@ public final class SpaceInvadersMechanics {
 
     public SpaceInvadersMechanics() {
         startWave();
+    }
+
+    /**
+     * Advances the game by one frame. dx is -1 (left), 0 or 1 (right) from the arrow keys,
+     * and fireHeld is true while the fire key is down.
+     */
+    public void update(double deltaSeconds, int dx, boolean fireHeld) {
+        movePlayer(deltaSeconds, dx);
+        if (fireHeld && playerShot == null) {
+            playerShot = new Bullet(playerX, PLAYER_Y - PLAYER_HEIGHT / 2, -PLAYER_SHOT_SPEED);
+        }
+        updateShot(deltaSeconds);
+    }
+
+    private void movePlayer(double deltaSeconds, int dx) {
+        playerX += dx * PLAYER_SPEED * deltaSeconds;
+        playerX = clamp(playerX, PLAYER_WIDTH / 2, PLAYFIELD_WIDTH - PLAYER_WIDTH / 2);
+    }
+
+    private void updateShot(double deltaSeconds) {
+        if (playerShot == null) {
+            return;
+        }
+        playerShot.update(deltaSeconds);
+        if (playerShot.isOffScreen()) {
+            playerShot = null;
+            return;
+        }
+        // Shields stop the shot and lose a block
+        for (Shield shield : shields) {
+            if (shield.hit(playerShot.getLeft(), playerShot.getTop(), Bullet.WIDTH, Bullet.HEIGHT)) {
+                playerShot = null;
+                return;
+            }
+        }
+        // The first alien touched is destroyed and the shot is used up
+        for (Alien alien : aliens) {
+            if (rectsOverlap(playerShot.getLeft(), playerShot.getTop(), Bullet.WIDTH, Bullet.HEIGHT,
+                    alien.getLeft(), alien.getTop(), Alien.WIDTH, Alien.HEIGHT)) {
+                aliens.remove(alien);
+                score += alien.getType().getPoints();
+                playerShot = null;
+                return;
+            }
+        }
+    }
+
+    static boolean rectsOverlap(double ax, double ay, double aw, double ah,
+                                double bx, double by, double bw, double bh) {
+        return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
+    }
+
+    private static double clamp(double value, double min, double max) {
+        return Math.max(min, Math.min(max, value));
     }
 
     /** Builds a fresh formation and fresh shields. */
@@ -62,6 +121,10 @@ public final class SpaceInvadersMechanics {
 
     public double getPlayerX() {
         return playerX;
+    }
+
+    public Bullet getPlayerShot() {
+        return playerShot;
     }
 
     public int getLives() {
@@ -154,8 +217,51 @@ public final class SpaceInvadersMechanics {
     }
 
     /**
+     * A shot moving straight up (the player's). Alien shots will reuse this in a later step.
+     */
+    public static class Bullet {
+        public static final double WIDTH = 3;
+        public static final double HEIGHT = 12;
+
+        private final double x;
+        private double y;
+        private final double velocityY;
+
+        public Bullet(double x, double y, double velocityY) {
+            this.x = x;
+            this.y = y;
+            this.velocityY = velocityY;
+        }
+
+        public void update(double deltaSeconds) {
+            y += velocityY * deltaSeconds;
+        }
+
+        /** True once the bullet has left the playfield. */
+        public boolean isOffScreen() {
+            return y + HEIGHT / 2 < 0 || y - HEIGHT / 2 > PLAYFIELD_HEIGHT;
+        }
+
+        public double getLeft() {
+            return x - WIDTH / 2;
+        }
+
+        public double getTop() {
+            return y - HEIGHT / 2;
+        }
+
+        public double getX() {
+            return x;
+        }
+
+        public double getY() {
+            return y;
+        }
+    }
+
+    /**
      * A bunker the player hides behind, built from a grid of small blocks
-     * (so later steps can knock them out one at a time).
+     * that get knocked out one at a time.
      */
     public static class Shield {
         public static final int COLUMNS = 11;
@@ -178,6 +284,27 @@ public final class SpaceInvadersMechanics {
                     blocks[row][col] = !cornerCut && !archCut;
                 }
             }
+        }
+
+        /**
+         * Knocks out the first block the rectangle overlaps, if any. Returns true if a block was hit,
+         * so a bullet knows to disappear.
+         */
+        public boolean hit(double rectLeft, double rectTop, double rectWidth, double rectHeight) {
+            int firstCol = (int) Math.floor((rectLeft - left) / BLOCK_SIZE);
+            int lastCol = (int) Math.floor((rectLeft + rectWidth - left) / BLOCK_SIZE);
+            int firstRow = (int) Math.floor((rectTop - top) / BLOCK_SIZE);
+            int lastRow = (int) Math.floor((rectTop + rectHeight - top) / BLOCK_SIZE);
+            // Check from the bottom up so the player's shot chips the shield from underneath
+            for (int row = Math.min(ROWS - 1, lastRow); row >= Math.max(0, firstRow); row--) {
+                for (int col = Math.max(0, firstCol); col <= Math.min(COLUMNS - 1, lastCol); col++) {
+                    if (blocks[row][col]) {
+                        blocks[row][col] = false;
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
 
         public boolean isBlock(int row, int col) {

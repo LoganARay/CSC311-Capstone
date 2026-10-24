@@ -2,18 +2,27 @@ package edu.farmingdale.csc311capstone.SpaceInvaders;
 
 import edu.farmingdale.csc311capstone.SceneSwitcher;
 import edu.farmingdale.csc311capstone.SpaceInvaders.SpaceInvadersMechanics.Alien;
+import edu.farmingdale.csc311capstone.SpaceInvaders.SpaceInvadersMechanics.Bullet;
 import edu.farmingdale.csc311capstone.SpaceInvaders.SpaceInvadersMechanics.Shield;
+import javafx.animation.AnimationTimer;
 import javafx.fxml.FXML;
+import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Label;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
- * Connects spaceinvaders-view.fxml to {@link SpaceInvadersMechanics} and draws the game on a Canvas.
+ * Connects spaceinvaders-view.fxml to {@link SpaceInvadersMechanics}: runs the game loop,
+ * reads the keyboard and draws the game on a Canvas.
  *
- * Step 1 (graphics): draws the starting screen once. Movement and the game loop come in step 2.
+ * Controls: Left/Right or A/D to move, Space to fire.
  */
 public class SpaceInvadersController {
 
@@ -34,17 +43,62 @@ public class SpaceInvadersController {
     @FXML private Canvas canvas;
 
     private SpaceInvadersMechanics game;
+    private final Set<KeyCode> heldKeys = new HashSet<>();
+    private long lastFrame;
+
+    private final AnimationTimer loop = new AnimationTimer() {
+        @Override
+        public void handle(long now) {
+            double deltaSeconds = lastFrame == 0 ? 0 : (now - lastFrame) / 1_000_000_000.0;
+            lastFrame = now;
+            // Cap the step so a slow frame doesn't teleport the cannon
+            deltaSeconds = Math.min(deltaSeconds, 0.05);
+            game.update(deltaSeconds, horizontalInput(), heldKeys.contains(KeyCode.SPACE));
+            draw();
+        }
+    };
 
     @FXML
     private void initialize() {
         game = new SpaceInvadersMechanics();
         canvas.setWidth(SpaceInvadersMechanics.PLAYFIELD_WIDTH);
         canvas.setHeight(SpaceInvadersMechanics.PLAYFIELD_HEIGHT);
+
+        root.sceneProperty().addListener((obs, oldScene, scene) -> {
+            if (scene != null) {
+                attachTo(scene);
+            }
+        });
+
         draw();
+        loop.start();
+    }
+
+    private void attachTo(Scene scene) {
+        // Filters (not handlers) so the Main Menu button can't swallow the arrow keys.
+        // Movement needs to know which keys are held down, so both presses and releases are tracked.
+        scene.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
+            heldKeys.add(e.getCode());
+            if (horizontalInput() != 0 || e.getCode() == KeyCode.SPACE) e.consume();
+        });
+        scene.addEventFilter(KeyEvent.KEY_RELEASED, e -> heldKeys.remove(e.getCode()));
+        // Stop the loop when the player goes back to the menu.
+        scene.windowProperty().addListener((obs, oldWin, win) -> {
+            if (win == null) loop.stop();
+        });
+    }
+
+    /** -1 for left, 1 for right, 0 when both or neither are held. */
+    private int horizontalInput() {
+        int dx = 0;
+        if (heldKeys.contains(KeyCode.LEFT) || heldKeys.contains(KeyCode.A)) dx -= 1;
+        if (heldKeys.contains(KeyCode.RIGHT) || heldKeys.contains(KeyCode.D)) dx += 1;
+        return dx;
     }
 
     @FXML
     private void onMainMenu() {
+        loop.stop();
         SceneSwitcher.showMenu(root);
     }
 
@@ -57,6 +111,7 @@ public class SpaceInvadersController {
 
         drawShields(g);
         drawAliens(g);
+        drawShot(g);
         g.setFill(CANNON);
         drawCannon(g, game.getPlayerX(), SpaceInvadersMechanics.PLAYER_Y);
 
@@ -132,6 +187,14 @@ public class SpaceInvadersController {
                 g.fillRect(left + 8, top + 5, 4, 3);
                 g.fillRect(left + 16, top + 5, 4, 3);
             }
+        }
+    }
+
+    private void drawShot(GraphicsContext g) {
+        Bullet shot = game.getPlayerShot();
+        if (shot != null) {
+            g.setFill(Color.WHITE);
+            g.fillRect(shot.getLeft(), shot.getTop(), Bullet.WIDTH, Bullet.HEIGHT);
         }
     }
 
