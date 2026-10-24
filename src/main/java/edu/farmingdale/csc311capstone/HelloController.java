@@ -37,7 +37,7 @@ public class HelloController {
     }
 
     @FXML
-    private void openTetris(ActionEvent event) {
-        SceneSwitcher.switchTo((Node) event.getSource(), "/edu/farmingdale/csc311capstone/tetris-view.fxml", "Tetris");
+    private void openSpaceInvaders(ActionEvent event) {
+        SceneSwitcher.switchTo((Node) event.getSource(), "spaceinvaders-view.fxml", "Space Invaders");
     }
 }
