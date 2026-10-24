@@ -21,6 +21,17 @@ public class HelloController {
         SceneSwitcher.switchTo((Node) event.getSource(), "snake-view.fxml", "Snake");
     }
 
+
+    @FXML
+    protected void openPong(ActionEvent event) {
+        SceneSwitcher.switchTo(
+                (Node) event.getSource(),
+                "pong-view.fxml",
+                "Pong"
+        );
+    }
+
+
     @FXML
     private void handleBreakout(ActionEvent event) {
         SceneSwitcher.switchTo((Node) event.getSource(), "breakout-view.fxml", "Breakout");

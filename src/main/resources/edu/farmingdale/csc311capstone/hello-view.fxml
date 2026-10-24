@@ -10,7 +10,7 @@
       <Button id="pacman" layoutX="382.0" layoutY="57.0" mnemonicParsing="false" prefHeight="99.0" prefWidth="143.0" text="Pacman" />
       <Button id="breakout" onAction="#handleBreakout" layoutX="76.0" layoutY="238.0" mnemonicParsing="false" prefHeight="91.0" prefWidth="143.0" text="Break-out" />
       <Button id="digdug" layoutX="382.0" layoutY="238.0" mnemonicParsing="false" prefHeight="91.0" prefWidth="143.0" text="DigDug" />
-      <Button id="pong" layoutX="228.0" layoutY="11.0" mnemonicParsing="false" prefHeight="91.0" prefWidth="143.0" text="Pong" />
+      <Button id="pong" layoutX="228.0" layoutY="11.0" mnemonicParsing="false" onAction="#openPong" prefHeight="91.0" prefWidth="143.0" text="Pong" />
       <Button id="spaceindavers" layoutX="228.0" layoutY="283.0" mnemonicParsing="false" prefHeight="91.0" prefWidth="143.0" text="Space Invaders" />
       <Button id="blackjack" layoutX="228.0" layoutY="154.0" mnemonicParsing="false" onAction="#openBlackjack" prefHeight="91.0" prefWidth="143.0" text="Blackjack" />
       <Button id="snake" layoutX="228.0" layoutY="395.0" mnemonicParsing="false" onAction="#openSnake" prefHeight="91.0" prefWidth="143.0" text="Snake" />

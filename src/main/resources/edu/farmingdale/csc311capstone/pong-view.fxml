@@ -1,10 +1,111 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
 <?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.shape.Circle?>
+<?import javafx.scene.shape.Line?>
+<?import javafx.scene.shape.Rectangle?>
+<?import javafx.scene.text.Font?>
 
-<AnchorPane xmlns="http://javafx.com/javafx"
-            xmlns:fx="http://javafx.com/fxml"
+<AnchorPane xmlns="http://javafx.com/javafx/25"
+            xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="edu.farmingdale.csc311capstone.Pong.PongController"
-            prefHeight="400.0" prefWidth="600.0">
+            prefWidth="800.0"
+            prefHeight="555.0"
+            style="-fx-background-color: black;">
+
+    <children>
+
+        <Label fx:id="statusLabel"
+               layoutX="20" layoutY="35"
+               text="First to 7"
+               textFill="WHITE"/>
+
+        <Label layoutX="220" layoutY="15"
+               text="PLAYER 1"
+               textFill="WHITE"/>
+
+        <Label layoutX="530" layoutY="15"
+               text="PLAYER 2"
+               textFill="WHITE"/>
+
+        <Label fx:id="player1Score"
+               layoutX="275" layoutY="35"
+               text="0" textFill="WHITE">
+            <font>
+                <Font size="28"/>
+            </font>
+        </Label>
+
+        <Label fx:id="player2Score"
+               layoutX="585" layoutY="35"
+               text="0" textFill="WHITE">
+            <font>
+                <Font size="28"/>
+            </font>
+        </Label>
+
+        <Pane fx:id="gamePane"
+              layoutY="80"
+              prefWidth="800"
+              prefHeight="420">
+
+            <children>
+
+                <Line startX="400" startY="0"
+                      endX="400" endY="420"
+                      stroke="GRAY"
+                      strokeWidth="2"/>
+
+                <Rectangle fx:id="leftPaddle"
+                           x="25" y="170"
+                           width="12" height="80"
+                           fill="WHITE"/>
+
+                <Rectangle fx:id="rightPaddle"
+                           x="763" y="170"
+                           width="12" height="80"
+                           fill="WHITE"/>
+
+                <Circle fx:id="ball"
+                        centerX="400"
+                        centerY="210"
+                        radius="8"
+                        fill="WHITE"/>
+
+            </children>
+
+        </Pane>
+
+        <Button layoutX="20"
+                layoutY="510"
+                prefWidth="135"
+                prefHeight="32"
+                text="Back to Arcade"
+                onAction="#backToArcade"/>
+
+        <Button fx:id="pauseButton"
+                layoutX="170"
+                layoutY="510"
+                prefWidth="90"
+                prefHeight="32"
+                text="Pause"
+                onAction="#togglePause"/>
+
+        <Button layoutX="275"
+                layoutY="510"
+                prefWidth="100"
+                prefHeight="32"
+                text="Restart"
+                onAction="#restartGame"/>
+
+        <Label layoutX="415"
+               layoutY="518"
+               text="P1: W/S   P2: Arrows   Space: Pause"
+               textFill="WHITE"/>
+
+    </children>
 
 </AnchorPane>
