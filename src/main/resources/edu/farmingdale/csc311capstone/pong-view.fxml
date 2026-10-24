@@ -1,10 +1,78 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.control.Label?>
 <?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.shape.Circle?>
+<?import javafx.scene.shape.Line?>
+<?import javafx.scene.shape.Rectangle?>
+<?import javafx.scene.text.Font?>
 
-<AnchorPane xmlns="http://javafx.com/javafx"
-            xmlns:fx="http://javafx.com/fxml"
+<AnchorPane xmlns="http://javafx.com/javafx/25"
+            xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="edu.farmingdale.csc311capstone.Pong.PongController"
-            prefHeight="400.0" prefWidth="600.0">
+            prefWidth="800.0"
+            prefHeight="500.0"
+            style="-fx-background-color: black;">
+
+    <children>
+
+        <Label layoutX="220" layoutY="15"
+               text="PLAYER 1"
+               textFill="WHITE"/>
+
+        <Label layoutX="530" layoutY="15"
+               text="PLAYER 2"
+               textFill="WHITE"/>
+
+        <Label fx:id="player1Score"
+               layoutX="275" layoutY="35"
+               text="0" textFill="WHITE">
+            <font>
+                <Font size="28"/>
+            </font>
+        </Label>
+
+        <Label fx:id="player2Score"
+               layoutX="585" layoutY="35"
+               text="0" textFill="WHITE">
+            <font>
+                <Font size="28"/>
+            </font>
+        </Label>
+
+        <Pane fx:id="gamePane"
+              layoutY="80"
+              prefWidth="800"
+              prefHeight="420">
+
+            <children>
+
+                <Line startX="400" startY="0"
+                      endX="400" endY="420"
+                      stroke="GRAY"
+                      strokeWidth="2"/>
+
+                <Rectangle fx:id="leftPaddle"
+                           x="25" y="170"
+                           width="12" height="80"
+                           fill="WHITE"/>
+
+                <Rectangle fx:id="rightPaddle"
+                           x="763" y="170"
+                           width="12" height="80"
+                           fill="WHITE"/>
+
+                <Circle fx:id="ball"
+                        centerX="400"
+                        centerY="210"
+                        radius="8"
+                        fill="WHITE"/>
+
+            </children>
+
+        </Pane>
+
+    </children>
 
 </AnchorPane>
