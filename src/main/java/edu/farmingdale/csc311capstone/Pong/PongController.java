@@ -28,6 +28,8 @@ public class PongController {
     @FXML
     private Label player2Score;
 
+    private final PongMechanics mechanics = new PongMechanics();
+
     private boolean wPressed;
     private boolean sPressed;
     private boolean upPressed;
@@ -54,7 +56,9 @@ public class PongController {
                 );
 
                 lastFrameTime = now;
+
                 updatePaddles(deltaTime);
+                updateBall(deltaTime);
             }
         };
 
@@ -62,6 +66,8 @@ public class PongController {
                 (observable, oldScene, newScene) -> {
 
                     if (newScene == null) {
+                        gameLoop.stop();
+                        resetKeys();
                         return;
                     }
 
@@ -80,6 +86,11 @@ public class PongController {
                                 }
                             }
                     );
+
+                    if (newScene.getWindow() != null) {
+                        lastFrameTime = 0;
+                        gameLoop.start();
+                    }
                 }
         );
     }
@@ -137,6 +148,14 @@ public class PongController {
                         deltaTime
                 )
         );
+    }
+
+    private void updateBall(double deltaTime) {
+
+        mechanics.moveBall(deltaTime);
+
+        ball.setCenterX(mechanics.getBallX());
+        ball.setCenterY(mechanics.getBallY());
     }
 
     private void resetKeys() {
