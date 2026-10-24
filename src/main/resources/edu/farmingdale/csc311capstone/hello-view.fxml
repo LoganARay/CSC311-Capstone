@@ -33,7 +33,7 @@
 
       <Button id="spaceindavers" layoutX="228.0" layoutY="283.0"
               mnemonicParsing="false" prefHeight="91.0"
-              prefWidth="143.0" text="Space Invaders" />
+              prefWidth="143.0" text="Space Invaders" onAction="#openSpaceInvaders" />
 
       <Button id="blackjack" layoutX="228.0" layoutY="154.0"
               mnemonicParsing="false" onAction="#openBlackjack"

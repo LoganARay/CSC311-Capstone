@@ -35,4 +35,9 @@ public class HelloController {
     private void openBomberman(ActionEvent event) {
         SceneSwitcher.switchTo((Node) event.getSource(), "bomberman-view.fxml", "Bomberman");
     }
+
+    @FXML
+    private void openSpaceInvaders(ActionEvent event) {
+        SceneSwitcher.switchTo((Node) event.getSource(), "spaceinvaders-view.fxml", "Space Invaders");
+    }
 }
