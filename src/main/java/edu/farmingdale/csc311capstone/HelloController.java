@@ -21,7 +21,6 @@ public class HelloController {
         SceneSwitcher.switchTo((Node) event.getSource(), "snake-view.fxml", "Snake");
     }
 
-
     @FXML
     protected void openPong(ActionEvent event) {
         SceneSwitcher.switchTo(
@@ -30,5 +29,15 @@ public class HelloController {
                 "Pong"
         );
     }
+
+    @FXML
+    protected void openPacman(ActionEvent event) {
+        SceneSwitcher.switchTo(
+                (Node) event.getSource(),
+                "pacman-view.fxml",
+                "Pac-Man"
+        );
+    }
+
 
 }

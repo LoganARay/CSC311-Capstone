@@ -7,7 +7,7 @@
 <AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="500.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="edu.farmingdale.csc311capstone.HelloController">
    <children>
       <Button id="tetris" layoutX="76.0" layoutY="61.0" mnemonicParsing="false" prefHeight="91.0" prefWidth="143.0" text="Tetris" />
-      <Button id="pacman" layoutX="382.0" layoutY="57.0" mnemonicParsing="false" prefHeight="99.0" prefWidth="143.0" text="Pacman" />
+      <Button id="pacman" layoutX="382.0" layoutY="57.0" mnemonicParsing="false" onAction="#openPacman" prefHeight="99.0" prefWidth="143.0" text="Pacman" />
       <Button id="breakout" layoutX="76.0" layoutY="238.0" mnemonicParsing="false" prefHeight="91.0" prefWidth="143.0" text="Break-out" />
       <Button id="digdug" layoutX="382.0" layoutY="238.0" mnemonicParsing="false" prefHeight="91.0" prefWidth="143.0" text="DigDug" />
       <Button id="pong" layoutX="228.0" layoutY="11.0" mnemonicParsing="false" onAction="#openPong" prefHeight="91.0" prefWidth="143.0" text="Pong" />
