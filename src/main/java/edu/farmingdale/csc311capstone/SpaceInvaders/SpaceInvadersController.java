@@ -34,6 +34,7 @@ public class SpaceInvadersController {
     private static final Color SQUID = Color.MAGENTA;
     private static final Color CRAB = Color.CYAN;
     private static final Color OCTOPUS = Color.LIMEGREEN;
+    private static final Color ALIEN_SHOT = Color.ORANGERED;
 
     /** Best score for as long as the app is open. */
     private static int highScore = 0;
@@ -118,8 +119,7 @@ public class SpaceInvadersController {
         drawShields(g);
         drawAliens(g);
         drawShot(g);
-        g.setFill(CANNON);
-        drawCannon(g, game.getPlayerX(), SpaceInvadersMechanics.PLAYER_Y);
+        drawPlayer(g);
 
         // Ground line under the cannon
         double groundY = SpaceInvadersMechanics.PLAYER_Y + SpaceInvadersMechanics.PLAYER_HEIGHT / 2 + 8;
@@ -154,6 +154,22 @@ public class SpaceInvadersController {
         bestLabel.setText(String.format("Best: %05d", highScore));
         livesLabel.setText("Lives: " + game.getLives());
         waveLabel.setText("Wave: " + game.getWave());
+    }
+
+    private void drawPlayer(GraphicsContext g) {
+        double x = game.getPlayerX();
+        double y = SpaceInvadersMechanics.PLAYER_Y;
+        if (game.isRespawning()) {
+            // A simple burst of debris where the cannon was hit, until the respawn pause ends
+            g.setFill(Color.WHITE);
+            for (int i = 0; i < 8; i++) {
+                double angle = i * Math.PI / 4;
+                g.fillRect(x + Math.cos(angle) * 12 - 2, y + Math.sin(angle) * 6 - 2, 4, 4);
+            }
+            return;
+        }
+        g.setFill(CANNON);
+        drawCannon(g, x, y);
     }
 
     /** A simple laser cannon: a wide base with a small turret on top. */
@@ -219,6 +235,16 @@ public class SpaceInvadersController {
         if (shot != null) {
             g.setFill(Color.WHITE);
             g.fillRect(shot.getLeft(), shot.getTop(), Bullet.WIDTH, Bullet.HEIGHT);
+        }
+        // Alien shots zigzag so they read differently from the player's
+        g.setStroke(ALIEN_SHOT);
+        g.setLineWidth(2);
+        for (Bullet alienShot : game.getAlienShots()) {
+            double x = alienShot.getX();
+            double top = alienShot.getTop();
+            double third = Bullet.HEIGHT / 3;
+            g.strokePolyline(new double[]{x - 2, x + 2, x - 2, x + 2},
+                    new double[]{top, top + third, top + 2 * third, top + Bullet.HEIGHT}, 4);
         }
     }
 

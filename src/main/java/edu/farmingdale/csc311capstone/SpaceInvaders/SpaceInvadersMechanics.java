@@ -2,6 +2,7 @@ package edu.farmingdale.csc311capstone.SpaceInvaders;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 /**
  * Game rules and state for classic Space Invaders. Kept free of JavaFX so it can be unit tested.
@@ -12,6 +13,9 @@ import java.util.List;
  * (adding that alien's points) or knocks a block out of a shield.
  * Step 4 (marching): the formation jumps sideways, drops and turns around at the edges, and speeds up
  * as aliens die. Aliens chew through shields they march into, and reaching the cannon's row ends the game.
+ * Step 5 (alien fire and lives): the lowest alien in a random column fires down. Alien shots chip shields
+ * and cost a life when they hit the cannon. The game pauses briefly while the cannon respawns, a bonus life
+ * comes at 1500 points, and losing the last life ends the game.
  */
 public final class SpaceInvadersMechanics {
     public static final double PLAYFIELD_WIDTH = 560;
@@ -24,6 +28,8 @@ public final class SpaceInvadersMechanics {
     public static final double PLAYER_SPEED = 220;                 // pixels per second
     public static final double PLAYER_SHOT_SPEED = 500;            // only one shot on screen at a time
     public static final int STARTING_LIVES = 3;
+    public static final int EXTRA_LIFE_SCORE = 1500;               // one bonus life, like the arcade
+    public static final double RESPAWN_TIME = 1.5;                 // the game pauses while the cannon explodes
 
     // Alien formation
     public static final int ALIEN_ROWS = 5;
@@ -36,14 +42,21 @@ public final class SpaceInvadersMechanics {
     public static final double ALIEN_STEP_DOWN = 16;               // and drops when it reaches an edge
     public static final double SLOWEST_STEP_TIME = 0.6;            // seconds between jumps with all 55 aliens
     public static final double FASTEST_STEP_TIME = 0.03;           // the last alien races
+    public static final double ALIEN_SHOT_SPEED = 200;
+    public static final double ALIEN_FIRE_INTERVAL = 0.9;          // average seconds between alien shots
+    public static final int MAX_ALIEN_SHOTS = 3;
 
     // Shields
     public static final int SHIELD_COUNT = 4;
     public static final double SHIELD_TOP = PLAYER_Y - 80;
 
+    private final Random random;
+
     private double playerX = PLAYFIELD_WIDTH / 2;
     private Bullet playerShot = null;
     private int lives = STARTING_LIVES;
+    private boolean extraLifeGiven = false;
+    private double respawnTimeLeft = 0;
     private int score = 0;
     private int wave = 1;
 
@@ -51,9 +64,17 @@ public final class SpaceInvadersMechanics {
     private int marchDirection = 1;                                 // 1 = right, -1 = left
     private double stepTimer = 0;
     private boolean aliensLanded = false;
+    private final List<Bullet> alienShots = new ArrayList<>();
+    private double alienFireTimer = ALIEN_FIRE_INTERVAL;
     private final List<Shield> shields = new ArrayList<>();
 
     public SpaceInvadersMechanics() {
+        this(new Random());
+    }
+
+    /** Tests pass a seeded Random so alien fire is predictable. */
+    SpaceInvadersMechanics(Random random) {
+        this.random = random;
         startWave();
     }
 
@@ -65,12 +86,19 @@ public final class SpaceInvadersMechanics {
         if (isGameOver()) {
             return;
         }
+        // While the cannon is exploding everything waits, like the arcade
+        if (respawnTimeLeft > 0) {
+            respawnTimeLeft = Math.max(0, respawnTimeLeft - deltaSeconds);
+            return;
+        }
         movePlayer(deltaSeconds, dx);
         if (fireHeld && playerShot == null) {
             playerShot = new Bullet(playerX, PLAYER_Y - PLAYER_HEIGHT / 2, -PLAYER_SHOT_SPEED);
         }
         marchAliens(deltaSeconds);
+        updateAlienFire(deltaSeconds);
         updateShot(deltaSeconds);
+        updateAlienShots(deltaSeconds);
     }
 
     /** Time between formation jumps: slow with a full formation, faster as aliens die. */
@@ -123,6 +151,65 @@ public final class SpaceInvadersMechanics {
         playerX = clamp(playerX, PLAYER_WIDTH / 2, PLAYFIELD_WIDTH - PLAYER_WIDTH / 2);
     }
 
+    private void updateAlienFire(double deltaSeconds) {
+        alienFireTimer -= deltaSeconds;
+        if (alienFireTimer > 0) {
+            return;
+        }
+        alienFireTimer += ALIEN_FIRE_INTERVAL * (0.5 + random.nextDouble());
+        if (alienShots.size() >= MAX_ALIEN_SHOTS || aliens.isEmpty()) {
+            return;
+        }
+        // A random column fires, from its lowest alien so shots never pass through other aliens
+        Alien shooter = aliens.get(random.nextInt(aliens.size()));
+        for (Alien alien : aliens) {
+            if (alien.getColumn() == shooter.getColumn() && alien.getY() > shooter.getY()) {
+                shooter = alien;
+            }
+        }
+        alienShots.add(new Bullet(shooter.getX(), shooter.getBottom(), ALIEN_SHOT_SPEED));
+    }
+
+    private void updateAlienShots(double deltaSeconds) {
+        for (Bullet shot : alienShots) {
+            shot.update(deltaSeconds);
+        }
+        alienShots.removeIf(Bullet::isOffScreen);
+        alienShots.removeIf(this::hitsShield);
+        for (Bullet shot : alienShots) {
+            if (rectsOverlap(shot.getLeft(), shot.getTop(), Bullet.WIDTH, Bullet.HEIGHT,
+                    playerX - PLAYER_WIDTH / 2, PLAYER_Y - PLAYER_HEIGHT / 2, PLAYER_WIDTH, PLAYER_HEIGHT)) {
+                loseLife();
+                return;
+            }
+        }
+    }
+
+    private boolean hitsShield(Bullet bullet) {
+        for (Shield shield : shields) {
+            if (shield.hit(bullet.getLeft(), bullet.getTop(), Bullet.WIDTH, Bullet.HEIGHT)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void loseLife() {
+        lives--;
+        respawnTimeLeft = RESPAWN_TIME;
+        alienShots.clear();
+        playerShot = null;
+        playerX = PLAYFIELD_WIDTH / 2;
+    }
+
+    private void addScore(int points) {
+        score += points;
+        if (!extraLifeGiven && score >= EXTRA_LIFE_SCORE) {
+            extraLifeGiven = true;
+            lives++;
+        }
+    }
+
     private void updateShot(double deltaSeconds) {
         if (playerShot == null) {
             return;
@@ -133,8 +220,15 @@ public final class SpaceInvadersMechanics {
             return;
         }
         // Shields stop the shot and lose a block
-        for (Shield shield : shields) {
-            if (shield.hit(playerShot.getLeft(), playerShot.getTop(), Bullet.WIDTH, Bullet.HEIGHT)) {
+        if (hitsShield(playerShot)) {
+            playerShot = null;
+            return;
+        }
+        // Meeting an alien shot head on destroys both
+        for (Bullet alienShot : alienShots) {
+            if (rectsOverlap(playerShot.getLeft(), playerShot.getTop(), Bullet.WIDTH, Bullet.HEIGHT,
+                    alienShot.getLeft(), alienShot.getTop(), Bullet.WIDTH, Bullet.HEIGHT)) {
+                alienShots.remove(alienShot);
                 playerShot = null;
                 return;
             }
@@ -144,7 +238,7 @@ public final class SpaceInvadersMechanics {
             if (rectsOverlap(playerShot.getLeft(), playerShot.getTop(), Bullet.WIDTH, Bullet.HEIGHT,
                     alien.getLeft(), alien.getTop(), Alien.WIDTH, Alien.HEIGHT)) {
                 aliens.remove(alien);
-                score += alien.getType().getPoints();
+                addScore(alien.getType().getPoints());
                 playerShot = null;
                 return;
             }
@@ -185,9 +279,32 @@ public final class SpaceInvadersMechanics {
         return playerShot;
     }
 
-    /** True once the aliens reach the cannon. Running out of lives is added in a later step. */
+    /** Puts an alien shot on screen. Used by tests. */
+    void addAlienShot(Bullet shot) {
+        alienShots.add(shot);
+    }
+
+    /** Stops aliens from firing on their own. Used by tests. */
+    void disableAlienFire() {
+        alienFireTimer = Double.POSITIVE_INFINITY;
+    }
+
+    /** Adds points as if something was shot. Used by tests. */
+    void addScoreForTest(int points) {
+        addScore(points);
+    }
+
+    /** True once the aliens reach the cannon or the last life is lost. */
     public boolean isGameOver() {
-        return aliensLanded;
+        return lives <= 0 || aliensLanded;
+    }
+
+    public boolean isRespawning() {
+        return respawnTimeLeft > 0;
+    }
+
+    public List<Bullet> getAlienShots() {
+        return alienShots;
     }
 
     public int getLives() {
@@ -285,7 +402,7 @@ public final class SpaceInvadersMechanics {
     }
 
     /**
-     * A shot moving straight up (the player's). Alien shots will reuse this in a later step.
+     * A shot moving straight up (the player's) or straight down (an alien's).
      */
     public static class Bullet {
         public static final double WIDTH = 3;
