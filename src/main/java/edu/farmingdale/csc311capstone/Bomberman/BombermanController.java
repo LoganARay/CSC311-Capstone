@@ -1,8 +1,7 @@
 package edu.farmingdale.csc311capstone.Bomberman;
 
-import edu.farmingdale.csc311capstone.HelloApplication;
+import edu.farmingdale.csc311capstone.SceneSwitcher;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.geometry.HPos;
 import javafx.geometry.VPos;
 import javafx.scene.control.Label;
@@ -10,8 +9,6 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
-
-import java.io.IOException;
 
 public class BombermanController {
     private BombermanGame game;
@@ -53,8 +50,7 @@ public class BombermanController {
     }
 
     @FXML
-    private void handleBack() throws IOException {
-        FXMLLoader loader = new FXMLLoader(HelloApplication.class.getResource("hello-view.fxml"));
-        gameArea.getScene().setRoot(loader.load());
+    private void handleBack() {
+        SceneSwitcher.showMenu(gameArea);
     }
 }

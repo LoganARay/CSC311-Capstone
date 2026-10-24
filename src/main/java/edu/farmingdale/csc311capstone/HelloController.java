@@ -1,35 +1,33 @@
 package edu.farmingdale.csc311capstone;
 
-import java.io.IOException;
-
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
-import javafx.scene.control.Label;
 
+/**
+ * Main menu. Each game button calls a method here that swaps in that game's view.
+ * To hook up another game, add a method like {@link #openSnake} and set
+ * onAction="#yourMethod" on its button in hello-view.fxml.
+ */
 public class HelloController {
-    @FXML
-    private Label welcomeText;
 
     @FXML
-    protected void onHelloButtonClick() {
-        welcomeText.setText("Welcome to JavaFX Application!");
+    protected void openBlackjack(ActionEvent event) {
+        SceneSwitcher.switchTo((Node) event.getSource(), "blackjack-view.fxml", "Blackjack");
     }
 
     @FXML
-    private void handleBreakout(ActionEvent event) throws IOException {
-        openGame(event, "breakout-view.fxml");
+    protected void openSnake(ActionEvent event) {
+        SceneSwitcher.switchTo((Node) event.getSource(), "snake-view.fxml", "Snake");
     }
 
     @FXML
-    private void handleBomberman(ActionEvent event) throws IOException {
-        openGame(event, "bomberman-view.fxml");
+    private void handleBreakout(ActionEvent event) {
+        SceneSwitcher.switchTo((Node) event.getSource(), "breakout-view.fxml", "Breakout");
     }
 
-    private void openGame(ActionEvent event, String view) throws IOException {
-        FXMLLoader loader = new FXMLLoader(HelloApplication.class.getResource(view));
-        Node button = (Node) event.getSource();
-        button.getScene().setRoot(loader.load());
+    @FXML
+    private void handleBomberman(ActionEvent event) {
+        SceneSwitcher.switchTo((Node) event.getSource(), "bomberman-view.fxml", "Bomberman");
     }
 }
