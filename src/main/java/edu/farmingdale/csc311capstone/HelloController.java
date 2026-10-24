@@ -31,4 +31,14 @@ public class HelloController {
         );
     }
 
+
+    @FXML
+    private void openBreakout(ActionEvent event) {
+        SceneSwitcher.switchTo((Node) event.getSource(), "breakout-view.fxml", "Breakout");
+    }
+
+    @FXML
+    private void openBomberman(ActionEvent event) {
+        SceneSwitcher.switchTo((Node) event.getSource(), "bomberman-view.fxml", "Bomberman");
+    }
 }
