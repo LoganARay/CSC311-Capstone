@@ -1,14 +1,53 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
 
-<AnchorPane xmlns="http://javafx.com/javafx"
-            xmlns:fx="http://javafx.com/fxml"
-            fx:controller="edu.farmingdale.csc311capstone.Tetris.TetrisController"
-            prefHeight="400.0" prefWidth="600.0">
-
-</AnchorPane>
+<HBox fx:id="root" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="edu.farmingdale.csc311capstone.Tetris.TetrisController">
+    <ImageView fitHeight="400" fitWidth="200">
+        <Image url="@TetrisGraphics/tempborder.jpeg" />
+    </ImageView>
+        <GridPane fx:id="gamespace" gridLinesVisible="true" prefHeight="400" prefWidth="200">
+    <rowConstraints>
+        <RowConstraints fx:id="row0" minHeight="20.0" prefHeight="20.0" />
+        <RowConstraints fx:id="row1" minHeight="20.0" prefHeight="20.0" />
+        <RowConstraints fx:id="row2" minHeight="20.0" prefHeight="20.0" />
+        <RowConstraints fx:id="row3" minHeight="20.0" prefHeight="20.0" />
+        <RowConstraints fx:id="row4" minHeight="20.0" prefHeight="20.0" />
+        <RowConstraints fx:id="row5" minHeight="20.0" prefHeight="20.0" />
+        <RowConstraints fx:id="row6" minHeight="20.0" prefHeight="20.0" />
+        <RowConstraints fx:id="row7" minHeight="20.0" prefHeight="20.0" />
+        <RowConstraints fx:id="row8" minHeight="20.0" prefHeight="20.0" />
+        <RowConstraints fx:id="row9" minHeight="20.0" prefHeight="20.0" />
+        <RowConstraints fx:id="row10" minHeight="20.0" prefHeight="20.0" />
+        <RowConstraints fx:id="row11" minHeight="20.0" prefHeight="20.0" />
+        <RowConstraints fx:id="row12" minHeight="20.0" prefHeight="20.0" />
+        <RowConstraints fx:id="row13" minHeight="20.0" prefHeight="20.0" />
+        <RowConstraints fx:id="row14" minHeight="20.0" prefHeight="20.0" />
+        <RowConstraints fx:id="row15" minHeight="20.0" prefHeight="20.0" />
+        <RowConstraints fx:id="row16" minHeight="20.0" prefHeight="20.0" />
+        <RowConstraints fx:id="row17" minHeight="20.0" prefHeight="20.0" />
+        <RowConstraints fx:id="row18" minHeight="20.0" prefHeight="20.0" />
+        <RowConstraints fx:id="row19" minHeight="20.0" prefHeight="20.0" />
+    </rowConstraints>
+    <columnConstraints>
+        <ColumnConstraints fx:id="col0" minWidth="20.0" prefWidth="20.0" />
+        <ColumnConstraints fx:id="col1" minWidth="20.0" prefWidth="20.0" />
+        <ColumnConstraints fx:id="col2" minWidth="20.0" prefWidth="20.0" />
+        <ColumnConstraints fx:id="col3" minWidth="20.0" prefWidth="20.0" />
+        <ColumnConstraints fx:id="col4" minWidth="20.0" prefWidth="20.0" />
+        <ColumnConstraints fx:id="col5" minWidth="20.0" prefWidth="20.0" />
+        <ColumnConstraints fx:id="col6" minWidth="20.0" prefWidth="20.0" />
+        <ColumnConstraints fx:id="col7" minWidth="20.0" prefWidth="20.0" />
+        <ColumnConstraints fx:id="col8" minWidth="20.0" prefWidth="20.0" />
+        <ColumnConstraints fx:id="col9" minWidth="20.0" prefWidth="20.0" />
+    </columnConstraints>
+        </GridPane>
+    <ImageView fitHeight="400" fitWidth="200">
+        <Image url="@TetrisGraphics/tempborder.jpeg" />
+    </ImageView>
+</HBox>

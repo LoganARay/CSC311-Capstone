@@ -35,4 +35,9 @@ public class HelloController {
     private void openBomberman(ActionEvent event) {
         SceneSwitcher.switchTo((Node) event.getSource(), "bomberman-view.fxml", "Bomberman");
     }
+
+    @FXML
+    private void openTetris(ActionEvent event) {
+        SceneSwitcher.switchTo((Node) event.getSource(), "/edu/farmingdale/csc311capstone/tetris-view.fxml", "Tetris");
+    }
 }
