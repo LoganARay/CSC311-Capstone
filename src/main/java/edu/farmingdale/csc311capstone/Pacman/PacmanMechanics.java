@@ -27,12 +27,15 @@ public class PacmanMechanics {
     private final int startRow;
     private final int startCol;
 
+    private int playerRow;
+    private int playerCol;
+
     public PacmanMechanics() {
 
         maze = new char[MAZE_LAYOUT.length][MAZE_LAYOUT[0].length()];
 
-        int playerRow = -1;
-        int playerCol = -1;
+        int foundRow = -1;
+        int foundCol = -1;
 
         for (int row = 0; row < MAZE_LAYOUT.length; row++) {
 
@@ -45,8 +48,8 @@ public class PacmanMechanics {
                 char tile = MAZE_LAYOUT[row].charAt(col);
 
                 if (tile == 'P') {
-                    playerRow = row;
-                    playerCol = col;
+                    foundRow = row;
+                    foundCol = col;
                     maze[row][col] = EMPTY;
                 } else {
                     maze[row][col] = tile;
@@ -54,12 +57,44 @@ public class PacmanMechanics {
             }
         }
 
-        if (playerRow == -1) {
+        if (foundRow == -1) {
             throw new IllegalStateException("Pac-Man start not found");
         }
 
-        startRow = playerRow;
-        startCol = playerCol;
+        startRow = foundRow;
+        startCol = foundCol;
+
+        playerRow = startRow;
+        playerCol = startCol;
+    }
+
+    public boolean movePlayer(int rowChange, int colChange) {
+
+        if (Math.abs(rowChange) + Math.abs(colChange) != 1) {
+            return false;
+        }
+
+        int newRow = playerRow + rowChange;
+        int newCol = playerCol + colChange;
+
+        if (isWall(newRow, newCol)) {
+            return false;
+        }
+
+        playerRow = newRow;
+        playerCol = newCol;
+
+        return true;
+    }
+
+    public boolean isWall(int row, int col) {
+
+        if (row < 0 || row >= getRows() ||
+                col < 0 || col >= getColumns()) {
+            return true;
+        }
+
+        return maze[row][col] == WALL;
     }
 
     public int getRows() {
@@ -78,17 +113,15 @@ public class PacmanMechanics {
         return startCol;
     }
 
-    public char getTile(int row, int col) {
-        return maze[row][col];
+    public int getPlayerRow() {
+        return playerRow;
     }
 
-    public boolean isWall(int row, int col) {
+    public int getPlayerCol() {
+        return playerCol;
+    }
 
-        if (row < 0 || row >= getRows() ||
-                col < 0 || col >= getColumns()) {
-            return true;
-        }
-
-        return maze[row][col] == WALL;
+    public char getTile(int row, int col) {
+        return maze[row][col];
     }
 }
