@@ -9,6 +9,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
+import edu.farmingdale.csc311capstone.SceneSwitcher;
 
 public class PacmanController {
 
@@ -340,6 +341,28 @@ public class PacmanController {
 
         gameLoop.start();
         mazePane.requestFocus();
+    }
+
+    @FXML
+    private void backToArcade() {
+
+        gameLoop.stop();
+        resetDirection();
+        lastMoveTime = 0;
+
+        if (mazePane.getScene() != null) {
+            mazePane.getScene().removeEventFilter(
+                    KeyEvent.KEY_PRESSED,
+                    keyPressedHandler
+            );
+
+            mazePane.getScene().removeEventFilter(
+                    KeyEvent.KEY_RELEASED,
+                    keyReleasedHandler
+            );
+        }
+
+        SceneSwitcher.showMenu(mazePane);
     }
 
     private void resetDirection() {

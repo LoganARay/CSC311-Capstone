@@ -63,6 +63,13 @@
                 text="Restart"
                 onAction="#restartGame"/>
 
+        <Button layoutX="405"
+                layoutY="490"
+                prefWidth="135"
+                prefHeight="32"
+                text="Back to Arcade"
+                onAction="#backToArcade"/>
+
         <Label fx:id="statusLabel"
                layoutX="62"
                layoutY="495"
