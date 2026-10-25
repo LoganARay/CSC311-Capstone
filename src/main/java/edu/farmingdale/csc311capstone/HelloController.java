@@ -40,4 +40,9 @@ public class HelloController {
     private void openSpaceInvaders(ActionEvent event) {
         SceneSwitcher.switchTo((Node) event.getSource(), "spaceinvaders-view.fxml", "Space Invaders");
     }
+
+    @FXML
+    private void openTetris(ActionEvent event) {
+        SceneSwitcher.switchTo((Node) event.getSource(), "tetris-view.fxml", "Tetris");
+    }
 }

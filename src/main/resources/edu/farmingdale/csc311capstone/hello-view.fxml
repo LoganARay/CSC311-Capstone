@@ -12,7 +12,7 @@
 
    <children>
       <Button id="tetris" layoutX="76.0" layoutY="61.0"
-              mnemonicParsing="false" prefHeight="91.0"
+              mnemonicParsing="false" prefHeight="91.0" onAction="#openTetris"
               prefWidth="143.0" text="Tetris" />
 
       <Button id="pacman" layoutX="382.0" layoutY="57.0"
