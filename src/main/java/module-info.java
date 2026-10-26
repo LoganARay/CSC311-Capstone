@@ -10,5 +10,6 @@ module edu.farmingdale.csc311capstone {
     opens edu.farmingdale.csc311capstone.Snake to javafx.fxml;
     opens edu.farmingdale.csc311capstone.Breakout to javafx.fxml;
     opens edu.farmingdale.csc311capstone.Bomberman to javafx.fxml;
+    opens edu.farmingdale.csc311capstone.SpaceInvaders to javafx.fxml;
     exports edu.farmingdale.csc311capstone;
 }
