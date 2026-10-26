@@ -14,6 +14,9 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import javafx.scene.text.TextAlignment;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -22,7 +25,7 @@ import java.util.Set;
  * Connects spaceinvaders-view.fxml to {@link SpaceInvadersMechanics}: runs the game loop,
  * reads the keyboard and draws the game on a Canvas.
  *
- * Controls: Left/Right or A/D to move, Space to fire.
+ * Controls: Left/Right or A/D to move, Space to fire, Enter to play again after a game over.
  */
 public class SpaceInvadersController {
 
@@ -31,6 +34,7 @@ public class SpaceInvadersController {
     private static final Color SQUID = Color.MAGENTA;
     private static final Color CRAB = Color.CYAN;
     private static final Color OCTOPUS = Color.LIMEGREEN;
+    private static final Color ALIEN_SHOT = Color.ORANGERED;
 
     /** Best score for as long as the app is open. */
     private static int highScore = 0;
@@ -79,7 +83,10 @@ public class SpaceInvadersController {
         // Movement needs to know which keys are held down, so both presses and releases are tracked.
         scene.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
             heldKeys.add(e.getCode());
-            if (horizontalInput() != 0 || e.getCode() == KeyCode.SPACE) e.consume();
+            if (e.getCode() == KeyCode.ENTER && game.isGameOver()) {
+                game = new SpaceInvadersMechanics();
+            }
+            if (horizontalInput() != 0 || e.getCode() == KeyCode.SPACE || e.getCode() == KeyCode.ENTER) e.consume();
         });
         scene.addEventFilter(KeyEvent.KEY_RELEASED, e -> heldKeys.remove(e.getCode()));
         // Stop the loop when the player goes back to the menu.
@@ -112,8 +119,7 @@ public class SpaceInvadersController {
         drawShields(g);
         drawAliens(g);
         drawShot(g);
-        g.setFill(CANNON);
-        drawCannon(g, game.getPlayerX(), SpaceInvadersMechanics.PLAYER_Y);
+        drawPlayer(g);
 
         // Ground line under the cannon
         double groundY = SpaceInvadersMechanics.PLAYER_Y + SpaceInvadersMechanics.PLAYER_HEIGHT / 2 + 8;
@@ -122,6 +128,24 @@ public class SpaceInvadersController {
         g.strokeLine(0, groundY, canvas.getWidth(), groundY);
 
         drawHud();
+        if (game.isGameOver()) {
+            drawGameOver(g);
+        }
+    }
+
+    private void drawGameOver(GraphicsContext g) {
+        double w = canvas.getWidth();
+        double h = canvas.getHeight();
+        g.setFill(Color.web("#000000", 0.55));
+        g.fillRect(0, 0, w, h);
+        g.setTextAlign(TextAlignment.CENTER);
+        g.setFill(Color.RED);
+        g.setFont(Font.font("Monospaced", FontWeight.BOLD, 40));
+        g.fillText("GAME OVER", w / 2, h / 2 - 20);
+        g.setFill(Color.WHITE);
+        g.setFont(Font.font("Monospaced", 18));
+        g.fillText("Score: " + game.getScore() + "\nPress Enter to play again", w / 2, h / 2 + 20);
+        g.setTextAlign(TextAlignment.LEFT);
     }
 
     private void drawHud() {
@@ -130,6 +154,22 @@ public class SpaceInvadersController {
         bestLabel.setText(String.format("Best: %05d", highScore));
         livesLabel.setText("Lives: " + game.getLives());
         waveLabel.setText("Wave: " + game.getWave());
+    }
+
+    private void drawPlayer(GraphicsContext g) {
+        double x = game.getPlayerX();
+        double y = SpaceInvadersMechanics.PLAYER_Y;
+        if (game.isRespawning()) {
+            // A simple burst of debris where the cannon was hit, until the respawn pause ends
+            g.setFill(Color.WHITE);
+            for (int i = 0; i < 8; i++) {
+                double angle = i * Math.PI / 4;
+                g.fillRect(x + Math.cos(angle) * 12 - 2, y + Math.sin(angle) * 6 - 2, 4, 4);
+            }
+            return;
+        }
+        g.setFill(CANNON);
+        drawCannon(g, x, y);
     }
 
     /** A simple laser cannon: a wide base with a small turret on top. */
@@ -195,6 +235,16 @@ public class SpaceInvadersController {
         if (shot != null) {
             g.setFill(Color.WHITE);
             g.fillRect(shot.getLeft(), shot.getTop(), Bullet.WIDTH, Bullet.HEIGHT);
+        }
+        // Alien shots zigzag so they read differently from the player's
+        g.setStroke(ALIEN_SHOT);
+        g.setLineWidth(2);
+        for (Bullet alienShot : game.getAlienShots()) {
+            double x = alienShot.getX();
+            double top = alienShot.getTop();
+            double third = Bullet.HEIGHT / 3;
+            g.strokePolyline(new double[]{x - 2, x + 2, x - 2, x + 2},
+                    new double[]{top, top + third, top + 2 * third, top + Bullet.HEIGHT}, 4);
         }
     }
 
