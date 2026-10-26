@@ -94,6 +94,11 @@ public class BreakoutController {
                     ball.setY(ball.getRadius());
                     ball.reverseY();
                 }
+                if (ball.getY() - ball.getRadius() >= gameArea.getHeight()) {
+                    gameLoop.stop();
+                    statusLabel.setText("Game over! You missed the ball.");
+                    return;
+                }
 
                 checkBrickCollisions();
                 updateBallPosition();
