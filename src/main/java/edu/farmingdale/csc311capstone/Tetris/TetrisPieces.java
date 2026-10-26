@@ -240,11 +240,11 @@ public class TetrisPieces {
             }
             case 5->{//t-block
                 switch(blockCords[8]){
-                    //⬛⬛⬛⬛
-                    //⬜⬜⬜⬛
-                    //⬛⬜⬛⬛
-                    //⬛⬛⬛⬛
-                    case 0 ->{
+                    //⬛⬛⬛⬛⬛⬛⬜⬜⬜⬛⬛⬜
+                    //⬜⬜⬜⬛⬛⬛⬜⬜⬛⬛⬛⬜
+                    //⬛⬜⬛⬛⬛⬛⬜⬜⬛⬜⬜⬜
+                    //⬛⬛⬛⬛⬛⬛⬜⬜⬛⬛⬜⬜
+                    case 0 ->{ //⬛⬜⬜⬛⬜⬜⬜
                         temp[0]=blockCords[0]+1; temp[1]=blockCords[1]-1; //⬛⬜⬛⬛
                         temp[2]=blockCords[2]; temp[3]=blockCords[3];     //⬜⬜⬛⬛
                         temp[4]=blockCords[4]-1; temp[5]=blockCords[5]+1; //⬛⬜⬛⬛
@@ -258,13 +258,28 @@ public class TetrisPieces {
                         temp[6]=blockCords[6]+1; temp[7]=blockCords[7]-1; //⬛⬛⬛⬛
                         temp[8]=2;
                         temp=checkBoundRight(temp);
+                        temp=checkBoundLeft(temp);
+                        temp=levelOneTSpin(temp, grid);
                     }
                     case 2 ->{
+                        if(grid[blockCords[0]+1][blockCords[1]] && grid[blockCords[0]+1][blockCords[1]-1]
+                                && grid[blockCords[0]][blockCords[1]+1] && grid[blockCords[2]][blockCords[3]+1]
+                                 && grid[blockCords[4]][blockCords[5]-1] && !grid[blockCords[4]][blockCords[5]+1]
+                             && !grid[blockCords[4]][blockCords[5]+2] && !grid[blockCords[4]][blockCords[5]+3]
+                                && !grid[blockCords[4]+1][temp[5]+2]){
+                            temp[0]=blockCords[0]-2; temp[1]=blockCords[1]+3;
+                            temp[2]=blockCords[2]-1; temp[3]=blockCords[3] +2;
+                            temp[4]=blockCords[4]; temp[5]=blockCords[5]+1;
+                            temp[6]=blockCords[6]; temp[7]=blockCords[7]+3;
+                            temp[8]=3;
+
+                        }else{
                         temp[0]=blockCords[0]-1; temp[1]=blockCords[1]+1; //⬛⬜⬛⬛
                         temp[2]=blockCords[2]; temp[3]=blockCords[3];     //⬛⬜⬜⬛
                         temp[4]=blockCords[4]+1; temp[5]=blockCords[5]-1; //⬛⬜⬛⬛
                         temp[6]=blockCords[6]+1; temp[7]=blockCords[7]+1; //⬛⬛⬛⬛
                         temp[8]=3;
+                        }
                     }
                     case 3 ->{
                         temp[0]=blockCords[0]-1; temp[1]=blockCords[1]-1; //⬛⬛⬛⬛
@@ -384,6 +399,19 @@ public class TetrisPieces {
     public static int[] safetyBound(int[] temp2, int axis, int inc){
         temp2[axis]=temp2[axis]+inc; temp2[axis+2]=temp2[axis+2]+inc; temp2[axis+4]=temp2[axis+4]+inc; temp2[axis+6]=temp2[axis+6]+inc;
         return temp2;
+    }
+
+    //
+    public static int[] levelOneTSpin(int[] temp, boolean[][] grid){
+        if( ( ( (grid[temp[2]][temp[3]+2] && grid[temp[4]][temp[5]+2]) || (temp[1]+1)==19)) && grid[temp[4]-1][temp[5]] && ((temp[0]+1)==10) || (( grid[temp[0]][temp[1]]) && grid[temp[0]][temp[1]+1])){
+            for(int i=2; i<8; i=i+2){
+                if(grid[temp[i]-1][temp[i+1]+1]){
+                    return temp;
+                }
+            }
+            temp[0]--; temp[1]++; temp[2]--; temp[3]++; temp[4]--; temp[5]++; temp[6]--; temp[7]++;
+        }
+        return temp;
     }
 }
 

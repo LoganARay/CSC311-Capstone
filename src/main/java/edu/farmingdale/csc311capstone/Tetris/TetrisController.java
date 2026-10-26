@@ -10,6 +10,8 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 
+import java.util.List;
+
 public class TetrisController {
     private AnimationTimer at;
     private ImageView[] currentBlock;
@@ -32,36 +34,17 @@ public class TetrisController {
         root.setFocusTraversable(true);
         gamespace.setPickOnBounds(true);
         grid= new boolean[10][20];
+        //int[] tspinSetUpL= {4,19,5,19,4,18,4,17,5,17,3,19,3,18,3,17,3,16,3,15,7,19,7,18,7,17,7,16,7,15,6,15};
+        //int[] tspinSetUp={4,19,4,18,4,17,4,16,4,15,5,15,6,19,6,17,7,19,7,18,7,17,8,19,8,18,8,17,8,16,8,15,8,14,5,14};
+        //demoHelper(tspinSetUp);
         newBlockEnters();
+
         baseSnapInterval=snapInterval;
-        ImageView[] newBlockImg= new ImageView[7];
-        Image image = new Image(
-                TetrisMechanics.class.getResourceAsStream("/edu/farmingdale/csc311capstone/TetrisGraphics/o-block.png")
-        );
-        ImageView demo = new ImageView(image); ImageView demo1 = new ImageView(image); ImageView demo2 = new ImageView(image); ImageView demo3 = new ImageView(image);
-        ImageView demo4 = new ImageView(image); ImageView demo5 = new ImageView(image); ImageView demo6 = new ImageView(image);
-        newBlockImg[0]=demo; newBlockImg[1]=demo1; newBlockImg[2]=demo2; newBlockImg[3]=demo3; newBlockImg[4]=demo4; newBlockImg[5]=demo5; newBlockImg[6]=demo6;
-        for(int i=0; i<7; i++){
-            newBlockImg[i].setFitWidth(20.0);
-            newBlockImg[i].setFitHeight(20.0);
-        }
-        gamespace.add(newBlockImg[0], 4, 19);
-        gamespace.add(newBlockImg[1], 5, 19);
-        gamespace.add(newBlockImg[2], 4, 17);
-        gamespace.add(newBlockImg[3], 5, 17);
-        gamespace.add(newBlockImg[4], 7, 17);
-        gamespace.add(newBlockImg[5], 7, 18);
-        gamespace.add(newBlockImg[6], 7, 19);
-        gamespace.add(newBlockImg[7], 7, 17);
-        gamespace.add(newBlockImg[8], 7, 18);
-        gamespace.add(newBlockImg[9], 7, 19);
-        grid[4][19]=true; grid[5][19]=true; grid[4][17]=true; grid[5][17]=true;
-         grid[7][18]=true; grid[7][17]=true;
         at= new AnimationTimer() {
             private long lastUpdate = 0;
             private double accumulatedTime = 0.0; // Tracks time between snaps
             private double lockDelayAccumulator = 0.0;
-            private final double lockDelayTime = 2.0;
+            private final double lockDelayTime = 1.0;
             private final double gridStep = 20.0;    // Number of pixels to snap down each time
 
             @Override
@@ -75,7 +58,7 @@ public class TetrisController {
                 if(!TetrisMechanics.checkCollisionDown(pieceCords)) {
                     lockDelayAccumulator = 0.0;
 
-                    fastSnapInterval = snapInterval / 2.0;
+                    fastSnapInterval = snapInterval / 4.0;
 
                     accumulatedTime += elapsedSeconds;
 
@@ -100,8 +83,22 @@ public class TetrisController {
                     if (lockDelayAccumulator >= lockDelayTime) {
                         stop();
                         TetrisMechanics.setCollision(pieceCords);
+                        List<Integer> linesCleared= TetrisMechanics.linesCleared(grid);
+                        System.out.println(linesCleared);
+                        if(!linesCleared.isEmpty()){
+                            grid= TetrisMechanics.fixGrid(grid, linesCleared);
+                            gamespace= TetrisMechanics.fixBoard(gamespace, linesCleared);
+                        }
                         newBlockEnters();
                         snapInterval = 1.0;
+                        for(int i=0; i<grid.length;i++){
+                            System.out.print(i + ": [");
+                            for(int e=0; e< grid[i].length; e++){
+                                System.out.print(" " + grid[i][e]);
+                            }
+                            System.out.println(" ]");
+                        }
+                        System.out.println();
                         at.start();
                     }
                 }
@@ -186,9 +183,9 @@ public class TetrisController {
     }
 
     public void newBlockEnters(){
-        currentBlock=TetrisMechanics.createBlock();
-        blockNumber=(int) (6);
-        pieceCords=TetrisPieces.setStartPiece(blockNumber);
+        blockNumber=(int) (Math.random()*7);
+        currentBlock=TetrisMechanics.createBlock(0);
+        pieceCords=TetrisPieces.setStartPiece(0);
         addGridChildren();
     }
 
@@ -204,5 +201,18 @@ public class TetrisController {
         gamespace.add(currentBlock[1], pieceCords[2], pieceCords[3]);
         gamespace.add(currentBlock[2], pieceCords[4], pieceCords[5]);
         gamespace.add(currentBlock[3], pieceCords[6], pieceCords[7]);
+    }
+
+    public void demoHelper(int[] setUp){
+        for(int i=0; i<setUp.length; i=i+2){
+            Image image = new Image(
+                    TetrisMechanics.class.getResourceAsStream("/edu/farmingdale/csc311capstone/TetrisGraphics/o-block.png")
+            );
+            ImageView demoBlocks= new ImageView(image);
+            demoBlocks.setFitWidth(20.0);
+            demoBlocks.setFitHeight(20.0);
+            gamespace.add(demoBlocks, setUp[i], setUp[i+1]);
+            grid[setUp[i]][setUp[i+1]]=true;
+        }
     }
 }
