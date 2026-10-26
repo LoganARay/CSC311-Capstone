@@ -19,6 +19,7 @@
     <Label fx:id="statusLabel" text="Static preview - gameplay coming later."/>
     <HBox alignment="CENTER" spacing="12.0">
         <Button text="Start" onAction="#handleStart"/>
+        <Button text="Restart" onAction="#handleRestart"/>
         <Button text="Back" onAction="#handleBack"/>
     </HBox>
 </VBox>
