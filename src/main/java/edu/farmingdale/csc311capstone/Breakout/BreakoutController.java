@@ -29,26 +29,7 @@ public class BreakoutController {
     @FXML
     private void initialize() {
         game = new BreakoutGame();
-        Paddle paddle = game.getPaddle();
-        paddleShape = new Rectangle(paddle.getX(), paddle.getY(),
-                paddle.getWidth(), paddle.getHeight());
-
-        paddleShape.setFill(Color.DARKSLATEBLUE);
-
-        Ball ball = game.getBall();
-        ballShape = new Circle(ball.getX(), ball.getY(), ball.getRadius(), Color.DARKORANGE);
-        gameArea.getChildren().addAll(paddleShape, ballShape);
-
-        for (Brick brick : game.getBricks()) {
-            Rectangle brickShape = new Rectangle(brick.getX(), brick.getY(),
-                    brick.getWidth(), brick.getHeight());
-
-
-            brickShape.setFill(Color.STEELBLUE);
-            gameArea.getChildren().add(brickShape);
-
-            bricks.put(brick, brickShape);
-        }
+        drawGame();
 
         gameArea.setFocusTraversable(true);
 
@@ -112,7 +93,7 @@ public class BreakoutController {
         System.out.println("Start button clicked!");
         game.startGame();
         gameLoop.start();
-        statusLabel.setText("Game stared!");
+        statusLabel.setText("Game started!");
         gameArea.requestFocus();
 
     }
@@ -121,6 +102,40 @@ public class BreakoutController {
     private void handleBack() {
         gameLoop.stop();
         SceneSwitcher.showMenu(gameArea);
+    }
+
+    @FXML
+    private void handleRestart() {
+        gameLoop.stop();
+        game.resetGame();
+        drawGame();
+        handleStart();
+    }
+
+    private void drawGame() {
+        gameArea.getChildren().clear();
+        bricks.clear();
+        Paddle paddle = game.getPaddle();
+        paddleShape = new Rectangle(paddle.getX(), paddle.getY(),
+                paddle.getWidth(), paddle.getHeight());
+
+        paddleShape.setFill(Color.DARKSLATEBLUE);
+
+        Ball ball = game.getBall();
+        ballShape = new Circle(ball.getX(), ball.getY(), ball.getRadius(), Color.DARKORANGE);
+        gameArea.getChildren().addAll(paddleShape, ballShape);
+
+        for (Brick brick : game.getBricks()) {
+            Rectangle brickShape = new Rectangle(brick.getX(), brick.getY(),
+                    brick.getWidth(), brick.getHeight());
+
+
+            brickShape.setFill(Color.STEELBLUE);
+            gameArea.getChildren().add(brickShape);
+
+            bricks.put(brick, brickShape);
+        }
+
     }
 
     private void updatePaddlePosition() {
