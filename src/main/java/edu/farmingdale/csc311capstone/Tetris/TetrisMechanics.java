@@ -135,7 +135,7 @@ public class TetrisMechanics {
     }
 
     public static boolean[][] fixGrid(boolean[][] currentGrid, List<Integer> fullLines){
-        for(int r:fullLines){
+        for(int r:fullLines) {
             for(int p=0; p<10; p++){
                 for(int i=r; i>0; i--){
                     currentGrid[p][i]=currentGrid[p][i-1];} }
