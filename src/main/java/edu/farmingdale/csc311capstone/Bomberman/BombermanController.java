@@ -1,6 +1,7 @@
 package edu.farmingdale.csc311capstone.Bomberman;
 
 import edu.farmingdale.csc311capstone.SceneSwitcher;
+import javafx.animation.AnimationTimer;
 import javafx.fxml.FXML;
 import javafx.geometry.HPos;
 import javafx.geometry.VPos;
@@ -12,6 +13,8 @@ import javafx.scene.shape.Rectangle;
 
 public class BombermanController {
     private BombermanGame game;
+    private AnimationTimer gameLoop;
+    private long lastFrame;
 
     @FXML
     private GridPane gameArea;
@@ -21,6 +24,84 @@ public class BombermanController {
     @FXML
     private void initialize() {
         game = new BombermanGame();
+        gameArea.setFocusTraversable(true);
+        gameArea.setOnKeyPressed(event -> {
+            switch (event.getCode()) {
+                case UP -> game.movePlayer(-1, 0);
+                case DOWN -> game.movePlayer(1, 0);
+                case LEFT -> game.movePlayer(0, -1);
+                case RIGHT -> game.movePlayer(0, 1);
+                case SPACE -> game.placeBomb();
+                default -> {
+                    return;
+                }
+            }
+            refreshView();
+            if (!game.isRunning()) {
+                gameLoop.stop();
+            }
+            event.consume();
+        });
+
+        gameLoop = new AnimationTimer() {
+            @Override
+            public void handle(long now) {
+                if (lastFrame == 0) {
+                    lastFrame = now;
+                    return;
+                }
+                double elapsedSeconds = (now - lastFrame) / 1_000_000_000.0;
+                lastFrame = now;
+                int bombCount = game.getBombs().size();
+                int explosionCount = game.getExplosionCells().size();
+                game.updateGame(elapsedSeconds);
+                // Redraw when a bomb explodes or the flames disappear.
+                if (bombCount != game.getBombs().size()
+                        || explosionCount != game.getExplosionCells().size()) {
+                    refreshView();
+                }
+                if (!game.isRunning()) {
+                    stop();
+                }
+            }
+        };
+        refreshView();
+    }
+
+    @FXML
+    private void handleStart() {
+        if (!game.isRunning()) {
+            game.startGame();
+            if (game.isRunning()) {
+                lastFrame = 0;
+                gameLoop.start();
+            }
+        }
+        refreshView();
+        gameArea.requestFocus();
+    }
+
+    @FXML
+    private void handleBack() {
+        gameLoop.stop();
+        SceneSwitcher.showMenu(gameArea);
+    }
+
+    private void refreshView() {
+        drawGame();
+        if (game.isGameOver()) {
+            statusLabel.setText("Game over! You were caught in the explosion.");
+        } else if (game.hasWon()) {
+            statusLabel.setText("You win! All blocks cleared.");
+        } else if (game.isRunning()) {
+            statusLabel.setText("Blocks remaining: " + game.getMap().countBlocks());
+        } else {
+            statusLabel.setText("Press Start to clear all the brown blocks.");
+        }
+    }
+
+    private void drawGame() {
+        gameArea.getChildren().clear();
         int[][] grid = game.getMap().getGrid();
         for (int row = 0; row < grid.length; row++) {
             for (int column = 0; column < grid[row].length; column++) {
@@ -36,21 +117,22 @@ public class BombermanController {
                 gameArea.add(tile, column, row);
             }
         }
+        for (int[] cell : game.getExplosionCells()) {
+            Rectangle flame = new Rectangle(34, 34, Color.ORANGE);
+            gameArea.add(flame, cell[1], cell[0]);
+        }
+        for (Bomb bomb : game.getBombs()) {
+            addCircle(bomb.getRow(), bomb.getColumn(), 9, Color.BLACK);
+        }
         Player player = game.getPlayer();
-        Circle playerShape = new Circle(11, Color.ROYALBLUE);
-        GridPane.setHalignment(playerShape, HPos.CENTER);
-        GridPane.setValignment(playerShape, VPos.CENTER);
-        gameArea.add(playerShape, player.getColumn(), player.getRow());
+        addCircle(player.getRow(), player.getColumn(), 11,
+                game.isGameOver() ? Color.CRIMSON : Color.ROYALBLUE);
     }
 
-    @FXML
-    private void handleStart() {
-        game.startGame();
-        statusLabel.setText("Bomberman skeleton only - gameplay coming later.");
-    }
-
-    @FXML
-    private void handleBack() {
-        SceneSwitcher.showMenu(gameArea);
+    private void addCircle(int row, int column, double radius, Color color) {
+        Circle circle = new Circle(radius, color);
+        GridPane.setHalignment(circle, HPos.CENTER);
+        GridPane.setValignment(circle, VPos.CENTER);
+        gameArea.add(circle, column, row);
     }
 }
