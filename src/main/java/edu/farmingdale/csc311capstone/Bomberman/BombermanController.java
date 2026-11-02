@@ -82,6 +82,13 @@ public class BombermanController {
     }
 
     @FXML
+    private void handleRestart() {
+        gameLoop.stop();
+        game.resetGame();
+        handleStart();
+    }
+
+    @FXML
     private void handleBack() {
         gameLoop.stop();
         SceneSwitcher.showMenu(gameArea);
@@ -90,9 +97,9 @@ public class BombermanController {
     private void refreshView() {
         drawGame();
         if (game.isGameOver()) {
-            statusLabel.setText("Game over! You were caught in the explosion.");
+            statusLabel.setText("Game over! Press Restart to try again.");
         } else if (game.hasWon()) {
-            statusLabel.setText("You win! All blocks cleared.");
+            statusLabel.setText("You win! All blocks cleared. Press Restart to play again.");
         } else if (game.isRunning()) {
             statusLabel.setText("Blocks remaining: " + game.getMap().countBlocks());
         } else {
