@@ -2,19 +2,26 @@ package edu.farmingdale.csc311capstone.Bomberman;
 
 import edu.farmingdale.csc311capstone.SceneSwitcher;
 import javafx.animation.AnimationTimer;
+import javafx.animation.TranslateTransition;
 import javafx.fxml.FXML;
 import javafx.geometry.HPos;
 import javafx.geometry.VPos;
 import javafx.scene.control.Label;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
+import javafx.util.Duration;
 
 public class BombermanController {
     private BombermanGame game;
     private AnimationTimer gameLoop;
     private long lastFrame;
+    private KeyCode moveKey;
+    private double movementCooldown;
+    private Circle playerShape;
+    private TranslateTransition playerMovement;
 
     @FXML
     private GridPane gameArea;
@@ -25,23 +32,40 @@ public class BombermanController {
     private void initialize() {
         game = new BombermanGame();
         gameArea.setFocusTraversable(true);
+        playerShape = new Circle(11, Color.ROYALBLUE);
+        playerMovement = new TranslateTransition(Duration.seconds(0.12), playerShape);
         gameArea.setOnKeyPressed(event -> {
             switch (event.getCode()) {
-                case UP -> game.movePlayer(-1, 0);
-                case DOWN -> game.movePlayer(1, 0);
-                case LEFT -> game.movePlayer(0, -1);
-                case RIGHT -> game.movePlayer(0, 1);
-                case SPACE -> game.placeBomb();
+                case UP, DOWN, LEFT, RIGHT -> {
+                    if (moveKey != event.getCode()) {
+                        moveKey = event.getCode();
+                        if (movementCooldown <= 0) {
+                            movePlayer();
+                        }
+                    }
+                }
+                case SPACE -> {
+                    game.placeBomb();
+                    refreshView();
+                }
                 default -> {
                     return;
                 }
             }
-            refreshView();
-            if (!game.isRunning()) {
-                gameLoop.stop();
-            }
             event.consume();
         });
+        gameArea.setOnKeyReleased(event -> {
+            if (event.getCode() == moveKey) {
+                moveKey = null;
+                event.consume();
+            }
+        });
+        gameArea.focusedProperty().addListener((observable, oldValue, focused) -> {
+            if (!focused) {
+                moveKey = null;
+            }
+        });
+        gameArea.setOnMouseClicked(event -> gameArea.requestFocus());
 
         gameLoop = new AnimationTimer() {
             @Override
@@ -55,6 +79,10 @@ public class BombermanController {
                 int bombCount = game.getBombs().size();
                 int explosionCount = game.getExplosionCells().size();
                 game.updateGame(elapsedSeconds);
+                movementCooldown = Math.max(0, movementCooldown - elapsedSeconds);
+                if (moveKey != null && movementCooldown <= 0 && game.isRunning()) {
+                    movePlayer();
+                }
                 // Redraw when a bomb explodes or the flames disappear.
                 if (bombCount != game.getBombs().size()
                         || explosionCount != game.getExplosionCells().size()) {
@@ -62,6 +90,8 @@ public class BombermanController {
                 }
                 if (!game.isRunning()) {
                     stop();
+                    moveKey = null;
+                    stopPlayerMovement();
                 }
             }
         };
@@ -84,6 +114,9 @@ public class BombermanController {
     @FXML
     private void handleRestart() {
         gameLoop.stop();
+        moveKey = null;
+        movementCooldown = 0;
+        stopPlayerMovement();
         game.resetGame();
         handleStart();
     }
@@ -91,7 +124,47 @@ public class BombermanController {
     @FXML
     private void handleBack() {
         gameLoop.stop();
+        moveKey = null;
+        stopPlayerMovement();
         SceneSwitcher.showMenu(gameArea);
+    }
+
+    private void movePlayer() {
+        if (!game.isRunning() || moveKey == null) {
+            return;
+        }
+        int oldRow = game.getPlayer().getRow();
+        int oldColumn = game.getPlayer().getColumn();
+        switch (moveKey) {
+            case UP -> game.movePlayer(-1, 0);
+            case DOWN -> game.movePlayer(1, 0);
+            case LEFT -> game.movePlayer(0, -1);
+            case RIGHT -> game.movePlayer(0, 1);
+            default -> { return; }
+        }
+        movementCooldown = 0.15;
+        refreshView();
+        int row = game.getPlayer().getRow();
+        int column = game.getPlayer().getColumn();
+        if (game.isRunning() && (row != oldRow || column != oldColumn)) {
+            playerMovement.stop();
+            playerMovement.setFromX((oldColumn - column) * 34);
+            playerMovement.setFromY((oldRow - row) * 34);
+            playerMovement.setToX(0);
+            playerMovement.setToY(0);
+            playerMovement.playFromStart();
+        }
+        if (!game.isRunning()) {
+            gameLoop.stop();
+            moveKey = null;
+            stopPlayerMovement();
+        }
+    }
+
+    private void stopPlayerMovement() {
+        playerMovement.stop();
+        playerShape.setTranslateX(0);
+        playerShape.setTranslateY(0);
     }
 
     private void refreshView() {
@@ -132,8 +205,10 @@ public class BombermanController {
             addCircle(bomb.getRow(), bomb.getColumn(), 9, Color.BLACK);
         }
         Player player = game.getPlayer();
-        addCircle(player.getRow(), player.getColumn(), 11,
-                game.isGameOver() ? Color.CRIMSON : Color.ROYALBLUE);
+        playerShape.setFill(game.isGameOver() ? Color.CRIMSON : Color.ROYALBLUE);
+        GridPane.setHalignment(playerShape, HPos.CENTER);
+        GridPane.setValignment(playerShape, VPos.CENTER);
+        gameArea.add(playerShape, player.getColumn(), player.getRow());
     }
 
     private void addCircle(int row, int column, double radius, Color color) {
