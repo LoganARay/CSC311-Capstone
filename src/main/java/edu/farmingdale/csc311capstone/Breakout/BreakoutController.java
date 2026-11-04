@@ -2,7 +2,6 @@ package edu.farmingdale.csc311capstone.Breakout;
 
 import edu.farmingdale.csc311capstone.SceneSwitcher;
 import javafx.animation.AnimationTimer;
-import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
@@ -12,7 +11,6 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
-import javafx.stage.Stage;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -20,9 +18,12 @@ import java.util.Map;
 public class BreakoutController {
     private static final double FIELD_WIDTH = 550;
     private static final double FIELD_HEIGHT = 330;
+    private static final double PADDLE_SPEED = 360;
+    private boolean leftPressed;
+    private boolean rightPressed;
+    private boolean running;
+    private long lastFrame;
     private BreakoutGame game;
-    private Stage gameStage;
-    private boolean wasFullScreen;
     private Rectangle paddleShape;
     private Circle ballShape;
     private AnimationTimer gameLoop;
@@ -34,6 +35,8 @@ public class BreakoutController {
     private Label statusLabel;
     @FXML
     private Label scoreLabel;
+    @FXML
+    private Label livesLabel;
     @FXML
     private StackPane gameContainer;
 
@@ -49,76 +52,112 @@ public class BreakoutController {
                 gameContainer.heightProperty().subtract(24).divide(FIELD_HEIGHT))));
         gameArea.scaleYProperty().bind(gameArea.scaleXProperty());
         gameArea.setClip(new Rectangle(FIELD_WIDTH, FIELD_HEIGHT));
-        Platform.runLater(() -> {
-            if (gameArea.getScene() != null
-                    && gameArea.getScene().getWindow() instanceof Stage stage) {
-                gameStage = stage;
-                wasFullScreen = stage.isFullScreen();
-                stage.setFullScreen(true);
-            }
-        });
-
         gameArea.setFocusTraversable(true);
 
         gameArea.setOnKeyPressed(event -> {
             if (event.getCode() == KeyCode.LEFT) {
-                game.getPaddle().move(-30, gameArea.getWidth());
-                updatePaddlePosition();
+                leftPressed = true;
                 event.consume();
-            }
-            else if (event.getCode() == KeyCode.RIGHT) {
-                game.getPaddle().move(30,gameArea.getWidth());
-                updatePaddlePosition();
+            } else if (event.getCode() == KeyCode.RIGHT) {
+                rightPressed = true;
                 event.consume();
             }
         });
+        gameArea.setOnKeyReleased(event -> {
+            if (event.getCode() == KeyCode.LEFT) {
+                leftPressed = false;
+                event.consume();
+            } else if (event.getCode() == KeyCode.RIGHT) {
+                rightPressed = false;
+                event.consume();
+            }
+        });
+        gameArea.focusedProperty().addListener((observable, oldValue, focused) -> {
+            if (!focused) {
+                leftPressed = false;
+                rightPressed = false;
+            }
+        });
+        gameArea.setOnMouseClicked(event -> gameArea.requestFocus());
 
         gameLoop = new AnimationTimer() {
             @Override
             public void handle(long now) {
-                Ball ball = game.getBall();
-                Paddle paddle = game.getPaddle();
-
-                if (ball.getY() + ball.getRadius() >= paddle.getY()
-                        && ball.getY() - ball.getRadius() < paddle.getY() + paddle.getHeight()
-                        && ball.getX() + ball.getRadius() >= paddle.getX()
-                        && ball.getX() - ball.getRadius() <= paddle.getX() + paddle.getWidth()) {
-
-                    ball.setY(paddle.getY() - ball.getRadius());
-                    ball.reverseY();
-                }
-
-                ball.move();
-
-                if(ball.getX() + ball.getRadius() >= gameArea.getWidth()) {
-                    ball.setX(gameArea.getWidth() - ball.getRadius());
-                    ball.reverseX();
-                } else if (ball.getX()-ball.getRadius() <= 0) {
-                    ball.setX(ball.getRadius());
-                    ball.reverseX();
-                }
-
-                if (ball.getY() - ball.getRadius() <= 0) {
-                    ball.setY(ball.getRadius());
-                    ball.reverseY();
-                }
-                if (ball.getY() - ball.getRadius() >= gameArea.getHeight()) {
-                    gameLoop.stop();
-                    statusLabel.setText("Game over! You missed the ball.");
+                if (lastFrame == 0) {
+                    lastFrame = now;
                     return;
                 }
-
-                checkBrickCollisions();
+                // Limit catch-up after a pause and use small steps to avoid skipped collisions.
+                double elapsed = Math.min((now - lastFrame) / 1_000_000_000.0, 0.05);
+                lastFrame = now;
+                int steps = Math.max(1, (int) Math.ceil(elapsed / (1.0 / 120)));
+                for (int i = 0; i < steps && running; i++) {
+                    updateMovement(elapsed / steps);
+                }
+                updatePaddlePosition();
                 updateBallPosition();
             }
         };
     }
 
+    private void updateMovement(double elapsedSeconds) {
+        Paddle paddle = game.getPaddle();
+        int direction = (rightPressed ? 1 : 0) - (leftPressed ? 1 : 0);
+        paddle.move(direction * PADDLE_SPEED * elapsedSeconds, FIELD_WIDTH);
+
+        Ball ball = game.getBall();
+        ball.move(elapsedSeconds);
+        if (ball.getVelocityY() > 0
+                && ball.getY() + ball.getRadius() >= paddle.getY()
+                && ball.getY() - ball.getRadius() < paddle.getY() + paddle.getHeight()
+                && ball.getX() + ball.getRadius() >= paddle.getX()
+                && ball.getX() - ball.getRadius() <= paddle.getX() + paddle.getWidth()) {
+            ball.setY(paddle.getY() - ball.getRadius());
+            ball.reverseY();
+        }
+
+        if (ball.getX() + ball.getRadius() >= FIELD_WIDTH) {
+            ball.setX(FIELD_WIDTH - ball.getRadius());
+            ball.reverseX();
+        } else if (ball.getX() - ball.getRadius() <= 0) {
+            ball.setX(ball.getRadius());
+            ball.reverseX();
+        }
+        if (ball.getY() - ball.getRadius() <= 0) {
+            ball.setY(ball.getRadius());
+            ball.reverseY();
+        }
+        if (ball.getY() - ball.getRadius() >= FIELD_HEIGHT) {
+            running = false;
+            gameLoop.stop();
+            leftPressed = false;
+            rightPressed = false;
+            lastFrame = 0;
+            game.loseLife();
+            drawGame();
+            if (game.getLives() > 0) {
+                statusLabel.setText("Ball missed! Press Start to use your next life.");
+            } else {
+                statusLabel.setText("Game over! Press Restart to play again.");
+            }
+            return;
+        }
+        checkBrickCollisions();
+    }
+
 
     @FXML
     private void handleStart() {
-        game.startGame();
-        gameLoop.start();
+        if (game.getLives() == 0) {
+            statusLabel.setText("Game over! Press Restart to play again.");
+            return;
+        }
+        if (!running) {
+            game.startGame();
+            lastFrame = 0;
+            running = true;
+            gameLoop.start();
+        }
         statusLabel.setText("Game started!");
         gameArea.requestFocus();
 
@@ -127,15 +166,18 @@ public class BreakoutController {
     @FXML
     private void handleBack() {
         gameLoop.stop();
-        if (gameStage != null) {
-            gameStage.setFullScreen(wasFullScreen);
-        }
+        running = false;
+        leftPressed = false;
+        rightPressed = false;
         SceneSwitcher.showMenu(gameArea);
     }
 
     @FXML
     private void handleRestart() {
         gameLoop.stop();
+        running = false;
+        leftPressed = false;
+        rightPressed = false;
         game.resetGame();
         drawGame();
         handleStart();
@@ -145,6 +187,7 @@ public class BreakoutController {
         gameArea.getChildren().clear();
         bricks.clear();
         scoreLabel.setText("Score: " + game.getScore());
+        livesLabel.setText("Lives: " + game.getLives());
         Paddle paddle = game.getPaddle();
         paddleShape = new Rectangle(paddle.getX(), paddle.getY(),
                 paddle.getWidth(), paddle.getHeight());

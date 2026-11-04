@@ -19,6 +19,7 @@
             <HBox alignment="CENTER_LEFT" spacing="16.0">
                 <Label text="Breakout" style="-fx-font-size: 24px;"/>
                 <Label fx:id="scoreLabel" text="Score: 0" style="-fx-font-size: 20px;"/>
+                <Label fx:id="livesLabel" text="Lives: 3" style="-fx-font-size: 20px;"/>
                 <Region HBox.hgrow="ALWAYS"/>
                 <Button text="Start" onAction="#handleStart"/>
                 <Button text="Restart" onAction="#handleRestart"/>

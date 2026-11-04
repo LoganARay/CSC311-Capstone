@@ -12,8 +12,8 @@ public class Ball {
         this.x = x;
         this.y = y;
         this.radius = radius;
-        this.velocityX = 3;
-        this.velocityY = -3;
+        this.velocityX = 180;
+        this.velocityY = -180;
     }
 
     public double getX() {
@@ -45,9 +45,9 @@ public class Ball {
     public double getVelocityY() {return this.velocityY;}
 
 
-    public void move() {
-        x += velocityX;
-        y += velocityY;
+    public void move(double elapsedSeconds) {
+        x += velocityX * elapsedSeconds;
+        y += velocityY * elapsedSeconds;
     }
 
     public void reverseX() {

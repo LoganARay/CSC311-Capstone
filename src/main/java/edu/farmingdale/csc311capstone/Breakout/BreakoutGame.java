@@ -5,6 +5,7 @@ import java.util.List;
 
 public class BreakoutGame {
     private int score;
+    private int lives;
     private Paddle paddle;
     private Ball ball;
     private final List<Brick> bricks = new ArrayList<>();
@@ -14,9 +15,9 @@ public class BreakoutGame {
     }
 
     public void initializeGame() {
-        paddle = new Paddle(225, 300, 100, 12);
-        ball = new Ball(275, 280, 8);
+        resetPositions();
         score = 0;
+        lives = 3;
         bricks.clear();
         for (int row = 0; row < 4; row++) {
             for (int column = 0; column < 8; column++) {
@@ -35,6 +36,24 @@ public class BreakoutGame {
 
     public void resetGame() {
         initializeGame();
+    }
+
+    private void resetPositions() {
+        paddle = new Paddle(225, 300, 100, 12);
+        ball = new Ball(275, 280, 8);
+    }
+
+    public void loseLife() {
+        if (lives > 0) {
+            lives--;
+            if (lives > 0) {
+                resetPositions();
+            }
+        }
+    }
+
+    public int getLives() {
+        return lives;
     }
 
     public void removeBrick(Brick brick) {
