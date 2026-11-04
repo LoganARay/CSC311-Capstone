@@ -14,6 +14,10 @@ public class Bomb {
         secondsRemaining -= elapsedSeconds;
     }
 
+    public double getSecondsRemaining() {
+        return Math.max(0, secondsRemaining);
+    }
+
     public boolean isReadyToExplode() {
         return secondsRemaining <= 0;
     }

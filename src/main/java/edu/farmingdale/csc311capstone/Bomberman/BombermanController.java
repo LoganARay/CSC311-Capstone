@@ -20,6 +20,8 @@ public class BombermanController {
     private long lastFrame;
     private KeyCode moveKey;
     private double movementCooldown;
+    private Label bombCountdownLabel;
+    private Circle bombShape;
     private Circle playerShape;
     private TranslateTransition playerMovement;
 
@@ -88,6 +90,7 @@ public class BombermanController {
                         || explosionCount != game.getExplosionCells().size()) {
                     refreshView();
                 }
+                updateBombCountdown();
                 if (!game.isRunning()) {
                     stop();
                     moveKey = null;
@@ -182,6 +185,8 @@ public class BombermanController {
 
     private void drawGame() {
         gameArea.getChildren().clear();
+        bombCountdownLabel = null;
+        bombShape = null;
         int[][] grid = game.getMap().getGrid();
         for (int row = 0; row < grid.length; row++) {
             for (int column = 0; column < grid[row].length; column++) {
@@ -202,8 +207,15 @@ public class BombermanController {
             gameArea.add(flame, cell[1], cell[0]);
         }
         for (Bomb bomb : game.getBombs()) {
-            addCircle(bomb.getRow(), bomb.getColumn(), 9, Color.BLACK);
+            bombShape = addCircle(bomb.getRow(), bomb.getColumn(), 12, Color.BLACK);
+            bombCountdownLabel = new Label();
+            bombCountdownLabel.setStyle("-fx-text-fill: white; -fx-font-weight: bold;");
+            bombCountdownLabel.setMouseTransparent(true);
+            GridPane.setHalignment(bombCountdownLabel, HPos.CENTER);
+            GridPane.setValignment(bombCountdownLabel, VPos.CENTER);
+            gameArea.add(bombCountdownLabel, bomb.getColumn(), bomb.getRow());
         }
+        updateBombCountdown();
         Player player = game.getPlayer();
         playerShape.setFill(game.isGameOver() ? Color.CRIMSON : Color.ROYALBLUE);
         GridPane.setHalignment(playerShape, HPos.CENTER);
@@ -211,10 +223,22 @@ public class BombermanController {
         gameArea.add(playerShape, player.getColumn(), player.getRow());
     }
 
-    private void addCircle(int row, int column, double radius, Color color) {
+    private void updateBombCountdown() {
+        if (bombCountdownLabel == null || game.getBombs().isEmpty()) {
+            return;
+        }
+        double remaining = game.getBombs().get(0).getSecondsRemaining();
+        bombCountdownLabel.setText(Integer.toString((int) Math.ceil(remaining)));
+        // Flash red during the final second as a warning to move away.
+        bombShape.setFill(remaining <= 1 && (int) (remaining * 8) % 2 == 0
+                ? Color.CRIMSON : Color.BLACK);
+    }
+
+    private Circle addCircle(int row, int column, double radius, Color color) {
         Circle circle = new Circle(radius, color);
         GridPane.setHalignment(circle, HPos.CENTER);
         GridPane.setValignment(circle, VPos.CENTER);
         gameArea.add(circle, column, row);
+        return circle;
     }
 }
