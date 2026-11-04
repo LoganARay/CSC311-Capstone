@@ -29,6 +29,8 @@ public class BombermanController {
     private GridPane gameArea;
     @FXML
     private Label statusLabel;
+    @FXML
+    private Label scoreLabel;
 
     @FXML
     private void initialize() {
@@ -171,6 +173,7 @@ public class BombermanController {
     }
 
     private void refreshView() {
+        scoreLabel.setText("Score: " + game.getScore());
         drawGame();
         if (game.isGameOver()) {
             statusLabel.setText("Game over! Press Restart to try again.");
@@ -229,7 +232,6 @@ public class BombermanController {
         }
         double remaining = game.getBombs().get(0).getSecondsRemaining();
         bombCountdownLabel.setText(Integer.toString((int) Math.ceil(remaining)));
-        // Flash red during the final second as a warning to move away.
         bombShape.setFill(remaining <= 1 && (int) (remaining * 8) % 2 == 0
                 ? Color.CRIMSON : Color.BLACK);
     }

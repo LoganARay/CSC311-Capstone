@@ -7,6 +7,7 @@ public class BombermanGame {
     private boolean running;
     private boolean gameOver;
     private boolean won;
+    private int score;
     // Each entry stores an explosion square as {row, column}.
     private final List<int[]> explosionCells = new ArrayList<>();
     private double explosionSecondsRemaining;
@@ -25,6 +26,7 @@ public class BombermanGame {
         running = false;
         gameOver = false;
         won = false;
+        score = 0;
         explosionCells.clear();
         explosionSecondsRemaining = 0;
     }
@@ -110,6 +112,7 @@ public class BombermanGame {
                 explosionCells.add(new int[]{row, column});
                 if (map.getGrid()[row][column] == GameMap.BLOCK) {
                     map.getGrid()[row][column] = GameMap.EMPTY;
+                    score += 50;
                     break;
                 }
             }
@@ -131,6 +134,10 @@ public class BombermanGame {
 
     public boolean isGameOver() {
         return gameOver;
+    }
+
+    public int getScore() {
+        return score;
     }
 
     public boolean hasWon() {

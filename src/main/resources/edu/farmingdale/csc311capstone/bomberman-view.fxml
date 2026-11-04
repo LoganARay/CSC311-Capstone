@@ -11,7 +11,10 @@
       xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="edu.farmingdale.csc311capstone.Bomberman.BombermanController">
     <padding><Insets top="12.0" right="12.0" bottom="12.0" left="12.0"/></padding>
-    <Label text="Bomberman" style="-fx-font-size: 24px;"/>
+    <HBox alignment="CENTER" spacing="24.0">
+        <Label text="Bomberman" style="-fx-font-size: 24px;"/>
+        <Label fx:id="scoreLabel" text="Score: 0" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
+    </HBox>
     <Label text="Arrow keys: Move | Space: Bomb | Clear all brown blocks"/>
     <GridPane fx:id="gameArea" prefWidth="374.0" prefHeight="306.0"
           minWidth="374.0" minHeight="306.0" maxWidth="374.0" maxHeight="306.0"
