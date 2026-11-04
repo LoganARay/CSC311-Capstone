@@ -2,19 +2,27 @@ package edu.farmingdale.csc311capstone.Breakout;
 
 import edu.farmingdale.csc311capstone.SceneSwitcher;
 import javafx.animation.AnimationTimer;
+import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
+import javafx.stage.Stage;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class BreakoutController {
+    private static final double FIELD_WIDTH = 550;
+    private static final double FIELD_HEIGHT = 330;
     private BreakoutGame game;
+    private Stage gameStage;
+    private boolean wasFullScreen;
     private Rectangle paddleShape;
     private Circle ballShape;
     private AnimationTimer gameLoop;
@@ -24,12 +32,31 @@ public class BreakoutController {
     private Pane gameArea;
     @FXML
     private Label statusLabel;
+    @FXML
+    private Label scoreLabel;
+    @FXML
+    private StackPane gameContainer;
 
 
     @FXML
     private void initialize() {
         game = new BreakoutGame();
         drawGame();
+
+        // Scale the view while keeping gameplay positions in the same coordinate system.
+        gameArea.scaleXProperty().bind(Bindings.max(0.1, Bindings.min(
+                gameContainer.widthProperty().subtract(24).divide(FIELD_WIDTH),
+                gameContainer.heightProperty().subtract(24).divide(FIELD_HEIGHT))));
+        gameArea.scaleYProperty().bind(gameArea.scaleXProperty());
+        gameArea.setClip(new Rectangle(FIELD_WIDTH, FIELD_HEIGHT));
+        Platform.runLater(() -> {
+            if (gameArea.getScene() != null
+                    && gameArea.getScene().getWindow() instanceof Stage stage) {
+                gameStage = stage;
+                wasFullScreen = stage.isFullScreen();
+                stage.setFullScreen(true);
+            }
+        });
 
         gameArea.setFocusTraversable(true);
 
@@ -90,7 +117,6 @@ public class BreakoutController {
 
     @FXML
     private void handleStart() {
-        System.out.println("Start button clicked!");
         game.startGame();
         gameLoop.start();
         statusLabel.setText("Game started!");
@@ -101,6 +127,9 @@ public class BreakoutController {
     @FXML
     private void handleBack() {
         gameLoop.stop();
+        if (gameStage != null) {
+            gameStage.setFullScreen(wasFullScreen);
+        }
         SceneSwitcher.showMenu(gameArea);
     }
 
@@ -115,6 +144,7 @@ public class BreakoutController {
     private void drawGame() {
         gameArea.getChildren().clear();
         bricks.clear();
+        scoreLabel.setText("Score: " + game.getScore());
         Paddle paddle = game.getPaddle();
         paddleShape = new Rectangle(paddle.getX(), paddle.getY(),
                 paddle.getWidth(), paddle.getHeight());
@@ -161,7 +191,8 @@ public class BreakoutController {
                             && ball.getY() - ball.getRadius() <= brick.getY() + brick.getHeight();
 
             if (collision) {
-                game.getBricks().remove(i);
+                game.removeBrick(brick);
+                scoreLabel.setText("Score: " + game.getScore());
 
                 Rectangle brickShape = bricks.remove(brick);
                 gameArea.getChildren().remove(brickShape);
