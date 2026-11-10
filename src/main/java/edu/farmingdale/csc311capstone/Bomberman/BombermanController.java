@@ -82,14 +82,17 @@ public class BombermanController {
                 lastFrame = now;
                 int bombCount = game.getBombs().size();
                 int explosionCount = game.getExplosionCells().size();
+                int enemyRow = game.getEnemyRow();
+                boolean enemyAlive = game.isEnemyAlive();
                 game.updateGame(elapsedSeconds);
                 movementCooldown = Math.max(0, movementCooldown - elapsedSeconds);
                 if (moveKey != null && movementCooldown <= 0 && game.isRunning()) {
                     movePlayer();
                 }
-                // Redraw when a bomb explodes or the flames disappear.
                 if (bombCount != game.getBombs().size()
-                        || explosionCount != game.getExplosionCells().size()) {
+                        || explosionCount != game.getExplosionCells().size()
+                        || enemyRow != game.getEnemyRow()
+                        || enemyAlive != game.isEnemyAlive()) {
                     refreshView();
                 }
                 updateBombCountdown();
@@ -219,6 +222,9 @@ public class BombermanController {
             gameArea.add(bombCountdownLabel, bomb.getColumn(), bomb.getRow());
         }
         updateBombCountdown();
+        if (game.isEnemyAlive()) {
+            addCircle(game.getEnemyRow(), game.getEnemyColumn(), 10, Color.DARKVIOLET);
+        }
         Player player = game.getPlayer();
         playerShape.setFill(game.isGameOver() ? Color.CRIMSON : Color.ROYALBLUE);
         GridPane.setHalignment(playerShape, HPos.CENTER);

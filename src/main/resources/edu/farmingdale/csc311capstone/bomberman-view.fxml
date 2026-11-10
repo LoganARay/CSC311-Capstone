@@ -15,7 +15,7 @@
         <Label text="Bomberman" style="-fx-font-size: 24px;"/>
         <Label fx:id="scoreLabel" text="Score: 0" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
     </HBox>
-    <Label text="Arrow keys: Move | Space: Bomb | Clear all brown blocks"/>
+    <Label text="Arrow keys: Move | Space: Bomb | Avoid the purple enemy and clear the blocks"/>
     <GridPane fx:id="gameArea" prefWidth="374.0" prefHeight="306.0"
           minWidth="374.0" minHeight="306.0" maxWidth="374.0" maxHeight="306.0"
           style="-fx-background-color: #f1f3f5; -fx-border-color: #777777;"/>
