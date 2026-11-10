@@ -4,6 +4,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class BombermanGame {
+    private static final int ENEMY_COLUMN = 9;
+    private static final int PATROL_START_ROW = 1;
+    private static final int PATROL_END_ROW = 4;
+    private static final double PATROL_STEP_SECONDS = 0.5;
+
+    private int enemyRow;
+    private int enemyDirection;
+    private double enemyStepRemaining;
+    private boolean enemyAlive;
     private boolean running;
     private boolean gameOver;
     private boolean won;
@@ -21,6 +30,10 @@ public class BombermanGame {
 
     public void initializeGame() {
         player = new Player(1, 1);
+        enemyRow = PATROL_END_ROW;
+        enemyDirection = -1;
+        enemyStepRemaining = PATROL_STEP_SECONDS;
+        enemyAlive = true;
         map = new GameMap();
         bombs.clear();
         running = false;
@@ -50,10 +63,8 @@ public class BombermanGame {
         }
 
         // The player can leave a newly placed bomb, but cannot walk back onto it.
-        for (Bomb bomb : bombs) {
-            if (bomb.getRow() == row && bomb.getColumn() == column) {
-                return;
-            }
+        if (hasBombAt(row, column)) {
+            return;
         }
 
         player.setRow(row);
@@ -87,6 +98,54 @@ public class BombermanGame {
                 explodeBomb(bomb);
             }
         }
+        if (running && enemyAlive) {
+            updateEnemy(elapsedSeconds);
+        }
+    }
+
+    private void updateEnemy(double elapsedSeconds) {
+        enemyStepRemaining -= elapsedSeconds;
+        if (enemyStepRemaining > 0) {
+            return;
+        }
+        enemyStepRemaining = PATROL_STEP_SECONDS;
+        int nextRow = enemyRow + enemyDirection;
+        if (!canPatrolTo(nextRow)) {
+            enemyDirection = -enemyDirection;
+            nextRow = enemyRow + enemyDirection;
+        }
+        if (canPatrolTo(nextRow)) {
+            enemyRow = nextRow;
+            checkEnemyHit();
+            checkPlayerHit();
+        }
+    }
+
+    private boolean canPatrolTo(int row) {
+        return row >= PATROL_START_ROW && row <= PATROL_END_ROW
+                && map.getGrid()[row][ENEMY_COLUMN] == GameMap.EMPTY
+                && !hasBombAt(row, ENEMY_COLUMN);
+    }
+
+    private boolean hasBombAt(int row, int column) {
+        for (Bomb bomb : bombs) {
+            if (bomb.getRow() == row && bomb.getColumn() == column) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public int getEnemyRow() {
+        return enemyRow;
+    }
+
+    public int getEnemyColumn() {
+        return ENEMY_COLUMN;
+    }
+
+    public boolean isEnemyAlive() {
+        return enemyAlive;
     }
 
     public void placeBomb() {
@@ -119,17 +178,33 @@ public class BombermanGame {
         }
 
         explosionSecondsRemaining = 0.4;
+        checkEnemyHit();
         checkPlayerHit();
     }
 
+    private void checkEnemyHit() {
+        if (enemyAlive && isInExplosion(enemyRow, ENEMY_COLUMN)) {
+            enemyAlive = false;
+        }
+    }
+
     private void checkPlayerHit() {
+        int row = player.getRow();
+        int column = player.getColumn();
+        if (isInExplosion(row, column)
+                || (enemyAlive && row == enemyRow && column == ENEMY_COLUMN)) {
+            gameOver = true;
+            running = false;
+        }
+    }
+
+    private boolean isInExplosion(int row, int column) {
         for (int[] cell : explosionCells) {
-            if (player.getRow() == cell[0] && player.getColumn() == cell[1]) {
-                gameOver = true;
-                running = false;
-                return;
+            if (row == cell[0] && column == cell[1]) {
+                return true;
             }
         }
+        return false;
     }
 
     public boolean isGameOver() {
