@@ -148,6 +148,9 @@ public class BreakoutController {
 
     @FXML
     private void handleStart() {
+        if (game.hasWon()) {
+            return;
+        }
         if (game.getLives() == 0) {
             statusLabel.setText("Game over! Press Restart to play again.");
             return;
@@ -241,6 +244,11 @@ public class BreakoutController {
                 gameArea.getChildren().remove(brickShape);
 
                 ball.reverseY();
+                if (game.hasWon()) {
+                    running = false;
+                    gameLoop.stop();
+                    statusLabel.setText("You win! Press Restart to play again.");
+                }
                 break;
             }
         }

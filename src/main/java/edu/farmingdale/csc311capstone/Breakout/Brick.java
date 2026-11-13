@@ -5,12 +5,22 @@ public class Brick {
     private double y;
     private double width;
     private double height;
+    private final boolean target;
 
     public Brick(double x, double y, double width, double height) {
+        this(x, y, width, height, false);
+    }
+
+    public Brick(double x, double y, double width, double height, boolean target) {
+        this.target = target;
         this.x = x;
         this.y = y;
         this.width = width;
         this.height = height;
+    }
+
+    public boolean isTarget() {
+        return target;
     }
 
     public double getX() {
