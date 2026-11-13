@@ -4,6 +4,7 @@ import edu.farmingdale.csc311capstone.SceneSwitcher;
 import javafx.animation.AnimationTimer;
 import javafx.beans.binding.Bindings;
 import javafx.fxml.FXML;
+import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Pane;
@@ -19,6 +20,7 @@ public class BreakoutController {
     private static final double FIELD_WIDTH = 550;
     private static final double FIELD_HEIGHT = 330;
     private static final double PADDLE_SPEED = 360;
+    private static final String START_HINT = "Press Start. Use the left and right arrow keys to move.";
     private boolean leftPressed;
     private boolean rightPressed;
     private boolean running;
@@ -39,11 +41,22 @@ public class BreakoutController {
     private Label livesLabel;
     @FXML
     private StackPane gameContainer;
+    @FXML
+    private ChoiceBox<BreakoutGame.Mode> modeSelector;
+    @FXML
+    private Label targetsLabel;
 
 
     @FXML
     private void initialize() {
         game = new BreakoutGame();
+        modeSelector.getItems().setAll(BreakoutGame.Mode.values());
+        modeSelector.setValue(BreakoutGame.Mode.NORMAL);
+        modeSelector.setOnAction(event -> {
+            game = new BreakoutGame(modeSelector.getValue());
+            drawGame();
+            statusLabel.setText(START_HINT);
+        });
         drawGame();
 
         // Scale the view while keeping gameplay positions in the same coordinate system.
@@ -138,6 +151,7 @@ public class BreakoutController {
             if (game.getLives() > 0) {
                 statusLabel.setText("Ball missed! Press Start to use your next life.");
             } else {
+                modeSelector.setDisable(false);
                 statusLabel.setText("Game over! Press Restart to play again.");
             }
             return;
@@ -156,6 +170,7 @@ public class BreakoutController {
             return;
         }
         if (!running) {
+            modeSelector.setDisable(true);
             game.startGame();
             lastFrame = 0;
             running = true;
@@ -191,6 +206,7 @@ public class BreakoutController {
         bricks.clear();
         scoreLabel.setText("Score: " + game.getScore());
         livesLabel.setText("Lives: " + game.getLives());
+        updateTargetsLabel();
         Paddle paddle = game.getPaddle();
         paddleShape = new Rectangle(paddle.getX(), paddle.getY(),
                 paddle.getWidth(), paddle.getHeight());
@@ -206,12 +222,21 @@ public class BreakoutController {
                     brick.getWidth(), brick.getHeight());
 
 
-            brickShape.setFill(Color.STEELBLUE);
+            brickShape.setFill(brick.isTarget() ? Color.GOLD : Color.STEELBLUE);
             gameArea.getChildren().add(brickShape);
 
             bricks.put(brick, brickShape);
         }
 
+    }
+
+    private void updateTargetsLabel() {
+        boolean targetHunt = modeSelector.getValue() == BreakoutGame.Mode.TARGET_HUNT;
+        targetsLabel.setVisible(targetHunt);
+        targetsLabel.setManaged(targetHunt);
+        if (targetHunt) {
+            targetsLabel.setText("Targets left: " + game.getTargetsRemaining());
+        }
     }
 
     private void updatePaddlePosition() {
@@ -239,6 +264,7 @@ public class BreakoutController {
             if (collision) {
                 game.removeBrick(brick);
                 scoreLabel.setText("Score: " + game.getScore());
+                updateTargetsLabel();
 
                 Rectangle brickShape = bricks.remove(brick);
                 gameArea.getChildren().remove(brickShape);
@@ -247,6 +273,7 @@ public class BreakoutController {
                 if (game.hasWon()) {
                     running = false;
                     gameLoop.stop();
+                    modeSelector.setDisable(false);
                     statusLabel.setText("You win! Press Restart to play again.");
                 }
                 break;

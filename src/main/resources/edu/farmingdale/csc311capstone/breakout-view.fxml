@@ -2,6 +2,7 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ChoiceBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
@@ -24,6 +25,11 @@
                 <Button text="Start" onAction="#handleStart"/>
                 <Button text="Restart" onAction="#handleRestart"/>
                 <Button text="Back" onAction="#handleBack"/>
+            </HBox>
+            <HBox alignment="CENTER_LEFT" spacing="8.0">
+                <Label text="Mode"/>
+                <ChoiceBox fx:id="modeSelector" accessibleText="Breakout mode"/>
+                <Label fx:id="targetsLabel"/>
             </HBox>
             <Label fx:id="statusLabel" text="Press Start. Use the left and right arrow keys to move."/>
         </VBox>
