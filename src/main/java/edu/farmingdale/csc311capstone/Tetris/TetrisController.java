@@ -32,8 +32,9 @@ public class TetrisController {
     @FXML
     private void initialize(){
         root.setFocusTraversable(true);
+        gamespace.setTranslateY(-80.0);
         gamespace.setPickOnBounds(true);
-        grid= new boolean[10][20];
+        grid= new boolean[10][24];
         //int[] tspinSetUpL= {4,19,5,19,4,18,4,17,5,17,3,19,3,18,3,17,3,16,3,15,7,19,7,18,7,17,7,16,7,15,6,15};
         //int[] tspinSetUp={4,19,4,18,4,17,4,16,4,15,5,15,6,19,6,17,7,19,7,18,7,17,8,19,8,18,8,17,8,16,8,15,8,14,5,14};
         //demoHelper(tspinSetUp);
@@ -84,21 +85,12 @@ public class TetrisController {
                         stop();
                         TetrisMechanics.setCollision(pieceCords);
                         List<Integer> linesCleared= TetrisMechanics.linesCleared(grid);
-                        System.out.println(linesCleared);
                         if(!linesCleared.isEmpty()){
                             grid= TetrisMechanics.fixGrid(grid, linesCleared);
                             gamespace= TetrisMechanics.fixBoard(gamespace, linesCleared);
                         }
                         newBlockEnters();
                         snapInterval = 1.0;
-                        for(int i=0; i<grid.length;i++){
-                            System.out.print(i + ": [");
-                            for(int e=0; e< grid[i].length; e++){
-                                System.out.print(" " + grid[i][e]);
-                            }
-                            System.out.println(" ]");
-                        }
-                        System.out.println();
                         at.start();
                     }
                 }

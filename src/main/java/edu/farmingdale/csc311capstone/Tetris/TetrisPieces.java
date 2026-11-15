@@ -56,7 +56,7 @@ public class TetrisPieces {
 
             default ->{ }
         }
-
+        temp[1]+=4; temp[3]+=4; temp[5]+=4; temp[7]+=4;
         return temp;
     }
 

@@ -14,7 +14,7 @@ import java.util.stream.IntStream;
 
 public class TetrisMechanics {
     public static boolean checkCollisionDown(int[] block){
-        if(block[1]==19 || block[3]==19 || block[5]==19 || block[7]==19){
+        if(block[1]==23 || block[3]==23 || block[5]==23 || block[7]==23){
             return true;
         }
         for(int i=0; i<8; i=i+2){
@@ -29,7 +29,7 @@ public class TetrisMechanics {
     public static boolean checkCollisionHorizontal(int[] block, boolean direction){
         int change=-1;
         int bound=0;
-        //changes to right directions, if not then chnage and bound are already set for left direction
+        //changes to right directions, if not then change and bound are already set for left direction
         if(direction){
             change=1;
             bound=9;

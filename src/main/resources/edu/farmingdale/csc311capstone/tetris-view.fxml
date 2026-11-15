@@ -33,6 +33,10 @@
         <RowConstraints fx:id="row17" minHeight="20.0" prefHeight="20.0" />
         <RowConstraints fx:id="row18" minHeight="20.0" prefHeight="20.0" />
         <RowConstraints fx:id="row19" minHeight="20.0" prefHeight="20.0" />
+        <RowConstraints fx:id="row20" minHeight="20.0" prefHeight="20.0" />
+        <RowConstraints fx:id="row21" minHeight="20.0" prefHeight="20.0" />
+        <RowConstraints fx:id="row22" minHeight="20.0" prefHeight="20.0" />
+        <RowConstraints fx:id="row23" minHeight="20.0" prefHeight="20.0" />
     </rowConstraints>
     <columnConstraints>
         <ColumnConstraints fx:id="col0" minWidth="20.0" prefWidth="20.0" />
