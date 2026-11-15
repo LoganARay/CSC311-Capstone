@@ -67,7 +67,7 @@ public class TetrisMechanics {
     }
 
     public static Image setGraphic(int block){
-        Image currentGraphic = new Image(TetrisMechanics.class.getResourceAsStream("/edu/farmingdale/csc311capstone/TetrisGraphics/o-block.png"));
+        Image currentGraphic = new Image(TetrisMechanics.class.getResourceAsStream("/edu/farmingdale/csc311capstone/TetrisGraphics/Test-block.png"));
         switch(block){
             case 0->{//o-block
                 currentGraphic= new Image(
