@@ -84,12 +84,21 @@ public class TetrisController {
                         stop();
                         TetrisMechanics.setCollision(pieceCords);
                         List<Integer> linesCleared= TetrisMechanics.linesCleared(grid);
+                        System.out.println(linesCleared);
                         if(!linesCleared.isEmpty()){
                             grid= TetrisMechanics.fixGrid(grid, linesCleared);
                             gamespace= TetrisMechanics.fixBoard(gamespace, linesCleared);
                         }
                         newBlockEnters();
                         snapInterval = 1.0;
+                        for(int i=0; i<grid.length;i++){
+                            System.out.print(i + ": [");
+                            for(int e=0; e< grid[i].length; e++){
+                                System.out.print(" " + grid[i][e]);
+                            }
+                            System.out.println(" ]");
+                        }
+                        System.out.println();
                         at.start();
                     }
                 }
