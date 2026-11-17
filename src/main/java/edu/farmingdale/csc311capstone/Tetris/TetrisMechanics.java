@@ -16,7 +16,23 @@ public class TetrisMechanics {
     private List<Integer> blockBag;
 
     public TetrisMechanics(){
-        blockBag= IntStream.rangeClosed(0, 7).boxed().collect(Collectors.toCollection(ArrayList::new));
+        blockBag= new ArrayList<>();
+    }
+
+    public int getBlock(){
+        if(blockBag.size()==0){
+            blockBag= IntStream.rangeClosed(0, 6).boxed().collect(Collectors.toCollection(ArrayList::new));
+        }
+        if(blockBag.size()==7){
+            for(int i=0; i<=21; i++){ //swaps blocks around randomly 21 times.
+                int pos1= (int) (Math.random()*7);
+                int pos2= (int) (Math.random()*7);
+                int swapBlock= blockBag.get(pos2);
+                blockBag.set(pos2, blockBag.get(pos1));
+                blockBag.set(pos1, swapBlock);
+            }
+        }
+        return blockBag.removeFirst();
     }
     public static boolean checkCollisionDown(int[] block){
         if(block[1]==23 || block[3]==23 || block[5]==23 || block[7]==23){
@@ -125,7 +141,7 @@ public class TetrisMechanics {
 //        }).boxed().collect(Collectors.toList());
         List<Integer> fullLines= new ArrayList<Integer>();
         int rowCount=0;
-        for(int r=0; r<=19; r++){
+        for(int r=0; r<=23; r++){
             boolean cleared=true;
             for(int i=0; i<10; i++){
                 if(!placedBlocks[i][r]){

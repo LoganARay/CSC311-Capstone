@@ -21,6 +21,7 @@ public class TetrisController {
     private double snapInterval =1.0;
     private double fastSnapInterval;
     private double baseSnapInterval;
+    private TetrisMechanics tm;
 
 
     @FXML
@@ -31,6 +32,7 @@ public class TetrisController {
 
     @FXML
     private void initialize(){
+        tm= new TetrisMechanics();
         root.setFocusTraversable(true);
         gamespace.setTranslateY(-80.0);
         gamespace.setPickOnBounds(true);
@@ -182,9 +184,9 @@ public class TetrisController {
     }
 
     public void newBlockEnters(){
-        blockNumber=6;
-        currentBlock=TetrisMechanics.createBlock(6);
-        pieceCords=TetrisPieces.setStartPiece(6);
+        blockNumber= tm.getBlock();
+        currentBlock=TetrisMechanics.createBlock(blockNumber);
+        pieceCords=TetrisPieces.setStartPiece(blockNumber);
         addGridChildren();
     }
 
