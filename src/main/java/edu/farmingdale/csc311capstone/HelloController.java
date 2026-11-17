@@ -43,6 +43,6 @@ public class HelloController {
 
     @FXML
     private void openTetris(ActionEvent event) {
-        SceneSwitcher.switchTo((Node) event.getSource(), "tetris-view.fxml", "Tetris");
+        SceneSwitcher.switchTo((Node) event.getSource(), "tetris-home.fxml", "Tetris");
     }
 }

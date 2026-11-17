@@ -164,6 +164,13 @@ public class TetrisController {
             addGridChildren();
             at.start();
         }
+        if(key.getCode()==KeyCode.L){
+            at.stop();
+            pieceCords=TetrisPieces.helpRotateL(pieceCords, grid, blockNumber);
+            removeGridChildren();
+            addGridChildren();
+            at.start();
+        }
     }
 
     private void keyReleased(KeyEvent key){
@@ -175,9 +182,9 @@ public class TetrisController {
     }
 
     public void newBlockEnters(){
-        blockNumber=(int) (Math.random()*7);
-        currentBlock=TetrisMechanics.createBlock(0);
-        pieceCords=TetrisPieces.setStartPiece(0);
+        blockNumber=6;
+        currentBlock=TetrisMechanics.createBlock(6);
+        pieceCords=TetrisPieces.setStartPiece(6);
         addGridChildren();
     }
 

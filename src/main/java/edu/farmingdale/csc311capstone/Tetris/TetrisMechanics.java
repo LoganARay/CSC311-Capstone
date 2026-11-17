@@ -13,6 +13,11 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class TetrisMechanics {
+    private List<Integer> blockBag;
+
+    public TetrisMechanics(){
+        blockBag= IntStream.rangeClosed(0, 7).boxed().collect(Collectors.toCollection(ArrayList::new));
+    }
     public static boolean checkCollisionDown(int[] block){
         if(block[1]==23 || block[3]==23 || block[5]==23 || block[7]==23){
             return true;

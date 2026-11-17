@@ -341,6 +341,271 @@ public class TetrisPieces {
         return rotationSafety(grid, temp, blockCords);
     }
 
+    public static int[] helpRotateL(int[] blockCords, boolean[][] grid, int block){
+        int[] temp= new int[9];
+        switch(block){
+            case 0->{ //o-block
+                //Did you think you could turn left now? Idiot!
+            }
+            case 1->{ //l-block
+                switch (blockCords[8]) {
+                    //⬛⬛⬛⬛
+                    //⬜⬜⬜⬛
+                    //⬜⬛⬛⬛
+                    //⬛⬛⬛⬛
+                    case 0 -> {
+                        temp[0]=blockCords[0]; temp[1]=blockCords[1]+1;     //⬜⬛⬛⬛
+                        temp[2]=blockCords[2]-1; temp[3]=blockCords[3];     //⬜⬛⬛⬛
+                        temp[4]=blockCords[4]-2; temp[5]=blockCords[5]-1;   //⬜⬜⬛⬛
+                        temp[6]=blockCords[6]+1; temp[7]=blockCords[7];     //⬛⬛⬛⬛
+                        temp[8]=3;
+                        if(isGridOccupied(grid, temp)){
+                            temp[1]--; temp[3]--; temp[5]--; temp[7]--;
+                            if(isGridOccupied(grid, temp)){
+                                return blockCords;
+                            }
+                        }
+                    }
+                    case 1->{
+                        temp[0]=blockCords[0]-2; temp[1]=blockCords[1]+1;   //⬛⬛⬛⬛
+                        temp[2]=blockCords[2]-1; temp[3]=blockCords[3];     //⬜⬜⬜⬛
+                        temp[4]=blockCords[4]; temp[5]=blockCords[5]-1;     //⬜⬛⬛⬛
+                        temp[6]=blockCords[6]-1; temp[7]=blockCords[7]+2;   //⬛⬛⬛⬛
+                        temp[8]=0;
+                        temp=checkBoundRight(temp);
+                        while(isGridOccupied(grid, temp)){
+                            temp[1]--; temp[3]--; temp[5]--; temp[7]--;
+                        }
+                    }
+                    case 2->{
+                        temp[0]=blockCords[0]; temp[1]=blockCords[1]-2;     //⬛⬜⬜⬛
+                        temp[2]=blockCords[2]+1; temp[3]=blockCords[3]-1;   //⬛⬛⬜⬛
+                        temp[4]=blockCords[4]+2; temp[5]=blockCords[5];     //⬛⬛⬜⬛
+                        temp[6]=blockCords[6]-1; temp[7]=blockCords[7]-1;   //⬛⬛⬛⬛
+                        temp[8]=1;
+                        if(isGridOccupied(grid, temp)){
+                            return blockCords;
+                        }
+                    }
+                    case 3->{
+                        temp[0]=blockCords[0]+2; temp[1]=blockCords[1];     //⬛⬛⬛⬛
+                        temp[2]=blockCords[2]+1; temp[3]=blockCords[3]+1;   //⬛⬛⬜⬛
+                        temp[4]=blockCords[4]; temp[5]=blockCords[5]+2;     //⬜⬜⬜⬛
+                        temp[6]=blockCords[6]+1; temp[7]=blockCords[7]-1;   //⬛⬛⬛⬛
+                        temp[8]=2;
+                    }
+                    default ->{}
+                }
+
+            }
+            //⬛⬛⬛⬛
+            //⬜⬜⬜⬛
+            //⬛⬛⬜⬛
+            //⬛⬛⬛⬛
+            case 2->{//j-block
+                switch(blockCords[8]){
+                    case 0 ->{
+                        temp[2]=blockCords[2]-1; temp[3]=blockCords[3]-1; //⬛⬜⬜⬛
+                        temp[4]=blockCords[4]; temp[5]=blockCords[5];     //⬛⬜⬛⬛
+                        temp[6]=blockCords[6]+1; temp[7]=blockCords[7]+1; //⬛⬜⬛⬛
+                        temp[0]=blockCords[0]; temp[1]=blockCords[1]-2;   //⬛⬛⬛⬛
+                        temp[8]=3;
+                    }
+                    case 1 ->{
+                        temp[2]=blockCords[2]; temp[3]=blockCords[3]-1;   //⬛⬛⬛⬛
+                        temp[4]=blockCords[4]-1; temp[5]=blockCords[5];   //⬜⬜⬜⬛
+                        temp[6]=blockCords[6]-2; temp[7]=blockCords[7]+1; //⬛⬛⬜⬛
+                        temp[0]=blockCords[0]+1; temp[1]=blockCords[1];   //⬛⬛⬛⬛
+                        temp[8]=0;
+                        temp=checkBoundLeft(temp);
+                    }
+                    case 2 ->{
+                        temp[2]=blockCords[2]+2; temp[3]=blockCords[3];   //⬛⬛⬜⬛
+                        temp[4]=blockCords[4]+1; temp[5]=blockCords[5]-1; //⬛⬛⬜⬛
+                        temp[6]=blockCords[6]; temp[7]=blockCords[7]-2;   //⬛⬜⬜⬛
+                        temp[0]=blockCords[0]+1; temp[1]=blockCords[1]+1; //⬛⬛⬛⬛
+                        temp[8]=1;
+                    }
+                    case 3 ->{
+                        temp[2]=blockCords[2]-1; temp[3]=blockCords[3]+2; //⬛⬛⬛⬛
+                        temp[4]=blockCords[4]; temp[5]=blockCords[5]+1;   //⬜⬛⬛⬛
+                        temp[6]=blockCords[6]+1; temp[7]=blockCords[7];   //⬜⬜⬜⬛
+                        temp[0]=blockCords[0]-2; temp[1]=blockCords[1]+1; //⬛⬛⬛⬛
+                        temp[8]=2;
+                    }
+                    default ->{}
+                }
+
+            }
+            case 3->{//s-block
+                switch(blockCords[8]){
+                    //⬛⬜⬜⬛
+                    //⬜⬜⬛⬛
+                    //⬛⬛⬛⬛
+                    //⬛⬛⬛⬛
+                    case 0 ->{
+                        temp[0]=blockCords[0]-2; temp[1]=blockCords[1];   //⬜⬛⬛⬛
+                        temp[2]=blockCords[2]-1; temp[3]=blockCords[3]+1; //⬜⬜⬛⬛
+                        temp[4]=blockCords[4]; temp[5]=blockCords[5];     //⬛⬜⬛⬛
+                        temp[6]=blockCords[6]+1; temp[7]=blockCords[7]+1; //⬛⬛⬛⬛
+                        temp[8]=3;
+                    }
+                    case 1 ->{
+                        temp[0]=blockCords[0]+1; temp[1]=blockCords[1];   //⬛⬜⬜⬛
+                        temp[2]=blockCords[2]; temp[3]=blockCords[3]-1;   //⬜⬜⬛⬛
+                        temp[4]=blockCords[4]-1; temp[5]=blockCords[5];   //⬛⬛⬛⬛
+                        temp[6]=blockCords[6]-2; temp[7]=blockCords[7]-1; //⬛⬛⬛⬛
+                        temp[8]=0;
+                        temp=checkBoundLeft(temp);
+                    }
+                    case 2 ->{
+                        temp[0]=blockCords[0]-1; temp[1]=blockCords[1]-1; //⬛⬜⬛⬛
+                        temp[2]=blockCords[2]; temp[3]=blockCords[3];     //⬛⬜⬜⬛
+                        temp[4]=blockCords[4]+1; temp[5]=blockCords[5]-1; //⬛⬛⬜⬛
+                        temp[6]=blockCords[6]+2; temp[7]=blockCords[7];   //⬛⬛⬛⬛
+                        temp[8]=1;
+                    }
+                    case 3 ->{
+                        temp[0]=blockCords[0]+2; temp[1]=blockCords[1]+1; //⬛⬛⬛⬛
+                        temp[2]=blockCords[2]+1; temp[3]=blockCords[3];   //⬛⬜⬜⬛
+                        temp[4]=blockCords[4]; temp[5]=blockCords[5]+1;   //⬜⬜⬛⬛
+                        temp[6]=blockCords[6]-1; temp[7]=blockCords[7];   //⬛⬛⬛⬛
+                        temp[8]=2;
+                        temp=checkBoundLeft(temp);
+                    }
+                    default ->{}
+                }
+            }
+            case 4->{//z-block
+                switch(blockCords[8]){
+                    //⬛⬛⬛⬛
+                    //⬜⬜⬛⬛
+                    //⬛⬜⬜⬛
+                    //⬛⬛⬛⬛
+                    case 0 ->{
+                        temp[0]=blockCords[0]+2; temp[1]=blockCords[1]-1; //⬛⬛⬜⬛
+                        temp[2]=blockCords[2]+1; temp[3]=blockCords[3];   //⬛⬜⬜⬛
+                        temp[4]=blockCords[4]; temp[5]=blockCords[5]-1;   //⬛⬜⬛⬛
+                        temp[6]=blockCords[6]-1; temp[7]=blockCords[7];   //⬛⬛⬛⬛
+                        temp[8]=3;
+                    }
+                    case 1 ->{
+                        temp[0]=blockCords[0]-1; temp[1]=blockCords[1]+1; //⬛⬛⬛⬛
+                        temp[2]=blockCords[2]; temp[3]=blockCords[3];     //⬜⬜⬛⬛
+                        temp[4]=blockCords[4]+1; temp[5]=blockCords[5]+1; //⬛⬜⬜⬛
+                        temp[6]=blockCords[6]+2; temp[7]=blockCords[7];   //⬛⬛⬛⬛
+                        temp[8]=0;
+                        temp=checkBoundLeft(temp);
+                    }
+                    case 2 ->{
+                        temp[0]=blockCords[0]+1; temp[1]=blockCords[1];   //⬛⬜⬛⬛
+                        temp[2]=blockCords[2]; temp[3]=blockCords[3]+1;   //⬜⬜⬛⬛
+                        temp[4]=blockCords[4]-1; temp[5]=blockCords[5];   //⬜⬛⬛⬛
+                        temp[6]=blockCords[6]-2; temp[7]=blockCords[7]+1; //⬛⬛⬛⬛
+                        temp[8]=1;
+                    }
+                    case 3 ->{
+                        temp[0]=blockCords[0]-2; temp[1]=blockCords[1];   //⬜⬜⬛⬛
+                        temp[2]=blockCords[2]-1; temp[3]=blockCords[3]-1; //⬛⬜⬜⬛
+                        temp[4]=blockCords[4]; temp[5]=blockCords[5];     //⬛⬛⬛⬛
+                        temp[6]=blockCords[6]+1; temp[7]=blockCords[7]-1; //⬛⬛⬛⬛
+                        temp[8]=2;
+                        temp=checkBoundRight(temp);
+                    }
+                    default ->{}
+                }
+
+            }
+            case 5->{//t-block
+                switch(blockCords[8]){//May god have mercy on your soul t-spin is not for the weak
+                    //⬛⬛⬛⬛⬛⬛⬜⬜⬜⬛⬛⬜
+                    //⬜⬜⬜⬛⬛⬛⬜⬜⬛⬛⬛⬜
+                    //⬛⬜⬛⬛⬛⬛⬜⬜⬛⬜⬜⬜
+                    //⬛⬛⬛⬛⬛⬛⬜⬜⬛⬛⬜⬜
+                    case 0 ->{ //⬛⬜⬜⬛⬜⬜⬜
+                        temp[0]=blockCords[0]+1; temp[1]=blockCords[1]+1; //⬛⬜⬛⬛
+                        temp[2]=blockCords[2]; temp[3]=blockCords[3];     //⬛⬜⬜⬛
+                        temp[4]=blockCords[4]-1; temp[5]=blockCords[5]-1; //⬛⬜⬛⬛
+                        temp[6]=blockCords[6]+1; temp[7]=blockCords[7]-1; //⬛⬛⬛⬛
+                        temp[8]=3;
+                    }
+                    case 1 ->{
+                        temp[0]=blockCords[0]-1; temp[1]=blockCords[1]+1; //⬛⬛⬛⬛
+                        temp[2]=blockCords[2]; temp[3]=blockCords[3];     //⬜⬜⬜⬛
+                        temp[4]=blockCords[4]+1; temp[5]=blockCords[5]-1; //⬛⬜⬛⬛
+                        temp[6]=blockCords[6]+1; temp[7]=blockCords[7]+1; //⬛⬛⬛⬛
+                        temp[8]=0;
+                        temp=checkBoundLeft(temp);
+                    }
+                    case 2 ->{
+                        temp[0]=blockCords[0]-1; temp[1]=blockCords[1]-1; //⬛⬜⬛⬛
+                        temp[2]=blockCords[2]; temp[3]=blockCords[3];     //⬜⬜⬛⬛
+                        temp[4]=blockCords[4]+1; temp[5]=blockCords[5]+1; //⬛⬜⬛⬛
+                        temp[6]=blockCords[6]-1; temp[7]=blockCords[7]+1; //⬛⬛⬛⬛
+                        temp[8]=1;
+                    }
+                    case 3 ->{
+                        temp[0]=blockCords[0]+1; temp[1]=blockCords[1]-1; //⬛⬜⬛⬛
+                        temp[2]=blockCords[2]; temp[3]=blockCords[3];     //⬜⬜⬜⬛
+                        temp[4]=blockCords[4]-1; temp[5]=blockCords[5]+1; //⬛⬛⬛⬛
+                        temp[6]=blockCords[6]-1; temp[7]=blockCords[7]-1; //⬛⬛⬛⬛
+                        temp[8]=2;
+                        temp=checkBoundRight(temp);
+                        temp=checkBoundLeft(temp);
+                        temp=levelOneTSpin(temp, grid);
+                    }
+                    default ->{}
+                }
+
+            }
+            case 6->{//i-block
+                switch(blockCords[8]){
+                    //⬛⬛⬛⬛⬛
+                    //⬛⬛⬛⬛⬛
+                    //⬜⬜⬜⬜⬛
+                    //⬛⬛⬛⬛⬛
+                    //⬛⬛⬛⬛⬛
+                    case 0 ->{
+                        temp[0]=blockCords[0]+2; temp[1]=blockCords[1]+2; //⬛⬛⬛⬛⬛
+                        temp[2]=blockCords[2]+1; temp[3]=blockCords[3]+1; //⬛⬛⬜⬛⬛
+                        temp[4]=blockCords[4]; temp[5]=blockCords[5];     //⬛⬛⬜⬛⬛
+                        temp[6]=blockCords[6]-1; temp[7]=blockCords[7]-1; //⬛⬛⬜⬛⬛
+                        temp[8]=3;                                        //⬛⬛⬜⬛⬛
+                    }
+                    case 1 ->{
+                        temp[0]=blockCords[0]-2; temp[1]=blockCords[1]+2; //⬛⬛⬛⬛⬛
+                        temp[2]=blockCords[2]-1; temp[3]=blockCords[3]+1; //⬛⬛⬛⬛⬛
+                        temp[4]=blockCords[4]; temp[5]=blockCords[5];     //⬜⬜⬜⬜⬛
+                        temp[6]=blockCords[6]+1; temp[7]=blockCords[7]-1; //⬛⬛⬛⬛⬛
+                        temp[8]=0;                                        //⬛⬛⬛⬛⬛
+                        temp=checkBoundLeft(temp);
+                        temp=checkBoundLeft(temp);
+                        temp=checkBoundRight(temp);
+                    }
+                    case 2 ->{
+                        temp[0]=blockCords[0]-2; temp[1]=blockCords[1]-2; //⬛⬛⬜⬛⬛
+                        temp[2]=blockCords[2]-1; temp[3]=blockCords[3]-1; //⬛⬛⬜⬛⬛
+                        temp[4]=blockCords[4]; temp[5]=blockCords[5];     //⬛⬛⬜⬛⬛
+                        temp[6]=blockCords[6]+1; temp[7]=blockCords[7]+1; //⬛⬛⬜⬛⬛
+                        temp[8]=1;                                        //⬛⬛⬛⬛⬛
+                    }
+                    case 3 ->{
+                        temp[0]=blockCords[0]+2; temp[1]=blockCords[1]-2; //⬛⬛⬛⬛⬛
+                        temp[2]=blockCords[2]+1; temp[3]=blockCords[3]-1; //⬛⬛⬛⬛⬛
+                        temp[4]=blockCords[4]; temp[5]=blockCords[5];     //⬛⬜⬜⬜⬜
+                        temp[6]=blockCords[6]-1; temp[7]=blockCords[7]+1; //⬛⬛⬛⬛⬛
+                        temp[8]=2;                                        //⬛⬛⬛⬛⬛
+                        temp=checkBoundRight(temp);
+                        temp=checkBoundRight(temp);
+                        temp=checkBoundLeft(temp);
+                    }
+                    default ->{}
+                }
+            }
+        }
+        return rotationSafety(grid, temp, blockCords);
+    }
+
     public static boolean isGridOccupied(boolean[][] grid, int[] temp){
         for(int i=0; i<8; i=i+2){
             if(grid[temp[i]][temp[i+1]]){
