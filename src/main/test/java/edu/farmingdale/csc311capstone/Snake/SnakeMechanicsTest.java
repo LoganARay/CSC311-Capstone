@@ -1,12 +1,14 @@
 package edu.farmingdale.csc311capstone.Snake;
 
 import edu.farmingdale.csc311capstone.Snake.SnakeMechanics.Direction;
+import edu.farmingdale.csc311capstone.Snake.SnakeMechanics.Event;
 import edu.farmingdale.csc311capstone.Snake.SnakeMechanics.Mode;
 import edu.farmingdale.csc311capstone.Snake.SnakeMechanics.Point;
 import edu.farmingdale.csc311capstone.Snake.SnakeMechanics.State;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -213,5 +215,65 @@ class SnakeMechanicsTest {
             else game.turn(Direction.UP);
             game.step();
         }
+    }
+
+    // ------------------------------------------------------------------ sound events
+
+    @Test
+    void eatingAnAppleReportsAnEvent() {
+        SnakeMechanics game = newGame(Mode.CLASSIC);
+        Point head = game.head();
+        game.placeFood(new Point(head.x() + 1, head.y()));
+        game.step();
+        assertEquals(List.of(Event.ATE_APPLE), game.pollEvents());
+        assertEquals(List.of(), game.pollEvents(), "events are cleared after polling");
+    }
+
+    @Test
+    void goldenAppleReportsAnEvent() {
+        SnakeMechanics game = newGame(Mode.TIME_ATTACK);
+        Point head = game.head();
+        game.placeGoldenApple(new Point(head.x() + 1, head.y()), 20);
+        game.step();
+        assertEquals(List.of(Event.ATE_GOLDEN_APPLE), game.pollEvents());
+    }
+
+    @Test
+    void hittingTheWallReportsACrash() {
+        SnakeMechanics game = newGame(Mode.CLASSIC);
+        for (int i = 0; i < 100 && !game.isOver(); i++) {
+            game.step();
+        }
+        assertEquals(List.of(Event.CRASHED), game.pollEvents());
+    }
+
+    @Test
+    void hittingARockReportsACrash() {
+        SnakeMechanics game = newGame(Mode.OBSTACLES);
+        Point head = game.head();
+        game.placeObstacle(new Point(head.x() + 1, head.y()));
+        game.step();
+        assertEquals(List.of(Event.CRASHED), game.pollEvents());
+    }
+
+    @Test
+    void runningOutOfTimeIsNotACrash() {
+        SnakeMechanics game = newGame(Mode.TIME_ATTACK);
+        for (int i = 0; i < 10_000 && !game.isOver(); i++) {
+            game.step();
+        }
+        List<Event> events = game.pollEvents();
+        assertTrue(events.contains(Event.TIME_UP));
+        assertFalse(events.contains(Event.CRASHED));
+    }
+
+    @Test
+    void newGameHasNoLeftoverEvents() {
+        SnakeMechanics game = newGame(Mode.CLASSIC);
+        Point head = game.head();
+        game.placeFood(new Point(head.x() + 1, head.y()));
+        game.step();
+        game.reset();
+        assertEquals(List.of(), game.pollEvents());
     }
 }

@@ -53,6 +53,7 @@ public class SnakeController {
     @FXML private Canvas canvas;
 
     private SnakeMechanics game;
+    private final SnakeSounds sounds = new SnakeSounds();
     private long lastTick;
 
     private final AnimationTimer loop = new AnimationTimer() {
@@ -68,6 +69,9 @@ public class SnakeController {
                 lastTick += interval;
                 game.step();
                 interval = game.tickIntervalMs() * 1_000_000L;
+            }
+            for (SnakeMechanics.Event event : game.pollEvents()) {
+                sounds.play(event);
             }
             if (game.state() != SnakeMechanics.State.RUNNING) {
                 lastTick = now;
@@ -104,13 +108,17 @@ public class SnakeController {
         scene.addEventFilter(KeyEvent.KEY_PRESSED, this::onKey);
         // Stop the loop when the player goes back to the menu.
         scene.windowProperty().addListener((obs, oldWin, win) -> {
-            if (win == null) loop.stop();
+            if (win == null) {
+                loop.stop();
+                sounds.stopAll();
+            }
         });
     }
 
     @FXML
     private void onNewGame() {
         Mode mode = modeBox.getValue();
+        sounds.stopAll(); // cut off the game-over / win sounds from the last round
         game = new SnakeMechanics(mode);
         canvas.setWidth(game.width() * CELL);
         canvas.setHeight(game.height() * CELL);
@@ -122,6 +130,7 @@ public class SnakeController {
     @FXML
     private void onMainMenu() {
         loop.stop();
+        sounds.stopAll();
         SceneSwitcher.showMenu(root);
     }
 

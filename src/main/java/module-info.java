@@ -1,6 +1,7 @@
 module edu.farmingdale.csc311capstone {
     requires javafx.controls;
     requires javafx.fxml;
+    requires javafx.media;
 
 
     opens edu.farmingdale.csc311capstone to javafx.fxml;
