@@ -41,6 +41,18 @@ public final class SnakeMechanics {
 
     public enum State { READY, RUNNING, PAUSED, GAME_OVER, WON }
 
+    /**
+     * Things that happened during a step, so the controller can play sounds
+     * without the rules needing to know about audio. Read them with {@link #pollEvents()}.
+     */
+    public enum Event {
+        ATE_APPLE,
+        ATE_GOLDEN_APPLE,
+        CRASHED,   // hit a wall, a rock or itself
+        TIME_UP,   // Time Attack clock ran out
+        WON        // filled the whole board
+    }
+
     // Tunable numbers
     public static final int DEFAULT_WIDTH = 24;
     public static final int DEFAULT_HEIGHT = 20;
@@ -66,6 +78,7 @@ public final class SnakeMechanics {
     private final Deque<Point> body = new ArrayDeque<>();     // head is first
     private final Deque<Direction> pendingTurns = new ArrayDeque<>();
     private final Set<Point> obstacles = new LinkedHashSet<>();
+    private final List<Event> events = new ArrayList<>();
 
     private Direction direction = Direction.RIGHT;
     private State state = State.READY;
@@ -97,6 +110,7 @@ public final class SnakeMechanics {
         body.clear();
         pendingTurns.clear();
         obstacles.clear();
+        events.clear();
         direction = Direction.RIGHT;
         state = State.READY;
         goldenApple = null;
@@ -162,6 +176,7 @@ public final class SnakeMechanics {
             timeLeftMs -= tickIntervalMs();
             if (timeLeftMs <= 0) {
                 timeLeftMs = 0;
+                events.add(Event.TIME_UP);
                 end(State.GAME_OVER, "Time's up!");
                 return;
             }
@@ -179,13 +194,13 @@ public final class SnakeMechanics {
             nx = Math.floorMod(nx, width);
             ny = Math.floorMod(ny, height);
         } else if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
-            end(State.GAME_OVER, "You hit the wall.");
+            crash("You hit the wall.");
             return;
         }
         Point next = new Point(nx, ny);
 
         if (obstacles.contains(next)) {
-            end(State.GAME_OVER, "You crashed into a rock.");
+            crash("You crashed into a rock.");
             return;
         }
 
@@ -196,7 +211,7 @@ public final class SnakeMechanics {
         // The tail moves out of the way this tick unless we're growing.
         Point tail = body.peekLast();
         if (body.contains(next) && (grows || !next.equals(tail))) {
-            end(State.GAME_OVER, "You ran into yourself.");
+            crash("You ran into yourself.");
             return;
         }
 
@@ -208,10 +223,12 @@ public final class SnakeMechanics {
         if (eatsGolden) {
             score += GOLDEN_APPLE_POINTS;
             goldenApple = null;
+            events.add(Event.ATE_GOLDEN_APPLE);
         }
         if (eatsApple) {
             score += pointsPerApple();
             applesEaten++;
+            events.add(Event.ATE_APPLE);
             onAppleEaten();
             if (state != State.RUNNING) {
                 return; // the board filled up
@@ -236,8 +253,14 @@ public final class SnakeMechanics {
         }
         food = randomEmptyCell();
         if (food == null) {
+            events.add(Event.WON);
             end(State.WON, "You filled the whole board!");
         }
+    }
+
+    private void crash(String reason) {
+        events.add(Event.CRASHED);
+        end(State.GAME_OVER, reason);
     }
 
     private void end(State finalState, String reason) {
@@ -280,6 +303,13 @@ public final class SnakeMechanics {
     }
 
     // ------------------------------------------------------------------ queries
+
+    /** Returns the events since the last call, oldest first, and clears them. */
+    public List<Event> pollEvents() {
+        List<Event> happened = List.copyOf(events);
+        events.clear();
+        return happened;
+    }
 
     /** How long the controller should wait between steps. */
     public int tickIntervalMs() {
