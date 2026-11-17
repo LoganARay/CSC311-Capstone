@@ -65,6 +65,7 @@ public class TetrisPieces {
         switch(block){
             case 0->{ //o-block
                 //You are too stupid to rotate idiot!
+                return blockCords;
             }
             case 1->{ //l-block
                     switch (blockCords[8]) {
@@ -166,34 +167,39 @@ public class TetrisPieces {
                     //⬛⬛⬛⬛
                     //⬛⬛⬛⬛
                     case 0 ->{
-                        temp[0]=blockCords[0]-1; temp[1]=blockCords[1];   //⬛⬜⬛⬛
-                        temp[2]=blockCords[2]; temp[3]=blockCords[3]+1;   //⬛⬜⬜⬛
-                        temp[4]=blockCords[4]+1; temp[5]=blockCords[5];   //⬛⬛⬜⬛
-                        temp[6]=blockCords[6]+2; temp[7]=blockCords[7]+1; //⬛⬛⬛⬛
-                        temp[8]=1;
-                    }
-                    case 1 ->{
-                        temp[0]=blockCords[0]+1; temp[1]=blockCords[1]+1; //⬛⬛⬛⬛
-                        temp[2]=blockCords[2]; temp[3]=blockCords[3];     //⬛⬜⬜⬛
-                        temp[4]=blockCords[4]-1; temp[5]=blockCords[5]+1; //⬜⬜⬛⬛
-                        temp[6]=blockCords[6]-2; temp[7]=blockCords[7];   //⬛⬛⬛⬛
-                        temp[8]=2;
-                        temp=checkBoundLeft(temp);
-                    }
-                    case 2 ->{
-                        temp[0]=blockCords[0]-2; temp[1]=blockCords[1]-1; //⬜⬛⬛⬛
-                        temp[2]=blockCords[2]-1; temp[3]=blockCords[3];   //⬜⬜⬛⬛
-                        temp[4]=blockCords[4]; temp[5]=blockCords[5]-1;   //⬛⬜⬛⬛
-                        temp[6]=blockCords[6]+1; temp[7]=blockCords[7];   //⬛⬛⬛⬛
+                        temp[0]=blockCords[0]-2; temp[1]=blockCords[1];   //⬜⬛⬛⬛
+                        temp[2]=blockCords[2]-1; temp[3]=blockCords[3]+1; //⬜⬜⬛⬛
+                        temp[4]=blockCords[4]; temp[5]=blockCords[5];     //⬛⬜⬛⬛
+                        temp[6]=blockCords[6]+1; temp[7]=blockCords[7]+1; //⬛⬛⬛⬛
                         temp[8]=3;
                     }
-                    case 3 ->{
-                        temp[0]=blockCords[0]+2; temp[1]=blockCords[1];   //⬛⬜⬜⬛
-                        temp[2]=blockCords[2]+1; temp[3]=blockCords[3]-1; //⬜⬜⬛⬛
-                        temp[4]=blockCords[4]; temp[5]=blockCords[5];     //⬛⬛⬛⬛
-                        temp[6]=blockCords[6]-1; temp[7]=blockCords[7]-1; //⬛⬛⬛⬛
+                    case 1 ->{
+                        temp[0]=blockCords[0]+1; temp[1]=blockCords[1];   //⬛⬜⬜⬛
+                        temp[2]=blockCords[2]; temp[3]=blockCords[3]-1;   //⬜⬜⬛⬛
+                        temp[4]=blockCords[4]-1; temp[5]=blockCords[5];   //⬛⬛⬛⬛
+                        temp[6]=blockCords[6]-2; temp[7]=blockCords[7]-1; //⬛⬛⬛⬛
                         temp[8]=0;
-                        temp=checkBoundRight(temp);
+                    }
+                    case 2 ->{
+                        temp[0]=blockCords[0]-1; temp[1]=blockCords[1]-1; //⬛⬜⬛⬛
+                        temp[2]=blockCords[2]; temp[3]=blockCords[3];     //⬛⬜⬜⬛
+                        temp[4]=blockCords[4]+1; temp[5]=blockCords[5]-1; //⬛⬛⬜⬛
+                        temp[6]=blockCords[6]+2; temp[7]=blockCords[7];   //⬛⬛⬛⬛
+                        temp[8]=1;
+                    }
+                    case 3 ->{
+                        temp[0]=blockCords[0]+2; temp[1]=blockCords[1]+1; //⬛⬛⬛⬛
+                        temp[2]=blockCords[2]+1; temp[3]=blockCords[3];   //⬛⬜⬜⬛
+                        temp[4]=blockCords[4]; temp[5]=blockCords[5]+1;   //⬜⬜⬛⬛
+                        temp[6]=blockCords[6]-1; temp[7]=blockCords[7];   //⬛⬛⬛⬛
+                        temp[8]=2;
+                        //horizontal s-spin (only works clockwise)
+                        //⬛🟩⬛⬛⬛     ⬛⬛⬛⬛⬛      ⬛⬛⬛⬛⬛
+                        //⬛🟩🟩⬛⬛     ⬛⬛🟩🟩⬛ push ⬛⬛⬛⬛⬛
+                        //⬜⬜🟩⬛⬜ --> ⬜🟩🟩⬛⬜ -->  ⬜⬜🟩🟩⬜
+                        //⬜⬛⬛⬜⬜     ⬜⬛⬛⬜⬜ down ⬜🟩🟩⬜⬜
+                        //⬜⬜⬜⬜⬜     ⬜⬜⬜⬜⬜      ⬜⬜⬜⬜⬜
+                        temp=horizontalSpinS_Z(temp, grid);
                     }
                     default ->{}
                 }
@@ -205,38 +211,55 @@ public class TetrisPieces {
                     //⬛⬜⬜⬛
                     //⬛⬛⬛⬛
                     case 0 ->{
-                        temp[0]=blockCords[0]+1; temp[1]=blockCords[1]-1; //⬛⬜⬛⬛
-                        temp[2]=blockCords[2]; temp[3]=blockCords[3];     //⬜⬜⬛⬛
-                        temp[4]=blockCords[4]-1; temp[5]=blockCords[5]-1; //⬜⬛⬛⬛
-                        temp[6]=blockCords[6]-2; temp[7]=blockCords[7];   //⬛⬛⬛⬛
-                        temp[8]=1;
+                        temp[0]=blockCords[0]+2; temp[1]=blockCords[1]-1; //⬛⬛⬜⬛
+                        temp[2]=blockCords[2]+1; temp[3]=blockCords[3];   //⬛⬜⬜⬛
+                        temp[4]=blockCords[4]; temp[5]=blockCords[5]-1;   //⬛⬜⬛⬛
+                        temp[6]=blockCords[6]-1; temp[7]=blockCords[7];   //⬛⬛⬛⬛
+                        temp[8]=3;
+                        //triple z-spin (only works clockwise)
+                        //⬛⬛⬛⬛⬛     ⬛⬛⬛🟥⬛     ⬛⬛⬛⬛⬛
+                        //⬛🟥🟥⬛⬛     ⬛⬛🟥🟥⬛     ⬛⬛⬛⬛⬛
+                        //⬜⬜🟥🟥⬛     ⬜⬜🟥⬛⬛     ⬜⬜⬛⬛⬛
+                        //⬜⬜⬜⬛⬜ --> ⬜⬜⬜⬛⬜ --> ⬜⬜⬜🟥⬜
+                        //⬜⬜⬛⬛⬜     ⬜⬜⬛⬛⬜     ⬜⬜🟥🟥⬜
+                        //⬜⬜⬛⬜⬜     ⬜⬜⬛⬜⬜     ⬜⬜🟥⬜⬜
+                        if(grid[blockCords[0]][blockCords[1]+1] && grid[temp[6]][temp[7]+1] && (temp[7]+3)<=23) {//checking to see if block space is clear for z-spin
+                            if (!grid[temp[0]][temp[1] + 3] && !grid[temp[2]][temp[3] + 3] && !grid[temp[4]][temp[5] + 3] && !grid[temp[6]][temp[7] + 3]) {
+                                temp[1]+=3; temp[3]+=3; temp[5]+=3; temp[7]+=3;
+                            }
+                        }
                     }
                     case 1 ->{
-                        temp[0]=blockCords[0]-1; temp[1]=blockCords[1];   //⬜⬜⬛⬛
-                        temp[2]=blockCords[2]; temp[3]=blockCords[3]-1;   //⬛⬜⬜⬛
-                        temp[4]=blockCords[4]+1; temp[5]=blockCords[5];   //⬛⬛⬛⬛
-                        temp[6]=blockCords[6]+2; temp[7]=blockCords[7]-1; //⬛⬛⬛⬛
+                        temp[0]=blockCords[0]-1; temp[1]=blockCords[1]+1; //⬛⬛⬛⬛
+                        temp[2]=blockCords[2]; temp[3]=blockCords[3];     //⬜⬜⬛⬛
+                        temp[4]=blockCords[4]+1; temp[5]=blockCords[5]+1; //⬛⬜⬜⬛
+                        temp[6]=blockCords[6]+2; temp[7]=blockCords[7];   //⬛⬛⬛⬛
+                        temp[8]=0;
+                        //wallkick z-spin (only works clockwise)
+                        //⬛⬛🟥⬛⬛     ⬛⬛⬛⬛⬛      ⬛⬛⬛⬛⬛
+                        //⬜🟥🟥⬜⬜     ⬜🟥🟥⬜⬜ push ⬜⬛⬛⬜⬜
+                        //⬜🟥⬛⬜⬜ --> ⬜⬛🟥🟥⬜ -->  ⬜🟥🟥⬜⬜
+                        //⬜⬜⬛⬛⬜     ⬜⬜⬛⬛⬜ down ⬜⬜🟥🟥⬜
+                        //⬜⬜⬜⬜⬜     ⬜⬜⬜⬜⬜      ⬜⬜⬜⬜⬜
+                        temp=horizontalSpinS_Z(temp, grid);
+                    }
+                    case 2 ->{
+                        temp[0]=blockCords[0]+1; temp[1]=blockCords[1];   //⬛⬜⬛⬛
+                        temp[2]=blockCords[2]; temp[3]=blockCords[3]+1;   //⬜⬜⬛⬛
+                        temp[4]=blockCords[4]-1; temp[5]=blockCords[5];   //⬜⬛⬛⬛
+                        temp[6]=blockCords[6]-2; temp[7]=blockCords[7]+1; //⬛⬛⬛⬛
+                        temp[8]=1;
+                    }
+                    case 3 ->{
+                        temp[0]=blockCords[0]-2; temp[1]=blockCords[1];   //⬜⬜⬛⬛
+                        temp[2]=blockCords[2]-1; temp[3]=blockCords[3]-1; //⬛⬜⬜⬛
+                        temp[4]=blockCords[4]; temp[5]=blockCords[5];     //⬛⬛⬛⬛
+                        temp[6]=blockCords[6]+1; temp[7]=blockCords[7]-1; //⬛⬛⬛⬛
                         temp[8]=2;
                         temp=checkBoundRight(temp);
                     }
-                    case 2 ->{
-                        temp[0]=blockCords[0]+2; temp[1]=blockCords[1];   //⬛⬛⬜⬛
-                        temp[2]=blockCords[2]+1; temp[3]=blockCords[3]+1; //⬛⬜⬜⬛
-                        temp[4]=blockCords[4]; temp[5]=blockCords[5];     //⬛⬜⬛⬛
-                        temp[6]=blockCords[6]-1; temp[7]=blockCords[7]+1; //⬛⬛⬛⬛
-                        temp[8]=3;
-                    }
-                    case 3 ->{
-                        temp[0]=blockCords[0]-2; temp[1]=blockCords[1]+1; //⬛⬛⬛⬛
-                        temp[2]=blockCords[2]-1; temp[3]=blockCords[3];   //⬜⬜⬛⬛
-                        temp[4]=blockCords[4]; temp[5]=blockCords[5]+1;   //⬛⬜⬜⬛
-                        temp[6]=blockCords[6]+1; temp[7]=blockCords[7];   //⬛⬛⬛⬛
-                        temp[8]=0;
-                        temp=checkBoundLeft(temp);
-                    }
                     default ->{}
                 }
-
             }
             case 5->{//t-block
                 switch(blockCords[8]){
@@ -338,6 +361,8 @@ public class TetrisPieces {
                 }
             }
         }
+        temp=checkBoundLeft(temp);
+        temp=checkBoundRight(temp);
         return rotationSafety(grid, temp, blockCords);
     }
 
@@ -345,7 +370,8 @@ public class TetrisPieces {
         int[] temp= new int[9];
         switch(block){
             case 0->{ //o-block
-                //Did you think you could turn left now? Idiot!
+                //Did you really think you could turn left now? Idiot!
+                return blockCords;
             }
             case 1->{ //l-block
                 switch (blockCords[8]) {
@@ -444,34 +470,55 @@ public class TetrisPieces {
                     //⬛⬛⬛⬛
                     //⬛⬛⬛⬛
                     case 0 ->{
-                        temp[0]=blockCords[0]-2; temp[1]=blockCords[1];   //⬜⬛⬛⬛
-                        temp[2]=blockCords[2]-1; temp[3]=blockCords[3]+1; //⬜⬜⬛⬛
-                        temp[4]=blockCords[4]; temp[5]=blockCords[5];     //⬛⬜⬛⬛
-                        temp[6]=blockCords[6]+1; temp[7]=blockCords[7]+1; //⬛⬛⬛⬛
-                        temp[8]=3;
+                        temp[0]=blockCords[0]-1; temp[1]=blockCords[1];   //⬛⬜⬛⬛
+                        temp[2]=blockCords[2]; temp[3]=blockCords[3]+1;   //⬛⬜⬜⬛
+                        temp[4]=blockCords[4]+1; temp[5]=blockCords[5];   //⬛⬛⬜⬛
+                        temp[6]=blockCords[6]+2; temp[7]=blockCords[7]+1; //⬛⬛⬛⬛
+                        temp[8]=1;
+                        // triple s-spin (only works counterclockwise)
+                        //set to first spin off spawn to entice quicker gameplay
+                        //⬛⬛🟩🟩⬛     ⬛⬛🟩⬛⬛     ⬛⬛⬛⬛⬛
+                        //⬛🟩🟩⬜⬜     ⬛⬛🟩🟩⬜     ⬛⬛⬛⬜⬜
+                        //⬜⬛⬜⬜⬜ --> ⬜⬛⬜🟩⬜ --> ⬜🟩⬜⬜⬜
+                        //⬜⬛⬛⬜⬜     ⬜⬛⬛⬜⬜     ⬜🟩🟩⬜⬜
+                        //⬜⬜⬛⬜⬜     ⬜⬜⬛⬜⬜     ⬜⬜🟩⬜⬜
+                        if(grid[blockCords[0]][blockCords[1]+1] && (temp[7]+2)<=23 && temp[0]>0) {//checking to see if block space is clear for z-spin
+                            if (!grid[temp[0]-1][temp[1] + 2] && !grid[temp[2]-1][temp[3] + 2] && !grid[temp[4]-1][temp[5] + 2] && !grid[temp[6]-1][temp[7] + 2]) {
+                                temp[0]--; temp[1]+=2;
+                                temp[2]--; temp[3]+=2;
+                                temp[4]--; temp[5]+=2;
+                                temp[6]--; temp[7]+=2;
+                            }
+                        }
                     }
                     case 1 ->{
-                        temp[0]=blockCords[0]+1; temp[1]=blockCords[1];   //⬛⬜⬜⬛
-                        temp[2]=blockCords[2]; temp[3]=blockCords[3]-1;   //⬜⬜⬛⬛
-                        temp[4]=blockCords[4]-1; temp[5]=blockCords[5];   //⬛⬛⬛⬛
-                        temp[6]=blockCords[6]-2; temp[7]=blockCords[7]-1; //⬛⬛⬛⬛
-                        temp[8]=0;
-                        temp=checkBoundLeft(temp);
+                        temp[0]=blockCords[0]+1; temp[1]=blockCords[1]+1; //⬛⬛⬛⬛
+                        temp[2]=blockCords[2]; temp[3]=blockCords[3];     //⬛⬜⬜⬛
+                        temp[4]=blockCords[4]-1; temp[5]=blockCords[5]+1; //⬜⬜⬛⬛
+                        temp[6]=blockCords[6]-2; temp[7]=blockCords[7];   //⬛⬛⬛⬛
+                        temp[8]=2;
+                        //s wall kick (only works counterclockwise)
+                        //⬛⬛🟩⬛⬛     ⬛⬛⬛⬛⬛      ⬛⬛⬛⬛⬛
+                        //⬜⬜🟩🟩⬜     ⬜⬜🟩🟩⬜ push ⬜⬜⬛⬛⬜
+                        //⬜⬜⬛🟩⬜ --> ⬜🟩🟩⬛⬜ -->  ⬜⬜🟩🟩⬜
+                        //⬜⬛⬛⬜⬜     ⬜⬛⬛⬜⬜ down ⬜🟩🟩⬜⬜
+                        //⬜⬜⬜⬜⬜     ⬜⬜⬜⬜⬜      ⬜⬜⬜⬜⬜
+                        temp=horizontalSpinS_Z(temp, grid);
                     }
                     case 2 ->{
-                        temp[0]=blockCords[0]-1; temp[1]=blockCords[1]-1; //⬛⬜⬛⬛
-                        temp[2]=blockCords[2]; temp[3]=blockCords[3];     //⬛⬜⬜⬛
-                        temp[4]=blockCords[4]+1; temp[5]=blockCords[5]-1; //⬛⬛⬜⬛
-                        temp[6]=blockCords[6]+2; temp[7]=blockCords[7];   //⬛⬛⬛⬛
-                        temp[8]=1;
+                        temp[0]=blockCords[0]-2; temp[1]=blockCords[1]-1; //⬜⬛⬛⬛
+                        temp[2]=blockCords[2]-1; temp[3]=blockCords[3];   //⬜⬜⬛⬛
+                        temp[4]=blockCords[4]; temp[5]=blockCords[5]-1;   //⬛⬜⬛⬛
+                        temp[6]=blockCords[6]+1; temp[7]=blockCords[7];   //⬛⬛⬛⬛
+                        temp[8]=3;
                     }
                     case 3 ->{
-                        temp[0]=blockCords[0]+2; temp[1]=blockCords[1]+1; //⬛⬛⬛⬛
-                        temp[2]=blockCords[2]+1; temp[3]=blockCords[3];   //⬛⬜⬜⬛
-                        temp[4]=blockCords[4]; temp[5]=blockCords[5]+1;   //⬜⬜⬛⬛
-                        temp[6]=blockCords[6]-1; temp[7]=blockCords[7];   //⬛⬛⬛⬛
-                        temp[8]=2;
-                        temp=checkBoundLeft(temp);
+                        temp[0]=blockCords[0]+2; temp[1]=blockCords[1];   //⬛⬜⬜⬛
+                        temp[2]=blockCords[2]+1; temp[3]=blockCords[3]-1; //⬜⬜⬛⬛
+                        temp[4]=blockCords[4]; temp[5]=blockCords[5];     //⬛⬛⬛⬛
+                        temp[6]=blockCords[6]-1; temp[7]=blockCords[7]-1; //⬛⬛⬛⬛
+                        temp[8]=0;
+                        temp=checkBoundRight(temp);
                     }
                     default ->{}
                 }
@@ -483,38 +530,43 @@ public class TetrisPieces {
                     //⬛⬜⬜⬛
                     //⬛⬛⬛⬛
                     case 0 ->{
-                        temp[0]=blockCords[0]+2; temp[1]=blockCords[1]-1; //⬛⬛⬜⬛
-                        temp[2]=blockCords[2]+1; temp[3]=blockCords[3];   //⬛⬜⬜⬛
-                        temp[4]=blockCords[4]; temp[5]=blockCords[5]-1;   //⬛⬜⬛⬛
-                        temp[6]=blockCords[6]-1; temp[7]=blockCords[7];   //⬛⬛⬛⬛
-                        temp[8]=3;
-                    }
-                    case 1 ->{
-                        temp[0]=blockCords[0]-1; temp[1]=blockCords[1]+1; //⬛⬛⬛⬛
+                        temp[0]=blockCords[0]+1; temp[1]=blockCords[1]-1; //⬛⬜⬛⬛
                         temp[2]=blockCords[2]; temp[3]=blockCords[3];     //⬜⬜⬛⬛
-                        temp[4]=blockCords[4]+1; temp[5]=blockCords[5]+1; //⬛⬜⬜⬛
-                        temp[6]=blockCords[6]+2; temp[7]=blockCords[7];   //⬛⬛⬛⬛
-                        temp[8]=0;
-                        temp=checkBoundLeft(temp);
-                    }
-                    case 2 ->{
-                        temp[0]=blockCords[0]+1; temp[1]=blockCords[1];   //⬛⬜⬛⬛
-                        temp[2]=blockCords[2]; temp[3]=blockCords[3]+1;   //⬜⬜⬛⬛
-                        temp[4]=blockCords[4]-1; temp[5]=blockCords[5];   //⬜⬛⬛⬛
-                        temp[6]=blockCords[6]-2; temp[7]=blockCords[7]+1; //⬛⬛⬛⬛
+                        temp[4]=blockCords[4]-1; temp[5]=blockCords[5]-1; //⬜⬛⬛⬛
+                        temp[6]=blockCords[6]-2; temp[7]=blockCords[7];   //⬛⬛⬛⬛
                         temp[8]=1;
                     }
-                    case 3 ->{
-                        temp[0]=blockCords[0]-2; temp[1]=blockCords[1];   //⬜⬜⬛⬛
-                        temp[2]=blockCords[2]-1; temp[3]=blockCords[3]-1; //⬛⬜⬜⬛
-                        temp[4]=blockCords[4]; temp[5]=blockCords[5];     //⬛⬛⬛⬛
-                        temp[6]=blockCords[6]+1; temp[7]=blockCords[7]-1; //⬛⬛⬛⬛
+                    case 1 ->{
+                        temp[0]=blockCords[0]-1; temp[1]=blockCords[1];   //⬜⬜⬛⬛
+                        temp[2]=blockCords[2]; temp[3]=blockCords[3]-1;   //⬛⬜⬜⬛
+                        temp[4]=blockCords[4]+1; temp[5]=blockCords[5];   //⬛⬛⬛⬛
+                        temp[6]=blockCords[6]+2; temp[7]=blockCords[7]-1; //⬛⬛⬛⬛
                         temp[8]=2;
                         temp=checkBoundRight(temp);
                     }
+                    case 2 ->{
+                        temp[0]=blockCords[0]+2; temp[1]=blockCords[1];   //⬛⬛⬜⬛
+                        temp[2]=blockCords[2]+1; temp[3]=blockCords[3]+1; //⬛⬜⬜⬛
+                        temp[4]=blockCords[4]; temp[5]=blockCords[5];     //⬛⬜⬛⬛
+                        temp[6]=blockCords[6]-1; temp[7]=blockCords[7]+1; //⬛⬛⬛⬛
+                        temp[8]=3;
+                    }
+                    case 3 ->{
+                        temp[0]=blockCords[0]-2; temp[1]=blockCords[1]+1; //⬛⬛⬛⬛
+                        temp[2]=blockCords[2]-1; temp[3]=blockCords[3];   //⬜⬜⬛⬛
+                        temp[4]=blockCords[4]; temp[5]=blockCords[5]+1;   //⬛⬜⬜⬛
+                        temp[6]=blockCords[6]+1; temp[7]=blockCords[7];   //⬛⬛⬛⬛
+                        temp[8]=0;
+                        //horizontal z-spin (only works counterclockwise)
+                        //⬛⬛⬛🟥⬛     ⬛⬛⬛⬛⬛      ⬛⬛⬛⬛⬛
+                        //⬛⬛🟥🟥⬛     ⬛🟥🟥⬛⬛ push ⬛⬛⬛⬛⬛
+                        //⬜⬛🟥⬜⬜ --> ⬜⬛🟥🟥⬜ -->  ⬜🟥🟥⬜⬜
+                        //⬜⬜⬛⬛⬜     ⬜⬜⬛⬛⬜ down ⬜⬜🟥🟥⬜
+                        //⬜⬜⬜⬜⬜     ⬜⬜⬜⬜⬜      ⬜⬜⬜⬜⬜
+                        temp=horizontalSpinS_Z(temp, grid);
+                    }
                     default ->{}
                 }
-
             }
             case 5->{//t-block
                 switch(blockCords[8]){//May god have mercy on your soul t-spin is not for the weak
@@ -603,6 +655,9 @@ public class TetrisPieces {
                 }
             }
         }
+        temp=checkBoundLeft(temp);
+        temp=checkBoundRight(temp);
+
         return rotationSafety(grid, temp, blockCords);
     }
 
@@ -678,5 +733,15 @@ public class TetrisPieces {
         }
         return temp;
     }
+
+    public static int[] horizontalSpinS_Z(int[] temp, boolean[][] grid){
+        if(grid[temp[6]][temp[7]] && temp[5]<23){//checking to see if block space is clear for z-spin
+            if (!grid[temp[0]][temp[1] + 1] && !grid[temp[2]][temp[3] + 1] && !grid[temp[4]][temp[5] + 1] && !grid[temp[6]][temp[7] + 1]) {
+                temp[1]++; temp[3]++;temp[5]++; temp[7]++;
+            }
+        }
+        return temp;
+    }
 }
+
 

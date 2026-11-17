@@ -132,13 +132,6 @@ public class TetrisMechanics {
 
 
     public static List<Integer> linesCleared(boolean[][] placedBlocks){
-//        return IntStream.range(0, placedBlocks.length)
-//        .filter(l->{
-//            for (boolean value : placedBlocks[l]) {
-//                if (!value) {return false;}
-//            }
-//            return true;
-//        }).boxed().collect(Collectors.toList());
         List<Integer> fullLines= new ArrayList<Integer>();
         int rowCount=0;
         for(int r=0; r<=23; r++){

@@ -37,9 +37,15 @@ public class TetrisController {
         gamespace.setTranslateY(-80.0);
         gamespace.setPickOnBounds(true);
         grid= new boolean[10][24];
-        //int[] tspinSetUpL= {4,19,5,19,4,18,4,17,5,17,3,19,3,18,3,17,3,16,3,15,7,19,7,18,7,17,7,16,7,15,6,15};
-        //int[] tspinSetUp={4,19,4,18,4,17,4,16,4,15,5,15,6,19,6,17,7,19,7,18,7,17,8,19,8,18,8,17,8,16,8,15,8,14,5,14};
-        //demoHelper(tspinSetUp);
+        int[] hz_spinSetUpL= {4,23,6,22};
+        int[] hs_spinSetUpL= {6,23,4,22};
+        int[] wallkick_s_setUp= {6,23,7,23,7,22,7,21,4,21,4,22};
+        int[] wallkick_z_setUp= {4,23,6,22,3,23,3,22,3,21,6,21};
+        int[] triple_s_setUp= {4,23,5,21,3,23,3,22,3,21,6,23,6,22,6,21,6,20};
+        int[] triple_z_setUp= {5,23,4,21,6,23,6,22,6,21,3,23,3,22,3,21,3,20};
+
+        int[] tspinSetUp={4,19,4,18,4,17,4,16,4,15,5,15,6,19,6,17,7,19,7,18,7,17,8,19,8,18,8,17,8,16,8,15,8,14,5,14};
+        demoHelper(triple_z_setUp);
         newBlockEnters();
 
         baseSnapInterval=snapInterval;
@@ -207,7 +213,7 @@ public class TetrisController {
     public void demoHelper(int[] setUp){
         for(int i=0; i<setUp.length; i=i+2){
             Image image = new Image(
-                    TetrisMechanics.class.getResourceAsStream("/edu/farmingdale/csc311capstone/TetrisGraphics/o-block.png")
+                    TetrisMechanics.class.getResourceAsStream("/edu/farmingdale/csc311capstone/TetrisGraphics/Test-block.png")
             );
             ImageView demoBlocks= new ImageView(image);
             demoBlocks.setFitWidth(20.0);
