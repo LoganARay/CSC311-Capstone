@@ -1,0 +1,18 @@
+.root{
+    -fx-background-image: url(tetris_puyo_background.jpg);
+    -fx-background-size: cover;
+    -fx-background-position: center;
+    -fx-background-repeat: no-repeat
+}
+.grid-row {
+    -fx-background-color: #181825;
+    -fx-border-color: #313244;
+    -fx-opacity: 0.8;
+    -fx-border-width: 0 0 1 0;
+}
+
+#gameOver{
+    -fx-background-color: #000000;
+    -fx-text-fill: #aa1717;
+    -fx-font-size: 30px;
+}

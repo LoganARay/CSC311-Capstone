@@ -1,17 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.image.Image?>
-<?import javafx.scene.image.ImageView?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.RowConstraints?>
 
-<HBox fx:id="root" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="edu.farmingdale.csc311capstone.Tetris.TetrisController">
-    <ImageView fitHeight="400" fitWidth="200">
-        <Image url="@TetrisGraphics/tempborder.jpeg" />
-    </ImageView>
-        <GridPane fx:id="gamespace" gridLinesVisible="true" prefHeight="400" prefWidth="200">
+<?import javafx.scene.layout.Pane?>
+<HBox fx:id="root" prefHeight="500.0" prefWidth="600.0" stylesheets="@TetrisGraphics/tetrisStyles.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="edu.farmingdale.csc311capstone.Tetris.TetrisController">
+        <GridPane fx:id="gamespace" prefHeight="400" prefWidth="200" maxWidth="-Infinity">
     <rowConstraints>
         <RowConstraints fx:id="row0" minHeight="20.0" prefHeight="20.0" />
         <RowConstraints fx:id="row1" minHeight="20.0" prefHeight="20.0" />
@@ -38,6 +36,27 @@
         <RowConstraints fx:id="row22" minHeight="20.0" prefHeight="20.0" />
         <RowConstraints fx:id="row23" minHeight="20.0" prefHeight="20.0" />
     </rowConstraints>
+            <Pane id="row4-bg" styleClass="grid-row" GridPane.rowIndex="4" GridPane.columnIndex="0" GridPane.columnSpan="20" mouseTransparent="true" />
+            <Pane id="row5-bg" styleClass="grid-row" GridPane.rowIndex="5" GridPane.columnIndex="0" GridPane.columnSpan="20" mouseTransparent="true" />
+            <Pane id="row6-bg" styleClass="grid-row" GridPane.rowIndex="6" GridPane.columnIndex="0" GridPane.columnSpan="20" mouseTransparent="true" />
+            <Pane id="row7-bg" styleClass="grid-row" GridPane.rowIndex="7" GridPane.columnIndex="0" GridPane.columnSpan="20" mouseTransparent="true" />
+            <Pane id="row8-bg" styleClass="grid-row" GridPane.rowIndex="8" GridPane.columnIndex="0" GridPane.columnSpan="20" mouseTransparent="true" />
+            <Pane id="row9-bg" styleClass="grid-row" GridPane.rowIndex="9" GridPane.columnIndex="0" GridPane.columnSpan="20" mouseTransparent="true" />
+            <Pane id="row10-bg" styleClass="grid-row" GridPane.rowIndex="10" GridPane.columnIndex="0" GridPane.columnSpan="20" mouseTransparent="true" />
+            <Pane id="row11-bg" styleClass="grid-row" GridPane.rowIndex="11" GridPane.columnIndex="0" GridPane.columnSpan="20" mouseTransparent="true" />
+            <Pane id="row12-bg" styleClass="grid-row" GridPane.rowIndex="12" GridPane.columnIndex="0" GridPane.columnSpan="20" mouseTransparent="true" />
+            <Pane id="row13-bg" styleClass="grid-row" GridPane.rowIndex="13" GridPane.columnIndex="0" GridPane.columnSpan="20" mouseTransparent="true" />
+            <Pane id="row14-bg" styleClass="grid-row" GridPane.rowIndex="14" GridPane.columnIndex="0" GridPane.columnSpan="20" mouseTransparent="true" />
+            <Pane id="row15-bg" styleClass="grid-row" GridPane.rowIndex="15" GridPane.columnIndex="0" GridPane.columnSpan="20" mouseTransparent="true" />
+            <Pane id="row16-bg" styleClass="grid-row" GridPane.rowIndex="16" GridPane.columnIndex="0" GridPane.columnSpan="20" mouseTransparent="true" />
+            <Pane id="row17-bg" styleClass="grid-row" GridPane.rowIndex="17" GridPane.columnIndex="0" GridPane.columnSpan="20" mouseTransparent="true" />
+            <Pane id="row18-bg" styleClass="grid-row" GridPane.rowIndex="18" GridPane.columnIndex="0" GridPane.columnSpan="20" mouseTransparent="true" />
+            <Pane id="row19-bg" styleClass="grid-row" GridPane.rowIndex="19" GridPane.columnIndex="0" GridPane.columnSpan="20" mouseTransparent="true" />
+            <Pane id="row20-bg" styleClass="grid-row" GridPane.rowIndex="20" GridPane.columnIndex="0" GridPane.columnSpan="20" mouseTransparent="true" />
+            <Pane id="row21-bg" styleClass="grid-row" GridPane.rowIndex="21" GridPane.columnIndex="0" GridPane.columnSpan="20" mouseTransparent="true" />
+            <Pane id="row22-bg" styleClass="grid-row" GridPane.rowIndex="22" GridPane.columnIndex="0" GridPane.columnSpan="20" mouseTransparent="true" />
+            <Pane id="row23-bg" styleClass="grid-row" GridPane.rowIndex="23" GridPane.columnIndex="0" GridPane.columnSpan="20" mouseTransparent="true" />
+
     <columnConstraints>
         <ColumnConstraints fx:id="col0" minWidth="20.0" prefWidth="20.0" />
         <ColumnConstraints fx:id="col1" minWidth="20.0" prefWidth="20.0" />
@@ -51,7 +70,5 @@
         <ColumnConstraints fx:id="col9" minWidth="20.0" prefWidth="20.0" />
     </columnConstraints>
         </GridPane>
-    <ImageView fitHeight="400" fitWidth="200">
-        <Image url="@TetrisGraphics/tempborder.jpeg" />
-    </ImageView>
+    <Label fx:id="gameOver" text="Game Over" />
 </HBox>

@@ -4,6 +4,7 @@ import javafx.scene.Node;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Pane;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -168,12 +169,26 @@ public class TetrisMechanics {
             for (Node node : currentGame.getChildren()) {
                 Integer row = GridPane.getRowIndex(node);
                 int r = (row == null) ? 0 : row;
-
                 if (r < l) {
-                    GridPane.setRowIndex(node, r + 1);
+                    GridPane.setRowIndex(node, r +1);
                 }
             }
+            System.out.println(currentGame.getRowCount());
         }
+//        currentGame.getChildren().stream().map(node ->{
+//            node.setStyle(
+//                "-fx-background-color: #181825;" +
+//                "-fx-border-color: #313244;" +
+//                "-fx-opacity: 0.8;" +
+//                "-fx-border-width: 0 0 1 0;"
+//            );
+//        }).collect(Collectors.toCollection(Node));
+        Pane firstRowPane = new Pane();
+        firstRowPane.setStyle("-fx-background-color: #181825;" +
+                "-fx-border-color: #313244;" +
+                "-fx-opacity: 0.8;" +
+                "-fx-border-width: 0 0 1 0;");
+        currentGame.add(firstRowPane,0,4,currentGame.getColumnCount(), 1);
         return currentGame;
     }
 }

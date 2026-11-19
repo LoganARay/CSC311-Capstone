@@ -1,7 +1,7 @@
 package edu.farmingdale.csc311capstone.Tetris;
 
 public class TetrisPieces {
-    public static int[] setStartPiece(int num){
+    public static int[] setStartPiece(int num, boolean[][] grid){
         int[] temp= new int[9];
         switch(num){
             case 0 -> { //o-block
@@ -57,7 +57,10 @@ public class TetrisPieces {
             default ->{ }
         }
         temp[1]+=4; temp[3]+=4; temp[5]+=4; temp[7]+=4;
-        return temp;
+        if(freeSpace(temp, grid, 0, 0)){
+            return temp;
+        }
+        return new int[]{-1};
     }
 
     public static int[] helpRotateR(int[] blockCords, boolean[][] grid, int block){
@@ -263,11 +266,11 @@ public class TetrisPieces {
             }
             case 5->{//t-block
                 switch(blockCords[8]){
-                    //⬛⬛⬛⬛⬛⬛⬜⬜⬜⬛⬛⬜
-                    //⬜⬜⬜⬛⬛⬛⬜⬜⬛⬛⬛⬜
-                    //⬛⬜⬛⬛⬛⬛⬜⬜⬛⬜⬜⬜
-                    //⬛⬛⬛⬛⬛⬛⬜⬜⬛⬛⬜⬜
-                    case 0 ->{ //⬛⬜⬜⬛⬜⬜⬜
+                    //⬛⬛⬛⬛
+                    //⬜⬜⬜⬛
+                    //⬛⬜⬛⬛
+                    //⬛⬛⬛⬛
+                    case 0 ->{
                         temp[0]=blockCords[0]+1; temp[1]=blockCords[1]-1; //⬛⬜⬛⬛
                         temp[2]=blockCords[2]; temp[3]=blockCords[3];     //⬜⬜⬛⬛
                         temp[4]=blockCords[4]-1; temp[5]=blockCords[5]+1; //⬛⬜⬛⬛
@@ -280,28 +283,42 @@ public class TetrisPieces {
                         temp[4]=blockCords[4]-1; temp[5]=blockCords[5]-1; //⬛⬛⬛⬛
                         temp[6]=blockCords[6]+1; temp[7]=blockCords[7]-1; //⬛⬛⬛⬛
                         temp[8]=2;
-                        temp=checkBoundRight(temp);
-                        temp=checkBoundLeft(temp);
                         temp=levelOneTSpin(temp, grid);
                     }
                     case 2 ->{
-                        if(grid[blockCords[0]+1][blockCords[1]] && grid[blockCords[0]+1][blockCords[1]-1]
-                                && grid[blockCords[0]][blockCords[1]+1] && grid[blockCords[2]][blockCords[3]+1]
-                                 && grid[blockCords[4]][blockCords[5]-1] && !grid[blockCords[4]][blockCords[5]+1]
-                             && !grid[blockCords[4]][blockCords[5]+2] && !grid[blockCords[4]][blockCords[5]+3]
-                                && !grid[blockCords[4]+1][temp[5]+2]){
-                            temp[0]=blockCords[0]-2; temp[1]=blockCords[1]+3;
-                            temp[2]=blockCords[2]-1; temp[3]=blockCords[3] +2;
-                            temp[4]=blockCords[4]; temp[5]=blockCords[5]+1;
-                            temp[6]=blockCords[6]; temp[7]=blockCords[7]+3;
-                            temp[8]=3;
+                        //tripe t-spin
+                        //⬛⬛⬛⬛⬛🟪⬛       ⬛⬛⬛⬛⬛🟪⬛         ⬛⬛⬛⬛⬛⬛⬛        ⬛⬛⬛⬛⬛⬛⬛         ⬛⬛⬛⬛⬛⬛⬛          ⬛⬛⬛⬛⬛⬛⬛       ⬛⬛⬛⬛⬛⬛⬛
+                        //⬛⬜⬜⬜🟪🟪⬜       ⬛⬜⬜⬜🟪🟪🟪         ⬛⬜⬜⬜⬛🟪⬜        ⬛⬜⬜⬜🟪⬛⬜         ⬛⬜⬜⬜🟪⬛⬜          ⬛⬜⬜⬜⬛⬛⬜       ⬛⬜⬜⬜⬛⬛⬜
+                        //⬛⬜⬜⬛⬛🟪⬜ turn  ⬛⬜⬜⬛⬛⬛⬜  push   ⬛⬜⬜⬛🟪🟪🟪  push  ⬛⬜⬜🟪🟪🟪⬜  turn   ⬛⬜⬜⬛🟪🟪⬜  push    ⬛⬜⬜⬛⬛⬛⬜  push ⬛⬜⬜⬛⬛⬛⬜
+                        //⬛⬜⬜⬛⬜⬜⬜  -->  ⬛⬜⬜⬛⬜⬜⬜  -->    ⬛⬜⬜⬛⬜⬜⬜   -->  ⬛⬜⬜⬛⬜⬜⬜  -->    ⬛⬜⬜⬛🟪⬜⬜   -->    ⬛⬜⬜⬛🟪⬜⬜  -->  ⬛⬜⬜🟪⬜⬜⬜
+                        //⬛⬜⬜⬛⬛⬜⬜       ⬛⬜⬜⬛⬛⬜⬜  down   ⬛⬜⬜⬛⬛⬜⬜  left  ⬛⬜⬜⬛⬛⬜⬜         ⬛⬜⬜⬛⬛⬜⬜ down x2  ⬛⬜⬜⬛🟪🟪⬜  left ⬛⬜⬜🟪🟪⬜⬜
+                        //⬛⬜⬜⬛⬜⬜⬜       ⬛⬜⬜⬛⬜⬜⬜         ⬛⬜⬜⬛⬜⬜⬜        ⬛⬜⬜⬛⬜⬜⬜         ⬛⬜⬜⬛⬜⬜⬜          ⬛⬜⬜⬛🟪⬜⬜       ⬛⬜⬜🟪⬜⬜⬜
+                        boolean regSpin=true;
+                        if((blockCords[1]<=20) && blockCords[0]<=8) {
+                            if ((grid[blockCords[0] + 1][blockCords[1]] && grid[blockCords[0] + 1][blockCords[1] - 1]
+                                    && grid[blockCords[0]][blockCords[1] + 1] && grid[blockCords[2]][blockCords[3] + 1]
+                                    && grid[blockCords[4]][blockCords[5] - 1] && !grid[blockCords[4]][blockCords[5] + 1]
+                                    && !grid[blockCords[4]][blockCords[5] + 2] && !grid[blockCords[4]][blockCords[5] + 3]
+                                    && !grid[blockCords[4] + 1][temp[5] + 2])) {
+                                regSpin=false;
+                                temp[0] = blockCords[0] - 2;
+                                temp[1] = blockCords[1] + 3;
+                                temp[2] = blockCords[2] - 1;
+                                temp[3] = blockCords[3] + 2;
+                                temp[4] = blockCords[4];
+                                temp[5] = blockCords[5] + 1;
+                                temp[6] = blockCords[6];
+                                temp[7] = blockCords[7] + 3;
+                                temp[8] = 3;
 
-                        }else{
-                        temp[0]=blockCords[0]-1; temp[1]=blockCords[1]+1; //⬛⬜⬛⬛
-                        temp[2]=blockCords[2]; temp[3]=blockCords[3];     //⬛⬜⬜⬛
-                        temp[4]=blockCords[4]+1; temp[5]=blockCords[5]-1; //⬛⬜⬛⬛
-                        temp[6]=blockCords[6]+1; temp[7]=blockCords[7]+1; //⬛⬛⬛⬛
-                        temp[8]=3;
+                            }
+                        }
+                        if(regSpin){
+                            temp[0]=blockCords[0]-1; temp[1]=blockCords[1]+1; //⬛⬜⬛⬛
+                            temp[2]=blockCords[2]; temp[3]=blockCords[3];     //⬛⬜⬜⬛
+                            temp[4]=blockCords[4]+1; temp[5]=blockCords[5]-1; //⬛⬜⬛⬛
+                            temp[6]=blockCords[6]+1; temp[7]=blockCords[7]+1; //⬛⬛⬛⬛
+                            temp[8]=3;
                         }
                     }
                     case 3 ->{
@@ -310,7 +327,6 @@ public class TetrisPieces {
                         temp[4]=blockCords[4]+1; temp[5]=blockCords[5]+1; //⬛⬜⬛⬛
                         temp[6]=blockCords[6]-1; temp[7]=blockCords[7]+1; //⬛⬛⬛⬛
                         temp[8]=0;
-                        temp=checkBoundLeft(temp);
                     }
                     default ->{}
                 }
@@ -604,7 +620,6 @@ public class TetrisPieces {
                         temp[8]=2;
                         temp=checkBoundRight(temp);
                         temp=checkBoundLeft(temp);
-                        temp=levelOneTSpin(temp, grid);
                     }
                     default ->{}
                 }
@@ -657,7 +672,6 @@ public class TetrisPieces {
         }
         temp=checkBoundLeft(temp);
         temp=checkBoundRight(temp);
-
         return rotationSafety(grid, temp, blockCords);
     }
 
@@ -694,26 +708,56 @@ public class TetrisPieces {
     }
 
     public static int[] rotationSafety(boolean[][] grid, int[] temp, int[] og){
-        int[] temp2=temp;
-        if(isGridOccupied(grid, temp2)){
-            for(int i=0; i<3; i++){
-                temp2[1]--; temp2[3]--; temp2[5]--; temp2[7]--;
-                if(!isGridOccupied(grid, temp2)){
-                    return temp;
-                }
-            }
-            temp2=temp;
-            temp2[0]--; temp2[2]--; temp2[4]--; temp2[6]--;
-            if(!isGridOccupied(grid, temp2)){
-                return temp;
-            }
-            temp2=temp;
-            temp2[0]++; temp2[2]++; temp2[4]++; temp2[6]++;
-            if(!isGridOccupied(grid, temp2)){
-                return temp;
+//        int[] temp2=temp;
+//        if(isGridOccupied(grid, temp2)){
+//            for(int i=0; i<3; i++){
+//                temp2[1]--; temp2[3]--; temp2[5]--; temp2[7]--;
+//                if(!isGridOccupied(grid, temp2)){
+//                    return temp;
+//                }
+//            }
+//            temp2=temp;
+//            temp2[0]--; temp2[2]--; temp2[4]--; temp2[6]--;
+//            if(!isGridOccupied(grid, temp2)){
+//                return temp;
+//            }
+//            temp2=temp;
+//            temp2[0]++; temp2[2]++; temp2[4]++; temp2[6]++;
+//            if(!isGridOccupied(grid, temp2)){
+//                return temp;
+//            }
+//        }
+//        return temp2;
+        if(freeSpace(temp, grid, 0, 0)){
+            og= temp;
+        }
+        else if(freeSpace(temp, grid, 1, 0)){
+            temp[0]++; temp[2]++; temp[4]++; temp[6]++;
+            og=temp;
+        }
+        else if(freeSpace(temp, grid, -1, 0)){
+            temp[0]--; temp[2]--; temp[4]--; temp[6]--;
+            og=temp;
+        }
+        else if(freeSpace(temp, grid, 0, -1)){
+            temp[1]--; temp[3]--; temp[5]--; temp[7]--;
+            og=temp;
+        }
+        else if(freeSpace(temp, grid, 0, -2)){
+            temp[1]--; temp[3]--; temp[5]--; temp[7]--;
+            temp[1]--; temp[3]--; temp[5]--; temp[7]--;
+            og=temp;
+        }
+        return og;
+    }
+
+    public static boolean freeSpace(int[] temp, boolean[][] grid, int x, int y){
+        for(int i=0; i<7; i+=2){
+            if(!((temp[i]+x)>=0) || !((temp[i]+x)<=9) || !((temp[i+1]+y)>=0) || !((temp[i+1]+y)<=23) || grid[temp[i]+x][temp[i+1]+y]){//if any block has a collision and in bounds
+                return false;
             }
         }
-        return temp2;
+        return true;
     }
 
     public static int[] safetyBound(int[] temp2, int axis, int inc){
@@ -723,13 +767,22 @@ public class TetrisPieces {
 
     //
     public static int[] levelOneTSpin(int[] temp, boolean[][] grid){
-        if( ( ( (grid[temp[2]][temp[3]+2] && grid[temp[4]][temp[5]+2]) || (temp[1]+1)==19)) && grid[temp[4]-1][temp[5]] && ((temp[0]+1)==10) || (( grid[temp[0]][temp[1]]) && grid[temp[0]][temp[1]+1])){
-            for(int i=2; i<8; i=i+2){
-                if(grid[temp[i]-1][temp[i+1]+1]){
-                    return temp;
+        if(temp[3]+2<=23 && temp[5]+2<=23 && temp[1]+1<=23 && temp[4]-1>=0 && temp[0]+1<=9) {
+            if ((((grid[temp[2]][temp[3]+2] && grid[temp[4]][temp[5]+2]) || (temp[1] + 1) == 23)) && grid[temp[4] - 1][temp[5]] && ((temp[0] + 1) == 10) || ((grid[temp[0]][temp[1]]) && grid[temp[0]][temp[1] + 1])) {
+                for (int i = 2; i < 8; i = i + 2) {
+                    if (grid[temp[i] - 1][temp[i + 1] + 1]) {
+                        return temp;
+                    }
                 }
+                temp[0]--;
+                temp[1]++;
+                temp[2]--;
+                temp[3]++;
+                temp[4]--;
+                temp[5]++;
+                temp[6]--;
+                temp[7]++;
             }
-            temp[0]--; temp[1]++; temp[2]--; temp[3]++; temp[4]--; temp[5]++; temp[6]--; temp[7]++;
         }
         return temp;
     }

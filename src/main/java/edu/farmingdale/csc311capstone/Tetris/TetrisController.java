@@ -1,7 +1,10 @@
 package edu.farmingdale.csc311capstone.Tetris;
 
 import javafx.animation.AnimationTimer;
+import javafx.beans.binding.Bindings;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
+import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
@@ -9,7 +12,10 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.RowConstraints;
+import javafx.scene.text.Text;
 
+import java.util.Arrays;
 import java.util.List;
 
 public class TetrisController {
@@ -23,6 +29,17 @@ public class TetrisController {
     private double baseSnapInterval;
     private TetrisMechanics tm;
 
+    @FXML
+    public RowConstraints row20;
+
+    @FXML
+    public RowConstraints row21;
+
+    @FXML
+    public RowConstraints row22;
+
+    @FXML
+    public RowConstraints row23;
 
     @FXML
     private HBox root;
@@ -31,10 +48,13 @@ public class TetrisController {
     private GridPane gamespace;
 
     @FXML
+    private Label gameOver;
+
+    @FXML
     private void initialize(){
+        gameOver.setVisible(false);
         tm= new TetrisMechanics();
         root.setFocusTraversable(true);
-        gamespace.setTranslateY(-80.0);
         gamespace.setPickOnBounds(true);
         grid= new boolean[10][24];
         int[] hz_spinSetUpL= {4,23,6,22};
@@ -110,7 +130,6 @@ public class TetrisController {
                 lastUpdate = 0; // Reset so next start doesn't cause a massive jump
             }
         };
-        at.start();
 
         root.sceneProperty().addListener(
                 (observable, oldScene, newScene) -> {
@@ -124,6 +143,14 @@ public class TetrisController {
                     );
                 }
         );
+        gamespace.paddingProperty().bind(
+                Bindings.createObjectBinding(() -> {
+                    double vPad = root.getHeight() * 0.1;
+                    double hPad = (root.getWidth() * 0.50) - 100.0;
+                    return new Insets(vPad, hPad, vPad, hPad);
+                }, root.widthProperty(), root.heightProperty())
+        );
+        at.start();
     }
 
     private void keyPressed(KeyEvent key){
@@ -192,8 +219,12 @@ public class TetrisController {
     public void newBlockEnters(){
         blockNumber= tm.getBlock();
         currentBlock=TetrisMechanics.createBlock(blockNumber);
-        pieceCords=TetrisPieces.setStartPiece(blockNumber);
+        pieceCords=TetrisPieces.setStartPiece(blockNumber, grid);
         addGridChildren();
+        if(pieceCords[0]==-1){ //game over
+            at.stop();
+
+        }
     }
 
     public void removeGridChildren(){
@@ -221,5 +252,9 @@ public class TetrisController {
             gamespace.add(demoBlocks, setUp[i], setUp[i+1]);
             grid[setUp[i]][setUp[i+1]]=true;
         }
+    }
+
+    public void pauseMenu(){
+        System.out.println("Stop");
     }
 }
