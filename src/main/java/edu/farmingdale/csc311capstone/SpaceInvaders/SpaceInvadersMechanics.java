@@ -16,6 +16,8 @@ import java.util.Random;
  * Step 5 (alien fire and lives): the lowest alien in a random column fires down. Alien shots chip shields
  * and cost a life when they hit the cannon. The game pauses briefly while the cannon respawns, a bonus life
  * comes at 1500 points, and losing the last life ends the game.
+ * Step 6 (mystery ship and waves): a mystery ship crosses the top every 20 to 30 seconds for bonus points,
+ * and clearing every alien starts a new wave a little lower down, with fresh shields.
  */
 public final class SpaceInvadersMechanics {
     public static final double PLAYFIELD_WIDTH = 560;
@@ -38,6 +40,8 @@ public final class SpaceInvadersMechanics {
     public static final double ALIEN_SPACING_Y = 32;
     public static final double FORMATION_START_X = 80;             // center of the top-left alien
     public static final double FORMATION_START_Y = 90;
+    public static final double WAVE_START_DROP = 16;               // each new wave starts this much lower
+    public static final double MAX_WAVE_START_DROP = 96;
     public static final double ALIEN_STEP_X = 10;                  // the formation moves in little jumps
     public static final double ALIEN_STEP_DOWN = 16;               // and drops when it reaches an edge
     public static final double SLOWEST_STEP_TIME = 0.6;            // seconds between jumps with all 55 aliens
@@ -45,6 +49,15 @@ public final class SpaceInvadersMechanics {
     public static final double ALIEN_SHOT_SPEED = 200;
     public static final double ALIEN_FIRE_INTERVAL = 0.9;          // average seconds between alien shots
     public static final int MAX_ALIEN_SHOTS = 3;
+
+    // Mystery ship that sometimes crosses the top
+    public static final double MYSTERY_Y = 50;
+    public static final double MYSTERY_WIDTH = 40;
+    public static final double MYSTERY_HEIGHT = 16;
+    public static final double MYSTERY_SPEED = 120;
+    public static final double MYSTERY_MIN_WAIT = 20;
+    public static final double MYSTERY_MAX_WAIT = 30;
+    public static final int[] MYSTERY_POINTS = {50, 100, 150, 300};
 
     // Shields
     public static final int SHIELD_COUNT = 4;
@@ -68,6 +81,12 @@ public final class SpaceInvadersMechanics {
     private double alienFireTimer = ALIEN_FIRE_INTERVAL;
     private final List<Shield> shields = new ArrayList<>();
 
+    private boolean mysteryActive = false;
+    private double mysteryX;
+    private int mysteryDirection;
+    private double mysteryTimer;
+    private int lastMysteryPoints = 0;
+
     public SpaceInvadersMechanics() {
         this(new Random());
     }
@@ -75,6 +94,7 @@ public final class SpaceInvadersMechanics {
     /** Tests pass a seeded Random so alien fire is predictable. */
     SpaceInvadersMechanics(Random random) {
         this.random = random;
+        mysteryTimer = nextMysteryWait();
         startWave();
     }
 
@@ -97,8 +117,39 @@ public final class SpaceInvadersMechanics {
         }
         marchAliens(deltaSeconds);
         updateAlienFire(deltaSeconds);
+        updateMystery(deltaSeconds);
         updateShot(deltaSeconds);
         updateAlienShots(deltaSeconds);
+        if (aliens.isEmpty()) {
+            wave++;
+            startWave();
+        }
+    }
+
+    private void updateMystery(double deltaSeconds) {
+        if (mysteryActive) {
+            mysteryX += mysteryDirection * MYSTERY_SPEED * deltaSeconds;
+            if (mysteryX < -MYSTERY_WIDTH || mysteryX > PLAYFIELD_WIDTH + MYSTERY_WIDTH) {
+                mysteryActive = false;
+                mysteryTimer = nextMysteryWait();
+            }
+            return;
+        }
+        mysteryTimer -= deltaSeconds;
+        if (mysteryTimer <= 0) {
+            startMystery(random.nextBoolean() ? 1 : -1);
+        }
+    }
+
+    /** Sends the mystery ship across from the left (direction 1) or the right (direction -1). */
+    private void startMystery(int direction) {
+        mysteryActive = true;
+        mysteryDirection = direction;
+        mysteryX = direction > 0 ? -MYSTERY_WIDTH / 2 : PLAYFIELD_WIDTH + MYSTERY_WIDTH / 2;
+    }
+
+    private double nextMysteryWait() {
+        return MYSTERY_MIN_WAIT + random.nextDouble() * (MYSTERY_MAX_WAIT - MYSTERY_MIN_WAIT);
     }
 
     /** Time between formation jumps: slow with a full formation, faster as aliens die. */
@@ -243,6 +294,14 @@ public final class SpaceInvadersMechanics {
                 return;
             }
         }
+        if (mysteryActive && rectsOverlap(playerShot.getLeft(), playerShot.getTop(), Bullet.WIDTH, Bullet.HEIGHT,
+                mysteryX - MYSTERY_WIDTH / 2, MYSTERY_Y - MYSTERY_HEIGHT / 2, MYSTERY_WIDTH, MYSTERY_HEIGHT)) {
+            lastMysteryPoints = MYSTERY_POINTS[random.nextInt(MYSTERY_POINTS.length)];
+            addScore(lastMysteryPoints);
+            mysteryActive = false;
+            mysteryTimer = nextMysteryWait();
+            playerShot = null;
+        }
     }
 
     static boolean rectsOverlap(double ax, double ay, double aw, double ah,
@@ -254,14 +313,19 @@ public final class SpaceInvadersMechanics {
         return Math.max(min, Math.min(max, value));
     }
 
-    /** Builds a fresh formation and fresh shields. */
+    /** Builds a fresh formation (a little lower each wave) and fresh shields. */
     private void startWave() {
         aliens.clear();
+        alienShots.clear();
+        playerShot = null;
+        marchDirection = 1;
+        stepTimer = 0;
+        double drop = Math.min(MAX_WAVE_START_DROP, (wave - 1) * WAVE_START_DROP);
         for (int row = 0; row < ALIEN_ROWS; row++) {
             Alien.Type type = row == 0 ? Alien.Type.SQUID : row <= 2 ? Alien.Type.CRAB : Alien.Type.OCTOPUS;
             for (int col = 0; col < ALIEN_COLUMNS; col++) {
                 aliens.add(new Alien(FORMATION_START_X + col * ALIEN_SPACING_X,
-                        FORMATION_START_Y + row * ALIEN_SPACING_Y, type, col));
+                        FORMATION_START_Y + drop + row * ALIEN_SPACING_Y, type, col));
             }
         }
         shields.clear();
@@ -284,6 +348,12 @@ public final class SpaceInvadersMechanics {
         alienShots.add(shot);
     }
 
+    /** Starts the mystery ship right away at x. Used by tests. */
+    void startMysteryForTest(int direction, double x) {
+        startMystery(direction);
+        mysteryX = x;
+    }
+
     /** Stops aliens from firing on their own. Used by tests. */
     void disableAlienFire() {
         alienFireTimer = Double.POSITIVE_INFINITY;
@@ -297,6 +367,19 @@ public final class SpaceInvadersMechanics {
     /** True once the aliens reach the cannon or the last life is lost. */
     public boolean isGameOver() {
         return lives <= 0 || aliensLanded;
+    }
+
+    public boolean isMysteryActive() {
+        return mysteryActive;
+    }
+
+    public double getMysteryX() {
+        return mysteryX;
+    }
+
+    /** Points from the last mystery ship hit, 0 if none has been hit yet. */
+    public int getLastMysteryPoints() {
+        return lastMysteryPoints;
     }
 
     public boolean isRespawning() {

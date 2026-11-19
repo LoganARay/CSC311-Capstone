@@ -35,6 +35,7 @@ public class SpaceInvadersController {
     private static final Color CRAB = Color.CYAN;
     private static final Color OCTOPUS = Color.LIMEGREEN;
     private static final Color ALIEN_SHOT = Color.ORANGERED;
+    private static final Color MYSTERY = Color.RED;
 
     /** Best score for as long as the app is open. */
     private static int highScore = 0;
@@ -118,6 +119,7 @@ public class SpaceInvadersController {
 
         drawShields(g);
         drawAliens(g);
+        drawMystery(g);
         drawShot(g);
         drawPlayer(g);
 
@@ -227,6 +229,24 @@ public class SpaceInvadersController {
                 g.fillRect(left + 8, top + 5, 4, 3);
                 g.fillRect(left + 16, top + 5, 4, 3);
             }
+        }
+    }
+
+    private void drawMystery(GraphicsContext g) {
+        if (!game.isMysteryActive()) {
+            return;
+        }
+        double x = game.getMysteryX();
+        double y = SpaceInvadersMechanics.MYSTERY_Y;
+        double w = SpaceInvadersMechanics.MYSTERY_WIDTH;
+        double h = SpaceInvadersMechanics.MYSTERY_HEIGHT;
+        // A saucer: a wide body, a dome on top and a row of lights
+        g.setFill(MYSTERY);
+        g.fillOval(x - w / 2, y - h / 4, w, h * 0.6);
+        g.fillOval(x - w / 4, y - h / 2, w / 2, h * 0.6);
+        g.setFill(Color.BLACK);
+        for (int i = -1; i <= 1; i++) {
+            g.fillRect(x + i * 10 - 2, y, 4, 3);
         }
     }
 
