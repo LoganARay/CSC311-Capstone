@@ -4,21 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-/**
- * Game rules and state for classic Space Invaders. Kept free of JavaFX so it can be unit tested.
- *
- * Step 1 (graphics): the starting layout of the cannon, the alien formation and the shields.
- * Step 2 (movement): the cannon slides left and right and stops at the edges.
- * Step 3 (shooting): one shot on screen at a time. It destroys the first alien it touches
- * (adding that alien's points) or knocks a block out of a shield.
- * Step 4 (marching): the formation jumps sideways, drops and turns around at the edges, and speeds up
- * as aliens die. Aliens chew through shields they march into, and reaching the cannon's row ends the game.
- * Step 5 (alien fire and lives): the lowest alien in a random column fires down. Alien shots chip shields
- * and cost a life when they hit the cannon. The game pauses briefly while the cannon respawns, a bonus life
- * comes at 1500 points, and losing the last life ends the game.
- * Step 6 (mystery ship and waves): a mystery ship crosses the top every 20 to 30 seconds for bonus points,
- * and clearing every alien starts a new wave a little lower down, with fresh shields.
- */
 public final class SpaceInvadersMechanics {
     public static final double PLAYFIELD_WIDTH = 560;
     public static final double PLAYFIELD_HEIGHT = 560;

@@ -15,9 +15,9 @@
             fx:controller="edu.farmingdale.csc311capstone.SpaceInvaders.SpaceInvadersController">
 
     <top>
-        <HBox alignment="CENTER_LEFT" spacing="14.0">
+        <HBox fx:id="topBar" alignment="CENTER_LEFT" spacing="14.0">
             <padding><Insets bottom="8.0" left="14.0" right="14.0" top="10.0"/></padding>
-            <Button focusTraversable="false" onAction="#onMainMenu" text="Main Menu"/>
+            <Button fx:id="titleButton" focusTraversable="false" onAction="#onShowTitle" text="Space Invaders Menu"/>
             <Pane HBox.hgrow="ALWAYS"/>
             <Label fx:id="waveLabel" textFill="WHITE"/>
             <Label fx:id="livesLabel" textFill="WHITE"/>
@@ -36,7 +36,7 @@
     </center>
 
     <bottom>
-        <Label text="Left/Right or A/D: move    Space: fire    Enter: play again" textFill="GRAY">
+        <Label fx:id="controlsLabel" textFill="GRAY">
             <padding><Insets bottom="10.0" left="14.0" top="8.0"/></padding>
         </Label>
     </bottom>
