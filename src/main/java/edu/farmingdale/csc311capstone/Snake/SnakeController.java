@@ -17,6 +17,8 @@ import javafx.scene.control.Label;
 import javafx.scene.effect.ColorAdjust;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.image.PixelWriter;
+import javafx.scene.image.WritableImage;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Pane;
@@ -87,6 +89,19 @@ public class SnakeController {
     /** How much the picture flickers (0 = steady). */
     private static final double FLICKER = 0.05;
 
+    // ------------------------------------------------------------------ crash sequence
+    // When the snake crashes: the crash sound, then STATIC_DELAY_MS later the screen fills with
+    // TV static (and its sound) that fades in, holds, and fades out. When the screen is back to
+    // normal, the funeral march and "game over" voice play.
+    private static final long STATIC_DELAY_MS = 500;
+    private static final long STATIC_FADE_IN_MS = 400;
+    private static final long STATIC_HOLD_MS = 600;
+    private static final long STATIC_FADE_OUT_MS = 800;
+    /** How strong the static is at its peak (1 = you can barely see the game). */
+    private static final double STATIC_STRENGTH = 0.85;
+    /** Different random static pictures, swapped every frame so it looks alive. */
+    private static final int STATIC_FRAMES = 8;
+
     // ------------------------------------------------------------------ look
     private static final Color WRAP_WALL = Color.web("#4da3ff");
     private static final Color BUTTON_TEXT = Color.web("#fffbe0");
@@ -129,6 +144,7 @@ public class SnakeController {
     @FXML private Pane crtLayer;
     @FXML private Canvas crtGlass;
     @FXML private Rectangle crtRollBar;
+    @FXML private Canvas crtStatic;
 
     private SnakeMechanics game;
     private Mode mode = Mode.CLASSIC;
@@ -145,6 +161,10 @@ public class SnakeController {
      * so it doesn't repeat every time the demo snake crashes; set this to true to hear it too.
      */
     private static final boolean DEMO_PLAYS_GAME_OVER_MUSIC = false;
+
+    private long crashAt;                    // when the crash sequence started (0 = not running)
+    private boolean staticStarted;
+    private final List<Image> staticFrames = new ArrayList<>();
 
     private SnakeMechanics demo;
     private long demoStartedAt;
@@ -174,6 +194,7 @@ public class SnakeController {
         @Override
         public void handle(long now) {
             animateCrt(now);
+            runCrashSequence(now);
             if (demoIsShowing()) {
                 runDemo(now);
                 lastTick = now;   // the real game waits while the start screen is up
@@ -192,7 +213,11 @@ public class SnakeController {
                 interval = game.tickIntervalMs() * 1_000_000L;
             }
             for (SnakeMechanics.Event event : game.pollEvents()) {
-                sounds.play(event);
+                if (event == SnakeMechanics.Event.CRASHED) {
+                    startCrashSequence(now);
+                } else {
+                    sounds.play(event);
+                }
             }
             if (game.state() != State.RUNNING) {
                 lastTick = now;
@@ -340,6 +365,9 @@ public class SnakeController {
         crtLayer.setClip(new Rectangle(w, h));   // the rolling band never shows outside the glass
         crtGlass.setWidth(w);
         crtGlass.setHeight(h);
+        crtStatic.setWidth(w);
+        crtStatic.setHeight(h);
+        makeStaticFrames(w, h);
 
         GraphicsContext g = crtGlass.getGraphicsContext2D();
         g.clearRect(0, 0, w, h);
@@ -388,10 +416,99 @@ public class SnakeController {
         crtGlass.setOpacity(1 - FLICKER * Math.random());
     }
 
+    // ------------------------------------------------------------------ crash sequence
+
+    private void startCrashSequence(long now) {
+        sounds.playCrash();
+        crashAt = now;
+        staticStarted = false;
+    }
+
+    /** Called every frame: fades the static in and out, then starts the game-over music. */
+    private void runCrashSequence(long now) {
+        if (crashAt == 0) {
+            return;
+        }
+        double ms = (now - crashAt) / 1e6 - STATIC_DELAY_MS;   // time since the static began
+        if (ms < 0) {
+            return;                                            // still just the crash sound
+        }
+        if (!staticStarted) {
+            staticStarted = true;
+            sounds.startStatic();
+        }
+
+        double strength;
+        if (ms < STATIC_FADE_IN_MS) {
+            strength = ms / STATIC_FADE_IN_MS;                                  // fading in
+        } else if (ms < STATIC_FADE_IN_MS + STATIC_HOLD_MS) {
+            strength = 1;                                                       // full static
+        } else if (ms < STATIC_FADE_IN_MS + STATIC_HOLD_MS + STATIC_FADE_OUT_MS) {
+            strength = 1 - (ms - STATIC_FADE_IN_MS - STATIC_HOLD_MS) / STATIC_FADE_OUT_MS;   // fading out
+        } else {
+            // Back to normal: hide the static and play the game-over music.
+            crashAt = 0;
+            crtStatic.setVisible(false);
+            sounds.stopStatic();
+            sounds.playGameOverMusic();
+            return;
+        }
+        sounds.setStaticVolume(strength);
+        drawStatic(strength);
+    }
+
+    /** Stops the crash sequence early, e.g. when a new game starts. */
+    private void cancelCrashSequence() {
+        crashAt = 0;
+        if (crtStatic != null) {
+            crtStatic.setVisible(false);
+        }
+    }
+
+    /** Draws one frame of static over the screen: random snow plus a few bright streaks. */
+    private void drawStatic(double strength) {
+        double w = crtStatic.getWidth();
+        double h = crtStatic.getHeight();
+        GraphicsContext g = crtStatic.getGraphicsContext2D();
+        g.clearRect(0, 0, w, h);
+        g.setImageSmoothing(false);
+        g.setGlobalAlpha(STATIC_STRENGTH * strength);
+        Image frame = staticFrames.get((int) (Math.random() * staticFrames.size()));
+        double shift = Math.random() * 6 - 3;                  // the picture jitters up and down
+        g.drawImage(frame, 0, shift, w, h);
+        g.setFill(Color.rgb(255, 255, 255, 0.35));
+        for (int i = 0; i < 3; i++) {                          // horizontal streaks
+            g.fillRect(0, Math.random() * h, w, 1 + Math.random() * 4);
+        }
+        g.setGlobalAlpha(1);
+        crtStatic.setVisible(true);
+        crtGlass.setOpacity(1 - (FLICKER + 0.4 * strength) * Math.random());   // flickers harder too
+    }
+
+    /** Makes the random snow pictures once, at a third of the screen's size (chunky pixels). */
+    private void makeStaticFrames(double w, double h) {
+        staticFrames.clear();
+        int sw = Math.max(1, (int) (w / 3));
+        int sh = Math.max(1, (int) (h / 3));
+        Random random = new Random();
+        for (int f = 0; f < STATIC_FRAMES; f++) {
+            WritableImage frame = new WritableImage(sw, sh);
+            PixelWriter pixels = frame.getPixelWriter();
+            for (int y = 0; y < sh; y++) {
+                for (int x = 0; x < sw; x++) {
+                    int gray = random.nextInt(256);
+                    pixels.setArgb(x, y, 0xFF000000 | gray << 16 | gray << 8 | gray);
+                }
+            }
+            staticFrames.add(frame);
+        }
+    }
+
     // ------------------------------------------------------------------ game actions
 
     private void startNewGame() {
         sounds.stopAll(); // cut off the game-over / win sounds from the last round
+        cancelCrashSequence();
         game = newGameFor(mode);
         lastTick = 0;
         if (cell > 0) {
@@ -449,6 +566,7 @@ public class SnakeController {
     }
 
     private void quitToMainMenu() {
+        cancelCrashSequence();
         loop.stop();
         sounds.stopAll();
         SceneSwitcher.showMenu(root);

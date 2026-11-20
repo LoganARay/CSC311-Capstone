@@ -31,3 +31,4 @@ The rest are from [Pixabay](https://pixabay.com) under the Pixabay Content Licen
 | `funeral-march.mp3` | Losing | Composiia | 260615 |
 | `game-over-voice.mp3` (trimmed) | Losing | koiroylers | 355993 |
 | `win.mp3` | Filling the board | u_it78ck90s3 | 331233 |
+| `static.mp3` (trimmed to 2.2 s) | TV static after a crash | lenspulse | 597768 |

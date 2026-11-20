@@ -26,9 +26,11 @@ final class SnakeSounds {
     private Media funeralMarch;
     private Media gameOverVoice;
     private Media win;
+    private Media staticNoise;
 
     private boolean enabled;
     private MediaPlayer current;   // whichever long sound is playing right now
+    private MediaPlayer staticPlayer;   // the TV static after a crash (plays alongside the others)
 
     SnakeSounds() {
         try {
@@ -38,6 +40,7 @@ final class SnakeSounds {
             funeralMarch = new Media(url("funeral-march.mp3"));
             gameOverVoice = new Media(url("game-over-voice.mp3"));
             win = new Media(url("win.mp3"));
+            staticNoise = new Media(url("static.mp3"));
             enabled = true;
         } catch (RuntimeException e) {
             System.err.println("Snake sounds are off: " + e.getMessage());
@@ -74,6 +77,55 @@ final class SnakeSounds {
         }
     }
 
+    // ---------------------------------------------------------------- the crash sequence
+    // SnakeController runs the timing: crash sound, then static fading in and out,
+    // then the game-over music. These are the pieces it uses.
+
+    /** Just the crash sound. */
+    void playCrash() {
+        if (enabled) {
+            playInOrder(crash);
+        }
+    }
+
+    /** Starts the TV static silently; raise it with setStaticVolume. */
+    void startStatic() {
+        if (!enabled) {
+            return;
+        }
+        stopStatic();
+        try {
+            staticPlayer = new MediaPlayer(staticNoise);
+            staticPlayer.setVolume(0);
+            staticPlayer.play();
+        } catch (RuntimeException e) {
+            System.err.println("Couldn't play the static sound: " + e.getMessage());
+            staticPlayer = null;
+        }
+    }
+
+    /** 0 = silent, 1 = full volume. Called every frame to fade the static in and out. */
+    void setStaticVolume(double volume) {
+        if (staticPlayer != null) {
+            staticPlayer.setVolume(Math.max(0, Math.min(1, volume)));
+        }
+    }
+
+    void stopStatic() {
+        if (staticPlayer != null) {
+            staticPlayer.stop();
+            staticPlayer.dispose();
+            staticPlayer = null;
+        }
+    }
+
+    /** The funeral march, then the "game over" voice. */
+    void playGameOverMusic() {
+        if (enabled) {
+            playInOrder(funeralMarch, gameOverVoice);
+        }
+    }
+
     /** Silences everything, e.g. when starting a new game or leaving to the menu. */
     void stopAll() {
         if (!enabled) {
@@ -81,6 +133,7 @@ final class SnakeSounds {
         }
         appleSound.stop();
         goldenApple.stop();
+        stopStatic();
         if (current != null) {
             MediaPlayer player = current;
             current = null;
