@@ -14,6 +14,7 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.effect.ColorAdjust;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
@@ -22,6 +23,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
@@ -49,31 +51,25 @@ public class SnakeController {
     // ------------------------------------------------------------------ the TV picture
     // Measured in pixels on tv.png. If you swap in a different TV picture,
     // update these to match its size and where its screen is.
-    private static final double TV_W = 1378;
-    private static final double TV_H = 947;
-    /** The whole see-through screen opening (filled with dark glass behind the TV). */
-    private static final double GLASS_X = 179;
-    private static final double GLASS_Y = 91;
-    private static final double GLASS_W = 1039;
-    private static final double GLASS_H = 778;
-    /** The part of the opening that is fully visible (the photo is a tiny bit tilted). */
-    private static final double SCREEN_X = 201;
-    private static final double SCREEN_Y = 95;
-    private static final double SCREEN_W = 1004;
-    private static final double SCREEN_H = 760;
-    /** Leave a little dark glass showing around the board. */
+    private static final double TV_W = 1404;
+    private static final double TV_H = 954;
+    /** The see-through screen opening: an exact rectangle, filled with dark glass behind the TV. */
+    private static final double SCREEN_X = 199;
+    private static final double SCREEN_Y = 93;
+    private static final double SCREEN_W = 1021;
+    private static final double SCREEN_H = 769;
+    /** Leave at least this much dark glass showing around the board. */
     private static final double SCREEN_MARGIN = 14;
     /** The TV takes up at most this much of the monitor. */
     private static final double MAX_SCREEN_FRACTION = 0.85;
 
     // ------------------------------------------------------------------ look
-    private static final Color BOARD_A = Color.web("#1e2b33");
-    private static final Color BOARD_B = Color.web("#22313a");
     private static final Color DEADLY_WALL = Color.web("#f5a142");
     private static final Color WRAP_WALL = Color.web("#4da3ff");
     private static final Color MENU_RED = Color.web("#c62828");
     private static final Color MENU_WHITE = Color.web("#dedede");
     private static final Color MENU_GOLD = Color.web("#ffd34d");
+    private static final Color TITLE = Color.web("#f5f0c8");
 
     // Snake and apple tiles from "Snake Game Assets" by hamuko27, see CREDITS.md
     private static final String GRAPHICS = "/edu/farmingdale/csc311capstone/SnakeGraphics/";
@@ -81,6 +77,10 @@ public class SnakeController {
     private static final Image APPLE = loadImage("snake/apple.png");
     private static final Image GOLDEN_APPLE = loadImage("snake/golden-apple.png");
     private static final Image ROCK = loadImage("snake/rock.png");
+    // Grass from "GRASS+" by SciGho (ninjikin on itch.io), see CREDITS.md
+    private static final Image GRASS_LIGHT = loadImage("grass/grass-light-a.png");
+    private static final Image GRASS_LIGHT_PLAIN = loadImage("grass/grass-light-b.png");
+    private static final String GRASS_DARK = "grass/grass-dark.png";
     /** Snake pieces by file name, e.g. "head-up", "turn-down-left", "tail-right". */
     private static final Map<String, Image> SNAKE = new HashMap<>();
 
@@ -96,10 +96,28 @@ public class SnakeController {
 
     private SnakeMechanics game;
     private Mode mode = Mode.CLASSIC;
+
+    // ------------------------------------------------------------------ demo
+    // Like an arcade machine, a game plays itself behind the start screen.
+    /** The demo starts over after this long, even if the snake is still alive. */
+    private static final long DEMO_MAX_NS = 40_000_000_000L;
+    /** How long a crashed demo stays on screen before it starts over. */
+    private static final long DEMO_PAUSE_NS = 1_500_000_000L;
+    /** The demo's snake, apples and rocks are drawn see-through by this much. */
+    private static final double DEMO_OPACITY = 0.7;
+
+    private SnakeMechanics demo;
+    private long demoStartedAt;
+    private long demoLastTick;
+    private long demoOverAt;
+
+    /** The game being drawn right now: the demo on the start screen, otherwise the real game. */
+    private SnakeMechanics shown;
     private final SnakeSounds sounds = new SnakeSounds();
     private long lastTick;
 
     private int cell;             // size of one board square on screen, in pixels
+    private int grassSize;        // grass tiles are drawn at a whole-number multiple of 16 px so they stay crisp
     private double buttonHeight;  // size of the menu buttons, in pixels
 
     // ------------------------------------------------------------------ menus
@@ -114,6 +132,12 @@ public class SnakeController {
     private final AnimationTimer loop = new AnimationTimer() {
         @Override
         public void handle(long now) {
+            if (demoIsShowing()) {
+                runDemo(now);
+                lastTick = now;   // the real game waits while the start screen is up
+                draw();
+                return;
+            }
             if (lastTick == 0) {
                 lastTick = now;
             }
@@ -181,18 +205,25 @@ public class SnakeController {
         tvPane.setPrefSize(tvW, tvH);
         tvPane.setMaxSize(tvW, tvH);
 
-        // The dark glass fills the whole screen opening.
-        screenGlass.setX(GLASS_X * scale);
-        screenGlass.setY(GLASS_Y * scale);
-        screenGlass.setWidth(GLASS_W * scale);
-        screenGlass.setHeight(GLASS_H * scale);
+        // The dark glass fills the screen opening exactly.
+        screenGlass.setX(SCREEN_X * scale);
+        screenGlass.setY(SCREEN_Y * scale);
+        screenGlass.setWidth(SCREEN_W * scale);
+        screenGlass.setHeight(SCREEN_H * scale);
 
-        // The board gets the biggest whole-pixel cell size that fits on the screen.
+        // The board gets the biggest whole-pixel cell size that fits on the screen,
+        // and is centered in the middle of it.
         double safeW = (SCREEN_W - 2 * SCREEN_MARGIN) * scale;
         double safeH = (SCREEN_H - 2 * SCREEN_MARGIN) * scale;
         cell = (int) Math.floor(Math.min(safeW / game.width(), safeH / game.height()));
         canvas.setWidth(game.width() * cell);
         canvas.setHeight(game.height() * cell);
+
+        // Dark grass fills the screen around the board (the part you can't play on).
+        grassSize = 16 * Math.max(1, Math.round(cell / 16f));
+        Image darkGrass = loadImage(GRASS_DARK, grassSize);
+        screenGlass.setFill(new ImagePattern(darkGrass, screenGlass.getX(), screenGlass.getY(),
+                grassSize, grassSize, false));
 
         double centerX = (SCREEN_X + SCREEN_W / 2) * scale;
         double centerY = (SCREEN_Y + SCREEN_H / 2) * scale;
@@ -205,6 +236,39 @@ public class SnakeController {
         menuBox.setLayoutY(canvas.getLayoutY());
         menuBox.setPrefSize(canvas.getWidth(), canvas.getHeight());
         buttonHeight = Math.min(80, (canvas.getHeight() - cell * 4.5 - 7 * menuBox.getSpacing()) / 6);
+    }
+
+    // ------------------------------------------------------------------ demo
+
+    /** The demo plays on the start screen and on the Levels screen opened from it. */
+    private boolean demoIsShowing() {
+        return menu == Menu.START || (menu == Menu.LEVELS && levelsBackTo == Menu.START);
+    }
+
+    /** Moves the demo snake along, and starts a new demo when it crashes or runs too long. */
+    private void runDemo(long now) {
+        boolean needNew = demo == null || demo.mode() != mode
+                || now - demoStartedAt > DEMO_MAX_NS
+                || (demo.isOver() && now - demoOverAt > DEMO_PAUSE_NS);
+        if (needNew) {
+            demo = new SnakeMechanics(mode);   // shows the level that's currently picked
+            demo.start();
+            demoStartedAt = now;
+            demoLastTick = now;
+            demoOverAt = 0;
+        }
+        long interval = demo.tickIntervalMs() * 1_000_000L;
+        int safety = 0;
+        while (!demo.isOver() && now - demoLastTick >= interval && safety++ < 5) {
+            demoLastTick += interval;
+            demo.turn(SnakeAutopilot.chooseMove(demo));
+            demo.step();
+            interval = demo.tickIntervalMs() * 1_000_000L;
+        }
+        demo.pollEvents();   // throw the events away: the demo plays no sounds
+        if (demo.isOver() && demoOverAt == 0) {
+            demoOverAt = now;
+        }
     }
 
     // ------------------------------------------------------------------ game actions
@@ -360,14 +424,14 @@ public class SnakeController {
         items.addAll(list);
 
         List<Node> children = new ArrayList<>();
-        children.add(menuLabel(title, cell * 2.2, Color.web("#8db04f")));
+        children.add(menuLabel(title, cell * 2.2, TITLE));
         if (subtitle != null) {
             children.add(menuLabel(subtitle, cell * 0.7, Color.web("#cfd8e3")));
         }
         for (MenuItem item : items) {
             children.add(item.button);
         }
-        children.add(menuLabel("↑ ↓ or W S to choose  •  Enter to select", cell * 0.55, Color.web("#8a96a3")));
+        children.add(menuLabel("↑ ↓ or W S to choose  •  Enter to select", cell * 0.55, Color.web("#cfd8e3")));
         menuBox.getChildren().setAll(children);
         menuBox.setVisible(true);
 
@@ -483,18 +547,20 @@ public class SnakeController {
     private void draw() {
         GraphicsContext g = canvas.getGraphicsContext2D();
         g.setImageSmoothing(false);   // keep the pixel art crisp
+        boolean isDemo = demoIsShowing() && demo != null;
+        shown = isDemo ? demo : game;
 
-        // Checkerboard
-        for (int y = 0; y < game.height(); y++) {
-            for (int x = 0; x < game.width(); x++) {
-                g.setFill((x + y) % 2 == 0 ? BOARD_A : BOARD_B);
-                g.fillRect(x * cell, y * cell, cell, cell);
+        // Bright grass on the playing area. Every so often a plainer tile, so it doesn't look repeated.
+        for (int ty = 0; ty * grassSize < canvas.getHeight(); ty++) {
+            for (int tx = 0; tx * grassSize < canvas.getWidth(); tx++) {
+                Image tile = (tx * 7 + ty * 13) % 5 == 0 ? GRASS_LIGHT_PLAIN : GRASS_LIGHT;
+                g.drawImage(tile, tx * grassSize, ty * grassSize, grassSize, grassSize);
             }
         }
 
         // Solid orange walls in modes where they kill you; wrap modes get a dashed blue edge.
         g.setLineWidth(3);
-        if (game.wrapsAround()) {
+        if (shown.wrapsAround()) {
             g.setStroke(WRAP_WALL);
             g.setLineDashes(8, 6);
         } else {
@@ -504,20 +570,22 @@ public class SnakeController {
         g.strokeRect(1.5, 1.5, canvas.getWidth() - 3, canvas.getHeight() - 3);
         g.setLineDashes();
 
-        for (Point p : game.obstacles()) {
+        g.setGlobalAlpha(isDemo ? DEMO_OPACITY : 1.0);
+        for (Point p : shown.obstacles()) {
             drawTile(g, ROCK, p);
         }
-        if (game.food() != null) {
-            drawTile(g, APPLE, game.food());
+        if (shown.food() != null) {
+            drawTile(g, APPLE, shown.food());
         }
-        if (game.goldenApple() != null) {
-            boolean blinking = game.goldenTicksLeft() < 12 && (game.goldenTicksLeft() / 2) % 2 == 0;
+        if (shown.goldenApple() != null) {
+            boolean blinking = shown.goldenTicksLeft() < 12 && (shown.goldenTicksLeft() / 2) % 2 == 0;
             if (!blinking) {
-                drawTile(g, GOLDEN_APPLE, game.goldenApple());
+                drawTile(g, GOLDEN_APPLE, shown.goldenApple());
             }
         }
 
         drawSnake(g);
+        g.setGlobalAlpha(1.0);
         if (menu == Menu.NONE) {
             drawHud(g);   // keep the menus uncluttered
         }
@@ -530,26 +598,46 @@ public class SnakeController {
      * the body, and every middle piece is a straight or a turn.
      */
     private void drawSnake(GraphicsContext g) {
-        List<Point> body = game.body();
+        List<Point> body = shown.body();
         int last = body.size() - 1;
-        boolean dead = game.state() == State.GAME_OVER;
+        boolean dead = shown.state() == State.GAME_OVER;
 
-        for (int i = last; i >= 0; i--) {
+        List<Image> tiles = new ArrayList<>();
+        for (int i = 0; i <= last; i++) {
             Point p = body.get(i);
             Direction toFront = i > 0 ? sideTowards(p, body.get(i - 1)) : null;
             Direction toBack = i < last ? sideTowards(p, body.get(i + 1)) : null;
 
             String name;
             if (i == 0) {
-                Direction facing = toBack != null ? toBack.opposite() : game.direction();
+                Direction facing = toBack != null ? toBack.opposite() : shown.direction();
                 name = "head-" + word(facing) + (dead ? "-dead" : "");
             } else if (i == last) {
-                Direction pointing = toFront != null ? toFront.opposite() : game.direction().opposite();
+                Direction pointing = toFront != null ? toFront.opposite() : shown.direction().opposite();
                 name = "tail-" + word(pointing);
             } else {
                 name = middlePiece(toFront, toBack);
             }
-            drawTile(g, snakeTile(name), p);
+            tiles.add(snakeTile(name));
+        }
+
+        // A thin dark outline so the green snake stands out on the green grass:
+        // draw a very dark copy of every piece nudged up, down, left and right, then the snake on top.
+        double alpha = g.getGlobalAlpha();
+        int o = Math.max(2, Math.round(cell / 16f));
+        g.setEffect(new ColorAdjust(0, 0, -0.85, 0));
+        g.setGlobalAlpha(alpha * 0.85);
+        for (int[] nudge : new int[][] {{o, 0}, {-o, 0}, {0, o}, {0, -o}}) {
+            for (int i = last; i >= 0; i--) {
+                Point p = body.get(i);
+                g.drawImage(tiles.get(i), p.x() * cell + nudge[0], p.y() * cell + nudge[1], cell, cell);
+            }
+        }
+        g.setEffect(null);
+        g.setGlobalAlpha(alpha);
+
+        for (int i = last; i >= 0; i--) {
+            drawTile(g, tiles.get(i), body.get(i));
         }
     }
 
@@ -626,7 +714,7 @@ public class SnakeController {
         double h = canvas.getHeight();
 
         if (menu != Menu.NONE) {
-            g.setFill(Color.web("#000000", 0.72));
+            g.setFill(Color.web("#000000", demoIsShowing() ? 0.35 : 0.72));
             g.fillRect(0, 0, w, h);
             return; // the menu buttons are drawn on top by JavaFX
         }
@@ -709,6 +797,15 @@ public class SnakeController {
             lines.add(line.toString());
         }
         return lines;
+    }
+
+    /** Loads a pixel-art image already scaled to size x size with no blurring. */
+    private static Image loadImage(String fileName, double size) {
+        InputStream in = SnakeController.class.getResourceAsStream(GRAPHICS + fileName);
+        if (in == null) {
+            throw new IllegalStateException("Missing Snake graphic: " + GRAPHICS + fileName);
+        }
+        return new Image(in, size, size, false, false);
     }
 
     private static Image loadImage(String fileName) {
