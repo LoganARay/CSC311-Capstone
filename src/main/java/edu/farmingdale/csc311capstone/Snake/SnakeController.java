@@ -26,7 +26,6 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.Screen;
@@ -35,9 +34,11 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 
 /**
  * Connects snake-view.fxml to {@link SnakeMechanics}: runs the game loop,
@@ -66,9 +67,17 @@ public class SnakeController {
 
     // ------------------------------------------------------------------ look
     private static final Color WRAP_WALL = Color.web("#4da3ff");
-    private static final Color MENU_RED = Color.web("#c62828");
-    private static final Color MENU_WHITE = Color.web("#dedede");
-    private static final Color MENU_GOLD = Color.web("#ffd34d");
+    private static final Color BUTTON_TEXT = Color.web("#fffbe0");
+    private static final Color MENU_GOLD = Color.web("#ffe45c");
+    private static final Color SOFT_TEXT = Color.web("#e4ecd8");
+
+    // All text uses the "Press Start 2P" pixel font by CodeMan38 (SIL Open Font License, see SnakeFonts/OFL.txt).
+    private static final String PIXEL_FONT = loadPixelFont();
+
+    // Menu buttons from "Game Interface kit" by mmkhlv. The -selected versions glow.
+    // The images have room around the button for the glow: the button itself is BUTTON_SHARE of the image height.
+    private static final double BUTTON_SHARE = 200.0 / 244.0;
+    private static final double BUTTON_ASPECT = 594.0 / 200.0;   // width / height of the button itself
     private static final Color TITLE = Color.web("#f5f0c8");
 
     // Snake and apple tiles from "Snake Game Assets" by hamuko27, see CREDITS.md
@@ -105,6 +114,12 @@ public class SnakeController {
     private static final long DEMO_MAX_NS = 40_000_000_000L;
     /** How long a crashed demo stays on screen before it starts over. */
     private static final long DEMO_PAUSE_NS = 1_500_000_000L;
+
+    /**
+     * The demo plays the eating and crash sounds. The long game-over music is left out
+     * so it doesn't repeat every time the demo snake crashes; set this to true to hear it too.
+     */
+    private static final boolean DEMO_PLAYS_GAME_OVER_MUSIC = false;
 
     private SnakeMechanics demo;
     private long demoStartedAt;
@@ -173,6 +188,7 @@ public class SnakeController {
 
         startNewGame();
         layoutTv();
+        game.keepClear(hudSquares(mode));   // now that the board's size on screen is known
         showStartScreen();
         loop.start();
     }
@@ -243,7 +259,7 @@ public class SnakeController {
         menuBox.setLayoutX(canvas.getLayoutX());
         menuBox.setLayoutY(canvas.getLayoutY());
         menuBox.setPrefSize(canvas.getWidth(), canvas.getHeight());
-        buttonHeight = Math.min(80, (canvas.getHeight() - cell * 4.5 - 7 * menuBox.getSpacing()) / 6);
+        buttonHeight = Math.min(80, (canvas.getHeight() - cell * 4 - 7 * menuBox.getSpacing()) / 6 * BUTTON_SHARE);
     }
 
     // ------------------------------------------------------------------ demo
@@ -259,7 +275,7 @@ public class SnakeController {
                 || now - demoStartedAt > DEMO_MAX_NS
                 || (demo.isOver() && now - demoOverAt > DEMO_PAUSE_NS);
         if (needNew) {
-            demo = new SnakeMechanics(mode);   // shows the level that's currently picked
+            demo = newGameFor(mode);   // shows the level that's currently picked
             demo.start();
             demoStartedAt = now;
             demoLastTick = now;
@@ -273,7 +289,13 @@ public class SnakeController {
             demo.step();
             interval = demo.tickIntervalMs() * 1_000_000L;
         }
-        demo.pollEvents();   // throw the events away: the demo plays no sounds
+        for (SnakeMechanics.Event event : demo.pollEvents()) {
+            if (DEMO_PLAYS_GAME_OVER_MUSIC) {
+                sounds.play(event);
+            } else {
+                sounds.playShort(event);
+            }
+        }
         if (demo.isOver() && demoOverAt == 0) {
             demoOverAt = now;
         }
@@ -283,11 +305,60 @@ public class SnakeController {
 
     private void startNewGame() {
         sounds.stopAll(); // cut off the game-over / win sounds from the last round
-        game = new SnakeMechanics(mode);
+        game = newGameFor(mode);
         lastTick = 0;
         if (cell > 0) {
             draw();
         }
+    }
+
+    /** A new game where apples and rocks never appear under the score and info text. */
+    private SnakeMechanics newGameFor(Mode m) {
+        SnakeMechanics g = new SnakeMechanics(m);
+        if (cell > 0) {
+            g.keepClear(hudSquares(m));
+        }
+        return g;
+    }
+
+    /**
+     * The board squares covered by the score (top right) and the level info (top left),
+     * measured from the longest text each can show.
+     */
+    private Set<Point> hudSquares(Mode m) {
+        double pad = cell * 0.6;
+        double w = canvas.getWidth();
+        Set<Point> squares = new HashSet<>();
+
+        double scoreWidth = Math.max(textWidth("Score: 9999", pixelFont(cell * 0.7)),
+                textWidth("High Score: 9999", pixelFont(cell * 0.45)));
+        addSquares(squares, w - pad - scoreWidth, 0, w, pad + cell * 1.7);
+
+        String longestInfo = switch (m) {
+            case TIME_ATTACK -> "Time: 99.9s";
+            case SPEED_RUSH -> "Speed: 22.2/s  9 pts/apple";
+            case OBSTACLES -> "Rocks: 999";
+            default -> null;
+        };
+        if (longestInfo != null) {
+            addSquares(squares, 0, 0, pad + textWidth(longestInfo, pixelFont(cell * 0.45)), pad + cell * 0.9);
+        }
+        return squares;
+    }
+
+    /** Adds every board square that overlaps the rectangle (x0, y0)-(x1, y1), in pixels. */
+    private void addSquares(Set<Point> squares, double x0, double y0, double x1, double y1) {
+        for (int x = (int) Math.floor(x0 / cell); x <= (int) Math.floor(x1 / cell); x++) {
+            for (int y = (int) Math.floor(y0 / cell); y <= (int) Math.floor(y1 / cell); y++) {
+                squares.add(new Point(x, y));
+            }
+        }
+    }
+
+    private static double textWidth(String text, Font font) {
+        Text measure = new Text(text);
+        measure.setFont(font);
+        return measure.getLayoutBounds().getWidth();
     }
 
     private void quitToMainMenu() {
@@ -350,12 +421,12 @@ public class SnakeController {
     /** The first thing you see: Start, Levels, Quit. */
     private void showStartScreen() {
         List<MenuItem> list = new ArrayList<>();
-        list.add(imageItem("start", () -> {
+        list.add(item("Start", () -> {
             closeMenu();
             startNewGame();
         }));
-        list.add(textItem("Levels", false, () -> showLevels(Menu.START)));
-        list.add(imageItem("quit", this::quitToMainMenu));
+        list.add(item("Levels", () -> showLevels(Menu.START)));
+        list.add(quitItem(this::quitToMainMenu));
         openMenu(Menu.START, "SNAKE", "Level: " + mode.displayName(), list, 0);
     }
 
@@ -364,14 +435,14 @@ public class SnakeController {
         levelsBackTo = backTo;
         List<MenuItem> list = new ArrayList<>();
         for (Mode m : Mode.values()) {
-            list.add(textItem(m.displayName(), m == mode, () -> {
+            list.add(levelItem(m, () -> {
                 mode = m;
                 pausedByMenu = false;
                 closeMenu();
                 startNewGame();
             }));
         }
-        list.add(imageItem("back", this::goBack));
+        list.add(item("Back", this::goBack));
         openMenu(Menu.LEVELS, "LEVELS", null, list, mode.ordinal());
     }
 
@@ -385,15 +456,15 @@ public class SnakeController {
         }
         List<MenuItem> list = new ArrayList<>();
         if (!game.isOver()) {
-            list.add(imageItem("continue", this::closeMenu));
+            list.add(item("Continue", this::closeMenu));
         }
-        list.add(imageItem("new-game", () -> {
+        list.add(item("New Game", () -> {
             pausedByMenu = false;
             closeMenu();
             startNewGame();
         }));
-        list.add(textItem("Levels", false, () -> showLevels(Menu.PAUSE)));
-        list.add(imageItem("menu", () -> {
+        list.add(item("Levels", () -> showLevels(Menu.PAUSE)));
+        list.add(item("Menu", () -> {
             pausedByMenu = false;
             startNewGame();
             showStartScreen();
@@ -432,14 +503,20 @@ public class SnakeController {
         items.addAll(list);
 
         List<Node> children = new ArrayList<>();
-        children.add(menuLabel(title, cell * 2.2, TITLE));
+        children.add(menuLabel(title, cell * 2, TITLE));
         if (subtitle != null) {
-            children.add(menuLabel(subtitle, cell * 0.7, Color.web("#cfd8e3")));
+            children.add(menuLabel(subtitle, cell * 0.5, SOFT_TEXT));
+        }
+        // Every button on a screen gets the same text size: the size that fits the longest label.
+        double textSize = Double.MAX_VALUE;
+        for (MenuItem item : items) {
+            textSize = Math.min(textSize, item.label.getFont().getSize());
         }
         for (MenuItem item : items) {
+            item.label.setFont(Font.font(PIXEL_FONT, textSize));
             children.add(item.button);
         }
-        children.add(menuLabel("↑ ↓ or W S to choose  •  Enter to select", cell * 0.55, Color.web("#cfd8e3")));
+        children.add(menuLabel("W/S or arrows: choose   Enter: select", cell * 0.4, SOFT_TEXT));
         menuBox.getChildren().setAll(children);
         menuBox.setVisible(true);
 
@@ -467,37 +544,41 @@ public class SnakeController {
 
     private Label menuLabel(String text, double size, Color color) {
         Label label = new Label(text);
-        label.setFont(Font.font("System", FontWeight.BOLD, size));
+        label.setFont(pixelFont(size));
         label.setTextFill(color);
-        label.setStyle("-fx-effect: dropshadow(one-pass-box, black, 0, 0, 2, 2);");
+        label.setStyle("-fx-effect: dropshadow(one-pass-box, #10240c, 0, 0, 3, 3);");
         label.setMouseTransparent(true);
         return label;
     }
 
     // ------------------------------------------------------------------ menu buttons
 
-    /** One button in a menu. Highlighted = the white version from the button pack. */
+    /** One button in a menu: a jelly button with pixel-font text. Selected = the glowing version. */
     private final class MenuItem {
         final Button button = new Button();
         final Runnable action;
         private final ImageView view;
         private final Image normal;
-        private final Image highlight;
-        private final Label label;            // only for text buttons
-        private final Color labelColor;
+        private final Image glowing;
+        final Label label;
 
-        MenuItem(Image normal, Image highlight, Label label, Color labelColor, Runnable action) {
-            this.normal = normal;
-            this.highlight = highlight;
-            this.label = label;
-            this.labelColor = labelColor;
+        MenuItem(String text, boolean red, Color textColor, Runnable action) {
+            String file = red ? "Buttons/button-red" : "Buttons/button";
+            this.normal = loadImage(file + ".png");
+            this.glowing = loadImage(file + "-selected.png");
             this.action = action;
             this.view = new ImageView(normal);
-            view.setFitHeight(buttonHeight);
+            view.setFitHeight(buttonHeight / BUTTON_SHARE);
             view.setPreserveRatio(true);
             view.setSmooth(true);
 
-            button.setGraphic(label == null ? view : new StackPane(view, label));
+            label = new Label(text.toUpperCase());
+            label.setFont(fitFont(label.getText(), buttonHeight * 0.32, buttonHeight * BUTTON_ASPECT * 0.72));
+            label.setTextFill(textColor);
+            label.setStyle("-fx-effect: dropshadow(one-pass-box, #1d4d12, 0, 0, 3, 3);");
+            label.setMouseTransparent(true);
+
+            button.setGraphic(new StackPane(view, label));
             button.setStyle("-fx-background-color: transparent; -fx-padding: 0;");
             button.setFocusTraversable(false);
             button.setCursor(Cursor.HAND);
@@ -511,43 +592,58 @@ public class SnakeController {
         }
 
         void setHighlighted(boolean on) {
-            view.setImage(on ? highlight : normal);
-            if (label != null) {
-                label.setTextFill(on ? MENU_WHITE : labelColor);
-            }
+            view.setImage(on ? glowing : normal);
         }
     }
 
-    /** A button from the button pack, e.g. "start" uses Buttons/start.png and Buttons/start-hover.png. */
-    private MenuItem imageItem(String name, Runnable action) {
-        return new MenuItem(loadImage("Buttons/" + name + ".png"),
-                loadImage("Buttons/" + name + "-hover.png"), null, null, action);
+    /** A green button. */
+    private MenuItem item(String text, Runnable action) {
+        return new MenuItem(text, false, BUTTON_TEXT, action);
     }
 
-    /** The pack has no "Levels" or level-name buttons, so these use a blank button with text on top. */
-    private MenuItem textItem(String text, boolean current, Runnable action) {
-        Color color = current ? MENU_GOLD : MENU_RED;
-        Label label = new Label(text.toUpperCase());
-        label.setFont(fitFont(label.getText(), buttonHeight * 0.38, buttonHeight * 3 * 0.75));
-        label.setTextFill(color);
-        label.setMouseTransparent(true);
-        return new MenuItem(loadImage("Buttons/blank.png"), loadImage("Buttons/blank-hover.png"),
-                label, color, action);
+    /** A level button; the level being played has gold text. */
+    private MenuItem levelItem(Mode m, Runnable action) {
+        return new MenuItem(m.displayName(), false, m == mode ? MENU_GOLD : BUTTON_TEXT, action);
     }
 
-    /** The biggest bold font, up to maxSize, that keeps the text narrower than maxWidth. */
+    /** The red Quit button. */
+    private MenuItem quitItem(Runnable action) {
+        return new MenuItem("Quit", true, BUTTON_TEXT, action);
+    }
+
+    /**
+     * The biggest pixel font, up to maxSize, that keeps the text narrower than maxWidth.
+     * Sizes go down in steps of 4 px so the letters stay sharp.
+     */
     private static Font fitFont(String text, double maxSize, double maxWidth) {
         Text measure = new Text(text);
-        double size = maxSize;
-        while (size > 8) {
-            Font font = Font.font("System", FontWeight.BOLD, size);
+        for (double size = Math.max(8, Math.floor(maxSize / 4) * 4); size > 8; size -= 4) {
+            Font font = Font.font(PIXEL_FONT, size);
             measure.setFont(font);
             if (measure.getLayoutBounds().getWidth() <= maxWidth) {
                 return font;
             }
-            size -= 1;
         }
-        return Font.font("System", FontWeight.BOLD, size);
+        return Font.font(PIXEL_FONT, 8);
+    }
+
+    /**
+     * The pixel font at the nearest multiple of 8 px (at least 8). Press Start 2P is drawn
+     * on an 8-pixel grid, so these sizes keep every letter sharp.
+     */
+    private static Font pixelFont(double size) {
+        return Font.font(PIXEL_FONT, Math.max(8, Math.round(size / 8) * 8));
+    }
+
+    private static String loadPixelFont() {
+        InputStream in = SnakeController.class.getResourceAsStream(
+                "/edu/farmingdale/csc311capstone/SnakeFonts/PressStart2P-Regular.ttf");
+        Font font = in == null ? null : Font.loadFont(in, 16);
+        if (font == null) {
+            System.err.println("Pixel font missing, using the default font.");
+            return "Monospaced";
+        }
+        return font.getFamily();
     }
 
     // ------------------------------------------------------------------ drawing
@@ -693,14 +789,14 @@ public class SnakeController {
         int best = Math.max(HIGH_SCORES.getOrDefault(game.mode(), 0), game.score());
 
         g.setTextAlign(TextAlignment.RIGHT);
-        g.setFont(Font.font("System", FontWeight.BOLD, cell * 0.9));
+        g.setFont(pixelFont(cell * 0.7));
         shadowText(g, "Score: " + game.score(), w - pad, pad + cell * 0.7, Color.WHITE);
-        g.setFont(Font.font("System", FontWeight.BOLD, cell * 0.65));
-        shadowText(g, "High Score: " + best, w - pad, pad + cell * 1.5, MENU_GOLD);
+        g.setFont(pixelFont(cell * 0.45));
+        shadowText(g, "High Score: " + best, w - pad, pad + cell * 1.6, MENU_GOLD);
 
         String info = switch (game.mode()) {
             case TIME_ATTACK -> String.format("Time: %.1fs", game.timeLeftMs() / 1000.0);
-            case SPEED_RUSH -> String.format("Speed: %.1f moves/s  |  %d pts per apple",
+            case SPEED_RUSH -> String.format("Speed: %.1f/s  %d pts/apple",
                     1000.0 / game.tickIntervalMs(), game.pointsPerApple());
             case OBSTACLES -> "Rocks: " + game.obstacles().size();
             default -> null;
@@ -708,8 +804,8 @@ public class SnakeController {
         if (info != null) {
             boolean lowTime = game.mode() == Mode.TIME_ATTACK && game.timeLeftMs() < 10_000;
             g.setTextAlign(TextAlignment.LEFT);
-            g.setFont(Font.font("System", FontWeight.BOLD, cell * 0.65));
-            shadowText(g, info, pad, pad + cell * 0.7, lowTime ? Color.web("#ff6b6b") : Color.web("#cfd8e3"));
+            g.setFont(pixelFont(cell * 0.45));
+            shadowText(g, info, pad, pad + cell * 0.7, lowTime ? Color.web("#ff6b6b") : Color.WHITE);
         }
     }
 
@@ -728,7 +824,7 @@ public class SnakeController {
         switch (game.state()) {
             case READY -> {
                 title = mode.displayName();
-                lines.addAll(wrap(mode.description(), smallFont(), w * 0.8));
+                lines.add(mode.description());
                 lines.add("");
                 lines.add("Press an arrow key or WASD to start");
                 lines.add("Press Esc for menu");
@@ -754,29 +850,40 @@ public class SnakeController {
         g.setFill(Color.web("#000000", 0.55));
         g.fillRect(0, 0, w, h);
 
-        double lineHeight = cell * 0.95;
+        // Wrap every line so long ones fit (the pixel font is wide).
+        List<String> wrapped = new ArrayList<>();
+        for (String line : lines) {
+            if (line.isEmpty()) {
+                wrapped.add(line);
+            } else {
+                wrapped.addAll(wrap(line, smallFont(), w * 0.85));
+            }
+        }
+        lines = wrapped;
+
+        double lineHeight = smallFont().getSize() * 1.8;
         double blockHeight = cell * 2.2 + lines.size() * lineHeight;
         double y = (h - blockHeight) / 2 + cell * 1.6;
 
         g.setTextAlign(TextAlignment.CENTER);
-        g.setFont(Font.font("System", FontWeight.BOLD, cell * 1.8));
+        g.setFont(pixelFont(cell * 1.4));
         shadowText(g, title, w / 2, y, Color.WHITE);
 
         y += cell * 1.4;
         g.setFont(smallFont());
         for (String line : lines) {
             y += lineHeight;
-            shadowText(g, line, w / 2, y, Color.web("#cfd8e3"));
+            shadowText(g, line, w / 2, y, SOFT_TEXT);
         }
     }
 
     private Font smallFont() {
-        return Font.font("System", cell * 0.75);
+        return pixelFont(cell * 0.5);
     }
 
     private static void shadowText(GraphicsContext g, String text, double x, double y, Color color) {
-        g.setFill(Color.web("#000000", 0.7));
-        g.fillText(text, x + 1.5, y + 1.5);
+        g.setFill(Color.web("#10240c", 0.85));
+        g.fillText(text, x + 3, y + 3);
         g.setFill(color);
         g.fillText(text, x, y);
     }
