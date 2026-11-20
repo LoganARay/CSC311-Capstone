@@ -54,10 +54,10 @@ class SnakeSaveTest {
     }
 
     @Test
-    void heartsAdd15PercentUpTo100() throws IOException {
+    void heartsAdd10PercentUpTo100() throws IOException {
         SnakeSave save = SnakeSave.load(tempFile());
         save.addHeart();
-        assertEquals(15, save.secretChance);
+        assertEquals(10, save.secretChance);
         for (int i = 0; i < 10; i++) {
             save.addHeart();
         }

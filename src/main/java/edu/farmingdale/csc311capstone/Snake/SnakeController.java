@@ -597,7 +597,7 @@ public class SnakeController {
                 saveItems();
             }
             case ATE_HEART -> {
-                save.addHeart();               // +15% chance of finding the black market
+                save.addHeart();               // +10% chance of finding the black market
                 save.save();
             }
             case HAMMER_SMASH -> saveItems();

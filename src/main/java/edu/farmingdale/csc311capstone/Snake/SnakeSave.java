@@ -19,7 +19,7 @@ import java.util.Properties;
 final class SnakeSave {
 
     /** Every heart collected adds this much to the chance of finding the black market. */
-    static final int HEART_CHANCE_BONUS = 15;
+    static final int HEART_CHANCE_BONUS = 10;
 
     private final Path file;
 
