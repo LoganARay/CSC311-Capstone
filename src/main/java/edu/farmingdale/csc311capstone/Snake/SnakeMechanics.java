@@ -4,6 +4,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Random;
@@ -78,6 +79,7 @@ public final class SnakeMechanics {
     private final Deque<Point> body = new ArrayDeque<>();     // head is first
     private final Deque<Direction> pendingTurns = new ArrayDeque<>();
     private final Set<Point> obstacles = new LinkedHashSet<>();
+    private final Set<Point> keepClear = new HashSet<>();
     private final List<Event> events = new ArrayList<>();
 
     private Direction direction = Direction.RIGHT;
@@ -269,6 +271,12 @@ public final class SnakeMechanics {
         pendingTurns.clear();
     }
 
+    /**
+     * Adds a rock somewhere fair. A spot is only used if, with the rock there:
+     *  - every square without a rock still has at least 2 open sides (no dead-end pockets
+     *    where you'd go in to get an apple and have no way back out), and
+     *  - every square without a rock can still be reached (nothing gets sealed off).
+     */
     private void addObstacle() {
         Point head = body.peekFirst();
         List<Point> options = new ArrayList<>();
@@ -278,14 +286,113 @@ public final class SnakeMechanics {
                 options.add(p);
             }
         }
-        if (!options.isEmpty()) {
-            obstacles.add(options.get(random.nextInt(options.size())));
+        Collections.shuffle(options, random);
+        for (Point p : options) {
+            obstacles.add(p);
+            if (rocksLeaveNoTraps(p)) {
+                return;
+            }
+            obstacles.remove(p);   // not fair here, try the next spot
         }
     }
 
+    /** True if the rocks (including the one just placed at 'added') leave no dead ends and seal nothing off. */
+    private boolean rocksLeaveNoTraps(Point added) {
+        // Only squares next to the new rock can lose an open side.
+        for (Direction d : Direction.values()) {
+            Point n = neighbour(added, d);
+            if (n != null && !obstacles.contains(n) && openSides(n) < 2) {
+                return false;
+            }
+        }
+        // Every square without a rock must still connect to every other one.
+        Point start = null;
+        int open = 0;
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                Point p = new Point(x, y);
+                if (!obstacles.contains(p)) {
+                    open++;
+                    if (start == null) {
+                        start = p;
+                    }
+                }
+            }
+        }
+        Set<Point> seen = new HashSet<>();
+        ArrayDeque<Point> queue = new ArrayDeque<>();
+        seen.add(start);
+        queue.add(start);
+        while (!queue.isEmpty()) {
+            Point p = queue.poll();
+            for (Direction d : Direction.values()) {
+                Point n = neighbour(p, d);
+                if (n != null && !obstacles.contains(n) && seen.add(n)) {
+                    queue.add(n);
+                }
+            }
+        }
+        return seen.size() == open;
+    }
+
+    /** How many of the squares next to p are on the board and have no rock. */
+    private int openSides(Point p) {
+        int count = 0;
+        for (Direction d : Direction.values()) {
+            Point n = neighbour(p, d);
+            if (n != null && !obstacles.contains(n)) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /** The square next to p in direction d (wrapping in wrap modes), or null if that's off the board. */
+    private Point neighbour(Point p, Direction d) {
+        int x = p.x() + d.dx;
+        int y = p.y() + d.dy;
+        if (wrapsAround()) {
+            return new Point(Math.floorMod(x, width), Math.floorMod(y, height));
+        }
+        if (x < 0 || y < 0 || x >= width || y >= height) {
+            return null;
+        }
+        return new Point(x, y);
+    }
+
+    /** A random empty square for an apple. Never under the score display, and never a dead end. */
     private Point randomEmptyCell() {
-        List<Point> empty = emptyCells();
-        return empty.isEmpty() ? null : empty.get(random.nextInt(empty.size()));
+        List<Point> fair = new ArrayList<>();
+        for (Point p : emptyCells()) {
+            if (openSides(p) >= 2) {
+                fair.add(p);
+            }
+        }
+        List<Point> pool = fair.isEmpty() ? emptyCells() : fair;
+        return pool.isEmpty() ? null : pool.get(random.nextInt(pool.size()));
+    }
+
+    /**
+     * Squares where apples and rocks never appear, e.g. under the score so they can't hide
+     * behind the text. The snake can still go there. Anything already in them is moved.
+     */
+    public void keepClear(Set<Point> squares) {
+        keepClear.clear();
+        keepClear.addAll(squares);
+        List<Point> moved = new ArrayList<>(obstacles);
+        moved.retainAll(keepClear);
+        for (Point p : moved) {
+            obstacles.remove(p);
+            addObstacle();
+        }
+        if (food != null && keepClear.contains(food)) {
+            food = null;
+            food = randomEmptyCell();
+        }
+        if (goldenApple != null && keepClear.contains(goldenApple)) {
+            goldenApple = null;
+            goldenApple = randomEmptyCell();
+        }
     }
 
     private List<Point> emptyCells() {
@@ -293,7 +400,7 @@ public final class SnakeMechanics {
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 Point p = new Point(x, y);
-                if (!body.contains(p) && !obstacles.contains(p)
+                if (!body.contains(p) && !obstacles.contains(p) && !keepClear.contains(p)
                         && !p.equals(food) && !p.equals(goldenApple)) {
                     empty.add(p);
                 }

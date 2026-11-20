@@ -20,7 +20,7 @@ final class SnakeSounds {
 
     private static final String FOLDER = "/edu/farmingdale/csc311capstone/SnakeSounds/";
 
-    private AudioClip appleCrunch;
+    private AudioClip appleSound;
     private AudioClip goldenApple;
     private Media crash;
     private Media funeralMarch;
@@ -32,7 +32,7 @@ final class SnakeSounds {
 
     SnakeSounds() {
         try {
-            appleCrunch = new AudioClip(url("apple-crunch.mp3"));
+            appleSound = new AudioClip(url("apple.wav"));
             goldenApple = new AudioClip(url("golden-apple.mp3"));
             crash = new Media(url("crash.mp3"));
             funeralMarch = new Media(url("funeral-march.mp3"));
@@ -51,11 +51,26 @@ final class SnakeSounds {
             return;
         }
         switch (event) {
-            case ATE_APPLE -> appleCrunch.play();
+            case ATE_APPLE -> appleSound.play();
             case ATE_GOLDEN_APPLE -> goldenApple.play();
             case CRASHED -> playInOrder(crash, funeralMarch, gameOverVoice);
             case TIME_UP -> playInOrder(funeralMarch, gameOverVoice);
             case WON -> playInOrder(win);
+        }
+    }
+
+    /**
+     * Like play(), but a crash is just the crash sound, without the funeral march and
+     * "game over" voice. Used by the demo on the start screen. Time running out makes no sound.
+     */
+    void playShort(Event event) {
+        if (!enabled) {
+            return;
+        }
+        switch (event) {
+            case CRASHED -> playInOrder(crash);
+            case TIME_UP -> { }
+            default -> play(event);
         }
     }
 
@@ -64,7 +79,7 @@ final class SnakeSounds {
         if (!enabled) {
             return;
         }
-        appleCrunch.stop();
+        appleSound.stop();
         goldenApple.stop();
         if (current != null) {
             MediaPlayer player = current;
