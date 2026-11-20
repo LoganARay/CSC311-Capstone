@@ -37,6 +37,7 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 /**
  * Connects snake-view.fxml to {@link SnakeMechanics}: runs the game loop,
@@ -64,7 +65,6 @@ public class SnakeController {
     private static final double MAX_SCREEN_FRACTION = 0.85;
 
     // ------------------------------------------------------------------ look
-    private static final Color DEADLY_WALL = Color.web("#f5a142");
     private static final Color WRAP_WALL = Color.web("#4da3ff");
     private static final Color MENU_RED = Color.web("#c62828");
     private static final Color MENU_WHITE = Color.web("#dedede");
@@ -78,9 +78,11 @@ public class SnakeController {
     private static final Image GOLDEN_APPLE = loadImage("snake/golden-apple.png");
     private static final Image ROCK = loadImage("snake/rock.png");
     // Grass from "GRASS+" by SciGho (ninjikin on itch.io), see CREDITS.md
-    private static final Image GRASS_LIGHT = loadImage("grass/grass-light-a.png");
-    private static final Image GRASS_LIGHT_PLAIN = loadImage("grass/grass-light-b.png");
-    private static final String GRASS_DARK = "grass/grass-dark.png";
+    private static final Image GRASS_MAIN = loadImage("grass/grass-main.png");      // playing area
+    private static final Image GRASS_ACCENT = loadImage("grass/grass-accent.png");  // scattered tufts
+    private static final String GRASS_DARK = "grass/grass-dark.png";                 // around the board
+    /** About 1 grass tile in this many gets tufts. */
+    private static final int ACCENT_ONE_IN = 15;
     /** Snake pieces by file name, e.g. "head-up", "turn-down-left", "tail-right". */
     private static final Map<String, Image> SNAKE = new HashMap<>();
 
@@ -103,8 +105,6 @@ public class SnakeController {
     private static final long DEMO_MAX_NS = 40_000_000_000L;
     /** How long a crashed demo stays on screen before it starts over. */
     private static final long DEMO_PAUSE_NS = 1_500_000_000L;
-    /** The demo's snake, apples and rocks are drawn see-through by this much. */
-    private static final double DEMO_OPACITY = 0.7;
 
     private SnakeMechanics demo;
     private long demoStartedAt;
@@ -118,6 +118,7 @@ public class SnakeController {
 
     private int cell;             // size of one board square on screen, in pixels
     private int grassSize;        // grass tiles are drawn at a whole-number multiple of 16 px so they stay crisp
+    private boolean[][] tuftAt;   // which grass tiles get tufts, picked at random once
     private double buttonHeight;  // size of the menu buttons, in pixels
 
     // ------------------------------------------------------------------ menus
@@ -226,6 +227,13 @@ public class SnakeController {
                 grassSize, grassSize, false));
 
         double centerX = (SCREEN_X + SCREEN_W / 2) * scale;
+        Random random = new Random();
+        tuftAt = new boolean[(int) Math.ceil(canvas.getWidth() / grassSize)][(int) Math.ceil(canvas.getHeight() / grassSize)];
+        for (boolean[] column : tuftAt) {
+            for (int i = 0; i < column.length; i++) {
+                column[i] = random.nextInt(ACCENT_ONE_IN) == 0;
+            }
+        }
         double centerY = (SCREEN_Y + SCREEN_H / 2) * scale;
         canvas.setLayoutX(Math.round(centerX - canvas.getWidth() / 2));
         canvas.setLayoutY(Math.round(centerY - canvas.getHeight() / 2));
@@ -550,27 +558,24 @@ public class SnakeController {
         boolean isDemo = demoIsShowing() && demo != null;
         shown = isDemo ? demo : game;
 
-        // Bright grass on the playing area. Every so often a plainer tile, so it doesn't look repeated.
-        for (int ty = 0; ty * grassSize < canvas.getHeight(); ty++) {
-            for (int tx = 0; tx * grassSize < canvas.getWidth(); tx++) {
-                Image tile = (tx * 7 + ty * 13) % 5 == 0 ? GRASS_LIGHT_PLAIN : GRASS_LIGHT;
+        // Bright grass on the playing area, with tufts here and there.
+        for (int tx = 0; tx < tuftAt.length; tx++) {
+            for (int ty = 0; ty < tuftAt[tx].length; ty++) {
+                Image tile = tuftAt[tx][ty] ? GRASS_ACCENT : GRASS_MAIN;
                 g.drawImage(tile, tx * grassSize, ty * grassSize, grassSize, grassSize);
             }
         }
 
-        // Solid orange walls in modes where they kill you; wrap modes get a dashed blue edge.
-        g.setLineWidth(3);
+        // The dark grass around the board is the wall. Wrap modes, where you go through
+        // the edge instead of crashing, also get a dashed blue line to show it.
         if (shown.wrapsAround()) {
+            g.setLineWidth(3);
             g.setStroke(WRAP_WALL);
             g.setLineDashes(8, 6);
-        } else {
-            g.setStroke(DEADLY_WALL);
+            g.strokeRect(1.5, 1.5, canvas.getWidth() - 3, canvas.getHeight() - 3);
             g.setLineDashes();
         }
-        g.strokeRect(1.5, 1.5, canvas.getWidth() - 3, canvas.getHeight() - 3);
-        g.setLineDashes();
 
-        g.setGlobalAlpha(isDemo ? DEMO_OPACITY : 1.0);
         for (Point p : shown.obstacles()) {
             drawTile(g, ROCK, p);
         }
@@ -585,7 +590,6 @@ public class SnakeController {
         }
 
         drawSnake(g);
-        g.setGlobalAlpha(1.0);
         if (menu == Menu.NONE) {
             drawHud(g);   // keep the menus uncluttered
         }
