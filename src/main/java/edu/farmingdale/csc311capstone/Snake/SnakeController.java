@@ -23,7 +23,11 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.CycleMethod;
 import javafx.scene.paint.ImagePattern;
+import javafx.scene.paint.LinearGradient;
+import javafx.scene.paint.RadialGradient;
+import javafx.scene.paint.Stop;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
@@ -65,6 +69,24 @@ public class SnakeController {
     /** The TV takes up at most this much of the monitor. */
     private static final double MAX_SCREEN_FRACTION = 0.85;
 
+    // ------------------------------------------------------------------ CRT effect
+    // Drawn over the whole TV screen (game, grass and menus). Set CRT_EFFECT to false to turn it off.
+    private static final boolean CRT_EFFECT = true;
+    /** One dark scanline every this many pixels, and how dark the lines are (0 = invisible, 1 = black). */
+    private static final int SCANLINE_GAP = 3;
+    private static final double SCANLINE_DARKNESS = 0.22;
+    /** Faint red / green / blue stripes, like the colored dots on a real picture tube. */
+    private static final double PHOSPHOR_STRENGTH = 0.05;
+    /** How dark the edges and corners of the glass get. */
+    private static final double VIGNETTE_DARKNESS = 0.55;
+    /** The soft reflection on the glass in the top-left corner. */
+    private static final double GLARE_STRENGTH = 0.10;
+    /** A faint bright band that slowly rolls down the screen, taking this many seconds per trip. */
+    private static final double ROLL_SECONDS = 7;
+    private static final double ROLL_BRIGHTNESS = 0.05;
+    /** How much the picture flickers (0 = steady). */
+    private static final double FLICKER = 0.05;
+
     // ------------------------------------------------------------------ look
     private static final Color WRAP_WALL = Color.web("#4da3ff");
     private static final Color BUTTON_TEXT = Color.web("#fffbe0");
@@ -104,6 +126,9 @@ public class SnakeController {
     @FXML private Canvas canvas;
     @FXML private ImageView tvImage;
     @FXML private VBox menuBox;
+    @FXML private Pane crtLayer;
+    @FXML private Canvas crtGlass;
+    @FXML private Rectangle crtRollBar;
 
     private SnakeMechanics game;
     private Mode mode = Mode.CLASSIC;
@@ -148,6 +173,7 @@ public class SnakeController {
     private final AnimationTimer loop = new AnimationTimer() {
         @Override
         public void handle(long now) {
+            animateCrt(now);
             if (demoIsShowing()) {
                 runDemo(now);
                 lastTick = now;   // the real game waits while the start screen is up
@@ -260,6 +286,8 @@ public class SnakeController {
         menuBox.setLayoutY(canvas.getLayoutY());
         menuBox.setPrefSize(canvas.getWidth(), canvas.getHeight());
         buttonHeight = Math.min(80, (canvas.getHeight() - cell * 4 - 7 * menuBox.getSpacing()) / 6 * BUTTON_SHARE);
+
+        layoutCrt(SCREEN_X * scale, SCREEN_Y * scale, SCREEN_W * scale, SCREEN_H * scale);
     }
 
     // ------------------------------------------------------------------ demo
@@ -299,6 +327,65 @@ public class SnakeController {
         if (demo.isOver() && demoOverAt == 0) {
             demoOverAt = now;
         }
+    }
+
+    // ------------------------------------------------------------------ CRT effect
+
+    /** Puts the CRT layer exactly over the screen opening and draws the parts that don't move. */
+    private void layoutCrt(double x, double y, double w, double h) {
+        crtLayer.setVisible(CRT_EFFECT);
+        crtLayer.setLayoutX(x);
+        crtLayer.setLayoutY(y);
+        crtLayer.setPrefSize(w, h);
+        crtLayer.setClip(new Rectangle(w, h));   // the rolling band never shows outside the glass
+        crtGlass.setWidth(w);
+        crtGlass.setHeight(h);
+
+        GraphicsContext g = crtGlass.getGraphicsContext2D();
+        g.clearRect(0, 0, w, h);
+
+        // Phosphor stripes: a faint red, green, blue column pattern.
+        Color[] phosphor = {Color.rgb(255, 0, 0, PHOSPHOR_STRENGTH),
+                Color.rgb(0, 255, 0, PHOSPHOR_STRENGTH), Color.rgb(0, 0, 255, PHOSPHOR_STRENGTH)};
+        for (int col = 0; col < w; col++) {
+            g.setFill(phosphor[col % 3]);
+            g.fillRect(col, 0, 1, h);
+        }
+
+        // Scanlines.
+        g.setFill(Color.rgb(0, 0, 0, SCANLINE_DARKNESS));
+        for (int row = 0; row < h; row += SCANLINE_GAP) {
+            g.fillRect(0, row, w, 1);
+        }
+
+        // Vignette: clear in the middle, darker toward the edges and corners.
+        g.setFill(new RadialGradient(0, 0, 0.5, 0.5, 0.75, true, CycleMethod.NO_CYCLE,
+                new Stop(0.55, Color.TRANSPARENT), new Stop(1, Color.rgb(0, 0, 0, VIGNETTE_DARKNESS))));
+        g.fillRect(0, 0, w, h);
+
+        // Glare: a soft light reflection coming from the top-left.
+        g.setFill(new LinearGradient(0, 0, 1, 1, true, CycleMethod.NO_CYCLE,
+                new Stop(0, Color.rgb(255, 255, 255, GLARE_STRENGTH)), new Stop(0.35, Color.TRANSPARENT)));
+        g.fillRect(0, 0, w, h);
+
+        // The rolling band: a soft bright stripe, faded at the top and bottom.
+        crtRollBar.setWidth(w);
+        crtRollBar.setHeight(h * 0.15);
+        crtRollBar.setFill(new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
+                new Stop(0, Color.TRANSPARENT), new Stop(0.5, Color.rgb(255, 255, 255, ROLL_BRIGHTNESS)),
+                new Stop(1, Color.TRANSPARENT)));
+    }
+
+    /** Moves the rolling band down the screen and makes the glass flicker a tiny bit. */
+    private void animateCrt(long now) {
+        if (!CRT_EFFECT) {
+            return;
+        }
+        double h = crtGlass.getHeight();
+        double band = crtRollBar.getHeight();
+        double trip = (now / 1e9 % ROLL_SECONDS) / ROLL_SECONDS;   // 0 to 1, over and over
+        crtRollBar.setTranslateY(-band + trip * (h + band));
+        crtGlass.setOpacity(1 - FLICKER * Math.random());
     }
 
     // ------------------------------------------------------------------ game actions

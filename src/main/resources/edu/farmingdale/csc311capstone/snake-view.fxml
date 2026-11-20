@@ -10,8 +10,8 @@
 
 <!--
   The Snake game sits inside an old TV.
-  Layers (back to front): dark screen glass, the game canvas, the TV picture
-  (with its screen cut out), then the Esc menu.
+  Layers (back to front): dark grass, the game canvas, the TV picture
+  (with its screen cut out), the menus, then the CRT effect.
   SnakeController sizes and positions everything to fit the screen, see layoutTv().
 -->
 <StackPane fx:id="root" style="-fx-background-color: #16181d;"
@@ -24,5 +24,10 @@
         <Canvas fx:id="canvas"/>
         <ImageView fx:id="tvImage" mouseTransparent="true" preserveRatio="true" smooth="true"/>
         <VBox fx:id="menuBox" alignment="CENTER" spacing="8.0" visible="false"/>
+        <!-- The CRT effect sits on top of everything on the screen. Clicks pass through it. -->
+        <Pane fx:id="crtLayer" mouseTransparent="true">
+            <Canvas fx:id="crtGlass"/>
+            <Rectangle fx:id="crtRollBar"/>
+        </Pane>
     </Pane>
 </StackPane>
