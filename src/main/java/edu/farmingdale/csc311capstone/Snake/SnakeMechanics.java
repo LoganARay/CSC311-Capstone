@@ -51,7 +51,12 @@ public final class SnakeMechanics {
         ATE_GOLDEN_APPLE,
         CRASHED,   // hit a wall, a rock or itself
         TIME_UP,   // Time Attack clock ran out
-        WON        // filled the whole board
+        WON,       // filled the whole board
+        ATE_HEART,     // the apple eaten was a heart (comes along with ATE_APPLE)
+        HAMMER_SMASH,  // the hammer smashed a rock instead of crashing
+        HAMMER_BROKE,  // ... and that was its last use
+        WHIP_SNAPPED,  // the whip's last apple grab
+        REWOUND        // the clock saved a crash by turning time back
     }
 
     // Tunable numbers
@@ -68,8 +73,14 @@ public final class SnakeMechanics {
     public static final int GOLDEN_APPLE_POINTS = 5;
     public static final int GOLDEN_APPLE_LIFETIME_TICKS = 45;
     public static final int GOLDEN_APPLE_CHANCE = 4;        // 1 in 4 after each normal apple
+    public static final int HEART_CHANCE = 10;              // 1 in 10 apples looks like a heart instead
     public static final int OBSTACLES_AT_START = 4;
     public static final int OBSTACLE_SAFE_DISTANCE = 4;     // rocks never spawn this close to the head
+
+    // Black market items
+    public static final int HAMMER_USES = 10;       // rocks a hammer can smash before it breaks
+    public static final int WHIP_GRABS = 100;       // apples a whip lasts for before it snaps
+    public static final int REWIND_MS = 3_000;      // how far back the clock turns time
 
     private final int width;
     private final int height;
@@ -85,12 +96,27 @@ public final class SnakeMechanics {
     private Direction direction = Direction.RIGHT;
     private State state = State.READY;
     private Point food;
+    private boolean foodIsHeart;   // just looks different: same points and sound as an apple
     private Point goldenApple;
     private int goldenTicksLeft;
     private int score;
     private int applesEaten;
     private long timeLeftMs;
     private String endReason = "";
+
+    // Items from the black market. The controller hands them in and saves what's left.
+    private boolean hasClock;
+    private int hammerUses;
+    private int whipGrabs;
+    private boolean justRewound;
+
+    /** What the board looked like a moment ago, so the clock can turn time back. */
+    private record Snapshot(List<Point> body, Direction direction, Point food, boolean foodIsHeart,
+                            Point goldenApple, int goldenTicksLeft, Set<Point> obstacles,
+                            int score, int applesEaten, long timeLeftMs, long playedMs) { }
+
+    private final Deque<Snapshot> history = new ArrayDeque<>();
+    private long playedMs;   // game time so far, used to find the snapshot from REWIND_MS ago
 
     public SnakeMechanics(Mode mode) {
         this(mode, DEFAULT_WIDTH, DEFAULT_HEIGHT, new Random());
@@ -121,6 +147,9 @@ public final class SnakeMechanics {
         applesEaten = 0;
         endReason = "";
         timeLeftMs = mode == Mode.TIME_ATTACK ? TIME_ATTACK_START_MS : 0;
+        history.clear();
+        playedMs = 0;
+        justRewound = false;
 
         int startX = width / 4 + STARTING_LENGTH - 1;
         int startY = height / 2;
@@ -132,13 +161,14 @@ public final class SnakeMechanics {
                 addObstacle();
             }
         }
-        food = randomEmptyCell();
+        newFood();
     }
 
     // ------------------------------------------------------------------ input
 
     public void start() {
         if (state == State.READY || state == State.PAUSED) {
+            justRewound = false;
             state = State.RUNNING;
         }
     }
@@ -174,6 +204,9 @@ public final class SnakeMechanics {
             return;
         }
 
+        remember();
+        playedMs += tickIntervalMs();
+
         if (mode == Mode.TIME_ATTACK) {
             timeLeftMs -= tickIntervalMs();
             if (timeLeftMs <= 0) {
@@ -202,12 +235,27 @@ public final class SnakeMechanics {
         Point next = new Point(nx, ny);
 
         if (obstacles.contains(next)) {
-            crash("You crashed into a rock.");
-            return;
+            if (hammerUses > 0) {
+                obstacles.remove(next);        // smash!
+                hammerUses--;
+                events.add(Event.HAMMER_SMASH);
+                if (hammerUses == 0) {
+                    events.add(Event.HAMMER_BROKE);
+                }
+            } else {
+                crash("You crashed into a rock.");
+                return;
+            }
         }
 
-        boolean eatsApple = next.equals(food);
-        boolean eatsGolden = next.equals(goldenApple);
+        // With the whip, apples one square to the left or right of the head get grabbed too.
+        Set<Point> reach = new HashSet<>();
+        reach.add(next);
+        if (whipGrabs > 0) {
+            reach.addAll(sideSquares(next, direction));
+        }
+        boolean eatsApple = food != null && reach.contains(food);
+        boolean eatsGolden = goldenApple != null && reach.contains(goldenApple);
         boolean grows = eatsApple || eatsGolden;
 
         // The tail moves out of the way this tick unless we're growing.
@@ -222,6 +270,13 @@ public final class SnakeMechanics {
             body.removeLast();
         }
 
+        if (whipGrabs > 0 && grows) {
+            whipGrabs -= (eatsApple ? 1 : 0) + (eatsGolden ? 1 : 0);
+            if (whipGrabs <= 0) {
+                whipGrabs = 0;
+                events.add(Event.WHIP_SNAPPED);
+            }
+        }
         if (eatsGolden) {
             score += GOLDEN_APPLE_POINTS;
             goldenApple = null;
@@ -231,6 +286,9 @@ public final class SnakeMechanics {
             score += pointsPerApple();
             applesEaten++;
             events.add(Event.ATE_APPLE);
+            if (foodIsHeart) {
+                events.add(Event.ATE_HEART);
+            }
             onAppleEaten();
             if (state != State.RUNNING) {
                 return; // the board filled up
@@ -253,17 +311,93 @@ public final class SnakeMechanics {
         if (mode == Mode.OBSTACLES) {
             addObstacle();
         }
-        food = randomEmptyCell();
+        newFood();
         if (food == null) {
             events.add(Event.WON);
             end(State.WON, "You filled the whole board!");
         }
     }
 
+    /** Puts a new apple on the board; 1 time in HEART_CHANCE it's a heart. */
+    private void newFood() {
+        food = randomEmptyCell();
+        foodIsHeart = random.nextInt(HEART_CHANCE) == 0;
+    }
+
     private void crash(String reason) {
+        if (hasClock && !history.isEmpty()) {
+            rewind();
+            return;
+        }
         events.add(Event.CRASHED);
         end(State.GAME_OVER, reason);
     }
+
+    // ------------------------------------------------------------------ the clock
+
+    /** Saves how the board looks right now, keeping only the last REWIND_MS of game time. */
+    private void remember() {
+        history.addLast(new Snapshot(new ArrayList<>(body), direction, food, foodIsHeart,
+                goldenApple, goldenTicksLeft, new LinkedHashSet<>(obstacles),
+                score, applesEaten, timeLeftMs, playedMs));
+        while (history.size() > 1 && playedMs - history.peekFirst().playedMs() > REWIND_MS) {
+            history.pollFirst();
+        }
+    }
+
+    /** Uses up the clock: puts the board back the way it was REWIND_MS ago and waits for the player. */
+    private void rewind() {
+        Snapshot then = history.peekFirst();
+        body.clear();
+        body.addAll(then.body());
+        direction = then.direction();
+        food = then.food();
+        foodIsHeart = then.foodIsHeart();
+        goldenApple = then.goldenApple();
+        goldenTicksLeft = then.goldenTicksLeft();
+        obstacles.clear();
+        obstacles.addAll(then.obstacles());
+        score = then.score();
+        applesEaten = then.applesEaten();
+        timeLeftMs = then.timeLeftMs();
+        playedMs = then.playedMs();
+        history.clear();
+        pendingTurns.clear();
+        hasClock = false;
+        justRewound = true;
+        state = State.READY;            // wait for an arrow key, like the start of a game
+        events.add(Event.REWOUND);
+    }
+
+    /** The squares to the left and right of p, from the point of view of something moving in direction d. */
+    private List<Point> sideSquares(Point p, Direction d) {
+        List<Point> sides = new ArrayList<>();
+        Direction[] across = (d == Direction.UP || d == Direction.DOWN)
+                ? new Direction[] {Direction.LEFT, Direction.RIGHT}
+                : new Direction[] {Direction.UP, Direction.DOWN};
+        for (Direction side : across) {
+            Point n = neighbour(p, side);
+            if (n != null) {
+                sides.add(n);
+            }
+        }
+        return sides;
+    }
+
+    // ------------------------------------------------------------------ items
+
+    /** Hands the player's black market items to this game. */
+    public void setItems(boolean clock, int hammerUsesLeft, int whipGrabsLeft) {
+        this.hasClock = clock;
+        this.hammerUses = Math.max(0, hammerUsesLeft);
+        this.whipGrabs = Math.max(0, whipGrabsLeft);
+    }
+
+    public boolean hasClock() { return hasClock; }
+    public int hammerUsesLeft() { return hammerUses; }
+    public int whipGrabsLeft() { return whipGrabs; }
+    /** True right after the clock turned time back, until the player starts moving again. */
+    public boolean justRewound() { return justRewound; }
 
     private void end(State finalState, String reason) {
         state = finalState;
@@ -387,7 +521,7 @@ public final class SnakeMechanics {
         }
         if (food != null && keepClear.contains(food)) {
             food = null;
-            food = randomEmptyCell();
+            newFood();
         }
         if (goldenApple != null && keepClear.contains(goldenApple)) {
             goldenApple = null;
@@ -450,6 +584,8 @@ public final class SnakeMechanics {
     public int length() { return body.size(); }
     public Direction direction() { return direction; }
     public Point food() { return food; }
+    /** True if the current apple is shown as a heart (it works exactly like an apple). */
+    public boolean foodIsHeart() { return foodIsHeart; }
     public Point goldenApple() { return goldenApple; }
     public int goldenTicksLeft() { return goldenTicksLeft; }
     public Set<Point> obstacles() { return Collections.unmodifiableSet(obstacles); }
@@ -461,6 +597,7 @@ public final class SnakeMechanics {
     // ------------------------------------------------------------------ test hooks
 
     void placeFood(Point p) { food = p; }
+    void makeFoodHeart(boolean heart) { foodIsHeart = heart; }
     void placeGoldenApple(Point p, int ticks) { goldenApple = p; goldenTicksLeft = ticks; }
     void placeObstacle(Point p) { obstacles.add(p); }
     void clearObstacles() { obstacles.clear(); }

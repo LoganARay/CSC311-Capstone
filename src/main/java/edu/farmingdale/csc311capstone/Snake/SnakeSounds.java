@@ -20,8 +20,20 @@ final class SnakeSounds {
 
     private static final String FOLDER = "/edu/farmingdale/csc311capstone/SnakeSounds/";
 
+    /** Black market volumes (0 to 1). The laugh is meant to sit under the music. */
+    private static final double MARKET_MUSIC_VOLUME = 0.5;
+    private static final double LAUGH_VOLUME = 0.7;
+
     private AudioClip appleSound;
     private AudioClip goldenApple;
+    private AudioClip hammerBreak;
+    private AudioClip whipSnap;
+    private AudioClip rewind;
+    private AudioClip notEnough;
+    private AudioClip creepyLaugh;
+    private AudioClip doorCreak;        // optional: skipped if door-creak.mp3 isn't in the folder
+    private Media marketMusic;
+    private MediaPlayer musicPlayer;
     private Media crash;
     private Media funeralMarch;
     private Media gameOverVoice;
@@ -36,6 +48,15 @@ final class SnakeSounds {
         try {
             appleSound = new AudioClip(url("apple.wav"));
             goldenApple = new AudioClip(url("golden-apple.mp3"));
+            hammerBreak = new AudioClip(url("hammer-break.mp3"));
+            whipSnap = new AudioClip(url("whip-snap.mp3"));
+            rewind = new AudioClip(url("rewind.mp3"));
+            notEnough = new AudioClip(url("not-enough.mp3"));
+            creepyLaugh = new AudioClip(url("creepy-laugh.mp3"));
+            marketMusic = new Media(url("market-music.mp3"));
+            if (SnakeSounds.class.getResource(FOLDER + "door-creak.mp3") != null) {
+                doorCreak = new AudioClip(url("door-creak.mp3"));
+            }
             crash = new Media(url("crash.mp3"));
             funeralMarch = new Media(url("funeral-march.mp3"));
             gameOverVoice = new Media(url("game-over-voice.mp3"));
@@ -74,6 +95,72 @@ final class SnakeSounds {
             case CRASHED -> playInOrder(crash);
             case TIME_UP -> { }
             default -> play(event);
+        }
+    }
+
+    // ---------------------------------------------------------------- black market items
+
+    /** The hammer breaking, the whip snapping, or the clock turning time back. */
+    void playItem(Event event) {
+        if (!enabled) {
+            return;
+        }
+        switch (event) {
+            case HAMMER_BROKE -> hammerBreak.play();
+            case WHIP_SNAPPED -> whipSnap.play();
+            case REWOUND -> {
+                stopAll();               // cut off the crash sound: time is going backwards
+                rewind.play();
+            }
+            default -> { }
+        }
+    }
+
+    // ---------------------------------------------------------------- black market
+
+    /** Starts the black market music, looping until stopMarketMusic(). */
+    void startMarketMusic() {
+        if (!enabled) {
+            return;
+        }
+        stopMarketMusic();
+        try {
+            musicPlayer = new MediaPlayer(marketMusic);
+            musicPlayer.setCycleCount(MediaPlayer.INDEFINITE);
+            musicPlayer.setVolume(MARKET_MUSIC_VOLUME);
+            musicPlayer.play();
+        } catch (RuntimeException e) {
+            System.err.println("Couldn't play the black market music: " + e.getMessage());
+            musicPlayer = null;
+        }
+    }
+
+    void stopMarketMusic() {
+        if (musicPlayer != null) {
+            musicPlayer.stop();
+            musicPlayer.dispose();
+            musicPlayer = null;
+        }
+    }
+
+    /** Bought something: a creepy laugh, once, under the music. */
+    void playBought() {
+        if (enabled) {
+            creepyLaugh.play(LAUGH_VOLUME);
+        }
+    }
+
+    /** Tried to buy without enough apples. */
+    void playNotEnough() {
+        if (enabled) {
+            notEnough.play();
+        }
+    }
+
+    /** The snake reached the door. */
+    void playDoor() {
+        if (enabled && doorCreak != null) {
+            doorCreak.play();
         }
     }
 
@@ -133,7 +220,11 @@ final class SnakeSounds {
         }
         appleSound.stop();
         goldenApple.stop();
+        hammerBreak.stop();
+        whipSnap.stop();
+        creepyLaugh.stop();
         stopStatic();
+        stopMarketMusic();
         if (current != null) {
             MediaPlayer player = current;
             current = null;

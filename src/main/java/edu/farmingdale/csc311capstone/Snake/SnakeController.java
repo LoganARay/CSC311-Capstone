@@ -101,6 +101,26 @@ public class SnakeController {
     private static final double STATIC_STRENGTH = 0.85;
     /** Different random static pictures, swapped every frame so it looks alive. */
     private static final int STATIC_FRAMES = 8;
+    /** When the crash leads to the black market, the static holds this long instead. */
+    private static final long SECRET_HOLD_MS = 1_800;
+
+    // ------------------------------------------------------------------ black market
+    // Graphics: clock, hammer, whip, altar, door and arrow drawn for this project;
+    // skull candle and lantern from "Haunted Evidence Lite" by certainity (see CREDITS.md).
+    private static final Image MARKET_ARROW = loadImage("market/arrow.png");
+    private static final Image MARKET_ALTAR = loadImage("market/altar.png");
+    private static final Image MARKET_DOOR = loadImage("market/door.png");
+    private static final Image MARKET_LANTERN = loadImage("market/lantern.png");
+    private static final Image SKULL_CANDLE = loadImage("market/skull-candle.png");
+    private static final Map<BlackMarket.Item, Image> ITEM_ICONS = Map.of(
+            BlackMarket.Item.CLOCK, loadImage("market/clock.png"),
+            BlackMarket.Item.HAMMER, loadImage("market/hammer.png"),
+            BlackMarket.Item.WHIP, loadImage("market/whip.png"));
+    /** How far each light reaches in the dark room, in squares. */
+    private static final double SNAKE_LIGHT = 5;
+    private static final double CANDLE_LIGHT = 6.5;
+    private static final double LANTERN_LIGHT = 3.5;
+    private static final double SIGN_LIGHT = 2.2;
 
     // ------------------------------------------------------------------ look
     private static final Color WRAP_WALL = Color.web("#4da3ff");
@@ -122,6 +142,8 @@ public class SnakeController {
     private static final Image TV = loadImage("tv.png");
     private static final Image APPLE = loadImage("snake/apple.png");
     private static final Image GOLDEN_APPLE = loadImage("snake/golden-apple.png");
+    // "Real heart" sprite by Iamrenz, shrunk to 32x32. 1 apple in 10 looks like this.
+    private static final Image HEART = loadImage("snake/heart.png");
     private static final Image ROCK = loadImage("snake/rock.png");
     // Grass from "GRASS+" by SciGho (ninjikin on itch.io), see CREDITS.md
     private static final Image GRASS_MAIN = loadImage("grass/grass-main.png");      // playing area
@@ -162,9 +184,29 @@ public class SnakeController {
      */
     private static final boolean DEMO_PLAYS_GAME_OVER_MUSIC = false;
 
-    private long crashAt;                    // when the crash sequence started (0 = not running)
-    private boolean staticStarted;
+    /**
+     * A burst of TV static: waits delayMs, fades in, holds, fades out. atPeak runs when it's
+     * at full strength (a good moment to switch screens) and atEnd when it's gone.
+     */
+    private record StaticPlan(long delayMs, long fadeInMs, long holdMs, long fadeOutMs,
+                              boolean withSound, boolean locksKeys, Runnable atPeak, Runnable atEnd) { }
+
+    private StaticPlan staticPlan;              // the static running right now, or null
+    private long staticStartedAt;
+    private boolean staticSoundStarted;
+    private boolean staticPeakDone;
     private final List<Image> staticFrames = new ArrayList<>();
+
+    // ------------------------------------------------------------------ saved progress + black market
+    private final SnakeSave save = SnakeSave.load();
+    private final Random random = new Random();
+
+    private enum View { GAME, MARKET }
+    private View view = View.GAME;
+    private BlackMarket market;
+    private long marketLastTick;
+    private double cameraX;                     // how far the market view has scrolled, in squares
+    private ImagePattern darkGrass;             // fills the screen around the board
 
     private SnakeMechanics demo;
     private long demoStartedAt;
@@ -194,7 +236,12 @@ public class SnakeController {
         @Override
         public void handle(long now) {
             animateCrt(now);
-            runCrashSequence(now);
+            runStatic(now);
+            if (view == View.MARKET) {
+                runMarket(now);
+                drawMarket();
+                return;
+            }
             if (demoIsShowing()) {
                 runDemo(now);
                 lastTick = now;   // the real game waits while the start screen is up
@@ -213,11 +260,7 @@ public class SnakeController {
                 interval = game.tickIntervalMs() * 1_000_000L;
             }
             for (SnakeMechanics.Event event : game.pollEvents()) {
-                if (event == SnakeMechanics.Event.CRASHED) {
-                    startCrashSequence(now);
-                } else {
-                    sounds.play(event);
-                }
+                onGameEvent(event, now);
             }
             if (game.state() != State.RUNNING) {
                 lastTick = now;
@@ -289,9 +332,9 @@ public class SnakeController {
 
         // Dark grass fills the screen around the board (the part you can't play on).
         grassSize = 16 * Math.max(1, Math.round(cell / 16f));
-        Image darkGrass = loadImage(GRASS_DARK, grassSize);
-        screenGlass.setFill(new ImagePattern(darkGrass, screenGlass.getX(), screenGlass.getY(),
-                grassSize, grassSize, false));
+        darkGrass = new ImagePattern(loadImage(GRASS_DARK, grassSize), screenGlass.getX(), screenGlass.getY(),
+                grassSize, grassSize, false);
+        screenGlass.setFill(darkGrass);
 
         double centerX = (SCREEN_X + SCREEN_W / 2) * scale;
         Random random = new Random();
@@ -329,6 +372,7 @@ public class SnakeController {
                 || (demo.isOver() && now - demoOverAt > DEMO_PAUSE_NS);
         if (needNew) {
             demo = newGameFor(mode);   // shows the level that's currently picked
+            demo.setItems(false, 0, 0);
             demo.start();
             demoStartedAt = now;
             demoLastTick = now;
@@ -418,48 +462,85 @@ public class SnakeController {
 
     // ------------------------------------------------------------------ crash sequence
 
+    /**
+     * The snake crashed: the crash sound, then static. Usually the game-over music follows;
+     * with luck (the secret chance from hearts) the static lasts longer and the snake wakes
+     * up in the black market instead.
+     */
     private void startCrashSequence(long now) {
         sounds.playCrash();
-        crashAt = now;
-        staticStarted = false;
+        if (save.rollForMarket(random)) {
+            startStatic(now, new StaticPlan(STATIC_DELAY_MS, STATIC_FADE_IN_MS, SECRET_HOLD_MS,
+                    STATIC_FADE_OUT_MS, true, true, () -> {
+                        resetSecretChance();         // the chance starts over at 0
+                        enterMarket();
+                    }, null));
+        } else {
+            startStatic(now, new StaticPlan(STATIC_DELAY_MS, STATIC_FADE_IN_MS, STATIC_HOLD_MS,
+                    STATIC_FADE_OUT_MS, true, false, null, sounds::playGameOverMusic));
+        }
     }
 
-    /** Called every frame: fades the static in and out, then starts the game-over music. */
-    private void runCrashSequence(long now) {
-        if (crashAt == 0) {
+    private void startStatic(long now, StaticPlan plan) {
+        staticPlan = plan;
+        staticStartedAt = now;
+        staticSoundStarted = false;
+        staticPeakDone = false;
+    }
+
+    /** Called every frame: fades the static in and out and runs the plan's atPeak / atEnd. */
+    private void runStatic(long now) {
+        StaticPlan plan = staticPlan;
+        if (plan == null) {
             return;
         }
-        double ms = (now - crashAt) / 1e6 - STATIC_DELAY_MS;   // time since the static began
+        double ms = (now - staticStartedAt) / 1e6 - plan.delayMs();   // time since the static began
         if (ms < 0) {
-            return;                                            // still just the crash sound
+            return;
         }
-        if (!staticStarted) {
-            staticStarted = true;
+        if (plan.withSound() && !staticSoundStarted) {
+            staticSoundStarted = true;
             sounds.startStatic();
         }
 
+        double fadeOutAt = plan.fadeInMs() + plan.holdMs();
         double strength;
-        if (ms < STATIC_FADE_IN_MS) {
-            strength = ms / STATIC_FADE_IN_MS;                                  // fading in
-        } else if (ms < STATIC_FADE_IN_MS + STATIC_HOLD_MS) {
-            strength = 1;                                                       // full static
-        } else if (ms < STATIC_FADE_IN_MS + STATIC_HOLD_MS + STATIC_FADE_OUT_MS) {
-            strength = 1 - (ms - STATIC_FADE_IN_MS - STATIC_HOLD_MS) / STATIC_FADE_OUT_MS;   // fading out
+        if (ms < plan.fadeInMs()) {
+            strength = ms / plan.fadeInMs();                         // fading in
+        } else if (ms < fadeOutAt) {
+            strength = 1;                                            // full static
+        } else if (ms < fadeOutAt + plan.fadeOutMs()) {
+            strength = 1 - (ms - fadeOutAt) / plan.fadeOutMs();      // fading out
         } else {
-            // Back to normal: hide the static and play the game-over music.
-            crashAt = 0;
+            staticPlan = null;                                       // back to normal
             crtStatic.setVisible(false);
-            sounds.stopStatic();
-            sounds.playGameOverMusic();
+            if (plan.withSound()) {
+                sounds.stopStatic();
+            }
+            if (plan.atEnd() != null) {
+                plan.atEnd().run();
+            }
             return;
         }
-        sounds.setStaticVolume(strength);
+
+        if (!staticPeakDone && ms >= plan.fadeInMs()) {
+            staticPeakDone = true;
+            if (plan.atPeak() != null) {
+                plan.atPeak().run();
+                if (staticPlan != plan) {
+                    return;                                          // atPeak stopped this static
+                }
+            }
+        }
+        if (plan.withSound()) {
+            sounds.setStaticVolume(strength);
+        }
         drawStatic(strength);
     }
 
-    /** Stops the crash sequence early, e.g. when a new game starts. */
+    /** Stops any static early, e.g. when a new game starts. */
     private void cancelCrashSequence() {
-        crashAt = 0;
+        staticPlan = null;
         if (crtStatic != null) {
             crtStatic.setVisible(false);
         }
@@ -504,11 +585,153 @@ public class SnakeController {
         }
     }
 
+    // ------------------------------------------------------------------ game events
+
+    /** Sounds, apples for the black market, and item uses, for everything that happens in a real game. */
+    private void onGameEvent(SnakeMechanics.Event event, long now) {
+        switch (event) {
+            case CRASHED -> startCrashSequence(now);
+            case ATE_APPLE, ATE_GOLDEN_APPLE -> {
+                sounds.play(event);
+                save.apples++;                 // every apple is money in the black market
+                saveItems();
+            }
+            case ATE_HEART -> {
+                save.addHeart();               // +15% chance of finding the black market
+                save.save();
+            }
+            case HAMMER_SMASH -> saveItems();
+            case HAMMER_BROKE, WHIP_SNAPPED -> {
+                sounds.playItem(event);
+                saveItems();
+            }
+            case REWOUND -> {
+                sounds.playItem(event);
+                saveItems();
+                startStatic(now, new StaticPlan(0, 150, 250, 450, false, false, null, null));
+            }
+            default -> sounds.play(event);
+        }
+    }
+
+    /** The black market chance goes back to 0: at the start of every game, and on entering and leaving the market. */
+    private void resetSecretChance() {
+        save.secretChance = 0;
+        save.save();
+    }
+
+    /** Copies what's left of the items from the game into the save file. */
+    private void saveItems() {
+        save.clock = game.hasClock();
+        save.hammerUses = game.hammerUsesLeft();
+        save.whipGrabs = game.whipGrabsLeft();
+        save.save();
+    }
+
+    // ------------------------------------------------------------------ black market
+
+    /** Switches the TV to the black market (called at the peak of the static). */
+    private void enterMarket() {
+        view = View.MARKET;
+        market = new BlackMarket(save);
+        screenGlass.setFill(Color.BLACK);            // no grass in here: just black
+        sounds.startMarketMusic();                   // loops until the player leaves
+        marketLastTick = 0;
+        cameraX = 0;
+        menu = Menu.NONE;
+        menuBox.setVisible(false);
+    }
+
+    /** Back through the door: static, then the start screen. */
+    private void leaveMarket() {
+        startStatic(System.nanoTime(), new StaticPlan(0, 400, 700, 800, true, true, () -> {
+            view = View.GAME;
+            market = null;
+            sounds.stopMarketMusic();
+            resetSecretChance();
+            screenGlass.setFill(darkGrass);           // the grass comes back
+            game = newGameFor(mode);   // not startNewGame(): that would cut off the static sound
+            lastTick = 0;
+            showStartScreen();
+        }, null));
+    }
+
+    /** Moves the market snake along, and scrolls the view to follow it. */
+    private void runMarket(long now) {
+        if (marketLastTick == 0) {
+            marketLastTick = now;
+        }
+        long interval = BlackMarket.TICK_MS * 1_000_000L;
+        int safety = 0;
+        while (now - marketLastTick >= interval && safety++ < 5) {
+            marketLastTick += interval;
+            BlackMarket.State before = market.state();
+            market.step();
+            if (before != BlackMarket.State.AT_DOOR && market.state() == BlackMarket.State.AT_DOOR) {
+                sounds.playDoor();                     // the snake touched the door: creak
+            }
+        }
+        if (market.state() != BlackMarket.State.WALKING) {
+            marketLastTick = now;
+        }
+        double viewW = game.width();
+        double target = Math.max(0, Math.min(BlackMarket.WIDTH - viewW, market.head().x() - viewW / 2));
+        cameraX += (target - cameraX) * 0.12;          // glide instead of jumping
+    }
+
+    private void onMarketKey(KeyCode key) {
+        switch (market.state()) {
+            case WAITING, WALKING -> {
+                Direction d = directionFor(key);
+                if (d != null) {
+                    market.turn(d);
+                }
+            }
+            case CHOOSING -> {
+                switch (key) {
+                    case LEFT, A, UP, W -> market.moveSelection(-1);
+                    case RIGHT, D, DOWN, S -> market.moveSelection(1);
+                    case ENTER, SPACE -> {
+                        switch (market.buy()) {
+                            case BOUGHT -> sounds.playBought();             // a creepy laugh
+                            case NOT_ENOUGH_APPLES -> sounds.playNotEnough();
+                            default -> { }
+                        }
+                    }
+                    case ESCAPE -> market.cancel();
+                    default -> { }
+                }
+            }
+            case AT_DOOR -> {
+                switch (key) {
+                    case ENTER, SPACE -> {
+                        market.leave();
+                        leaveMarket();
+                    }
+                    case ESCAPE -> market.cancel();
+                    default -> { }
+                }
+            }
+            default -> { }
+        }
+    }
+
+    private static Direction directionFor(KeyCode key) {
+        return switch (key) {
+            case UP, W -> Direction.UP;
+            case DOWN, S -> Direction.DOWN;
+            case LEFT, A -> Direction.LEFT;
+            case RIGHT, D -> Direction.RIGHT;
+            default -> null;
+        };
+    }
+
     // ------------------------------------------------------------------ game actions
 
     private void startNewGame() {
         sounds.stopAll(); // cut off the game-over / win sounds from the last round
         cancelCrashSequence();
+        resetSecretChance();   // only hearts from this game count toward the black market
         game = newGameFor(mode);
         lastTick = 0;
         if (cell > 0) {
@@ -522,6 +745,7 @@ public class SnakeController {
         if (cell > 0) {
             g.keepClear(hudSquares(m));
         }
+        g.setItems(save.clock, save.hammerUses, save.whipGrabs);
         return g;
     }
 
@@ -547,6 +771,8 @@ public class SnakeController {
         if (longestInfo != null) {
             addSquares(squares, 0, 0, pad + textWidth(longestInfo, pixelFont(cell * 0.45)), pad + cell * 0.9);
         }
+        // The black market items, bottom-left.
+        addSquares(squares, 0, canvas.getHeight() - pad - cell, pad + itemsHudWidth(), canvas.getHeight() - 1);
         return squares;
     }
 
@@ -573,6 +799,15 @@ public class SnakeController {
     }
 
     private void onKey(KeyEvent e) {
+        if (staticPlan != null && staticPlan.locksKeys()) {
+            e.consume();               // switching screens: wait for the static
+            return;
+        }
+        if (view == View.MARKET) {
+            onMarketKey(e.getCode());
+            e.consume();
+            return;
+        }
         if (menu != Menu.NONE) {
             onMenuKey(e.getCode());
             e.consume(); // the game ignores keys while a menu is up
@@ -585,13 +820,7 @@ public class SnakeController {
             return;
         }
 
-        Direction dir = switch (e.getCode()) {
-            case UP, W -> Direction.UP;
-            case DOWN, S -> Direction.DOWN;
-            case LEFT, A -> Direction.LEFT;
-            case RIGHT, D -> Direction.RIGHT;
-            default -> null;
-        };
+        Direction dir = directionFor(e.getCode());
 
         if (dir != null) {
             if (game.state() == State.READY) {
@@ -760,7 +989,7 @@ public class SnakeController {
 
     /** One button in a menu: a jelly button with pixel-font text. Selected = the glowing version. */
     private final class MenuItem {
-        final Button button = new Button();
+        final Button button;
         final Runnable action;
         private final ImageView view;
         private final Image normal;
@@ -768,6 +997,7 @@ public class SnakeController {
         final Label label;
 
         MenuItem(String text, boolean red, Color textColor, Runnable action) {
+            this.button = new Button();
             String file = red ? "Buttons/button-red" : "Buttons/button";
             this.normal = loadImage(file + ".png");
             this.glowing = loadImage(file + "-selected.png");
@@ -881,7 +1111,7 @@ public class SnakeController {
             drawTile(g, ROCK, p);
         }
         if (shown.food() != null) {
-            drawTile(g, APPLE, shown.food());
+            drawTile(g, shown.foodIsHeart() ? HEART : APPLE, shown.food());
         }
         if (shown.goldenApple() != null) {
             boolean blinking = shown.goldenTicksLeft() < 12 && (shown.goldenTicksLeft() / 2) % 2 == 0;
@@ -893,6 +1123,9 @@ public class SnakeController {
         drawSnake(g);
         if (menu == Menu.NONE) {
             drawHud(g);   // keep the menus uncluttered
+            if (!isDemo) {
+                drawItemsHud(g);
+            }
         }
         drawOverlay(g);
     }
@@ -903,10 +1136,15 @@ public class SnakeController {
      * the body, and every middle piece is a straight or a turn.
      */
     private void drawSnake(GraphicsContext g) {
-        List<Point> body = shown.body();
-        int last = body.size() - 1;
-        boolean dead = shown.state() == State.GAME_OVER;
+        drawSnakeBody(g, shown.body(), shown.direction(), shown.state() == State.GAME_OVER, 0);
+    }
 
+    /**
+     * Picks a tile for each piece of the snake by looking at which sides it connects to,
+     * and draws it xOffset pixels to the side (the black market scrolls).
+     */
+    private void drawSnakeBody(GraphicsContext g, List<Point> body, Direction heading, boolean dead, double xOffset) {
+        int last = body.size() - 1;
         List<Image> tiles = new ArrayList<>();
         for (int i = 0; i <= last; i++) {
             Point p = body.get(i);
@@ -915,10 +1153,10 @@ public class SnakeController {
 
             String name;
             if (i == 0) {
-                Direction facing = toBack != null ? toBack.opposite() : shown.direction();
+                Direction facing = toBack != null ? toBack.opposite() : heading;
                 name = "head-" + word(facing) + (dead ? "-dead" : "");
             } else if (i == last) {
-                Direction pointing = toFront != null ? toFront.opposite() : shown.direction().opposite();
+                Direction pointing = toFront != null ? toFront.opposite() : heading.opposite();
                 name = "tail-" + word(pointing);
             } else {
                 name = middlePiece(toFront, toBack);
@@ -935,14 +1173,15 @@ public class SnakeController {
         for (int[] nudge : new int[][] {{o, 0}, {-o, 0}, {0, o}, {0, -o}}) {
             for (int i = last; i >= 0; i--) {
                 Point p = body.get(i);
-                g.drawImage(tiles.get(i), p.x() * cell + nudge[0], p.y() * cell + nudge[1], cell, cell);
+                g.drawImage(tiles.get(i), p.x() * cell + nudge[0] + xOffset, p.y() * cell + nudge[1], cell, cell);
             }
         }
         g.setEffect(null);
         g.setGlobalAlpha(alpha);
 
         for (int i = last; i >= 0; i--) {
-            drawTile(g, tiles.get(i), body.get(i));
+            Point p = body.get(i);
+            g.drawImage(tiles.get(i), p.x() * cell + xOffset, p.y() * cell, cell, cell);
         }
     }
 
@@ -987,6 +1226,201 @@ public class SnakeController {
         g.drawImage(image, p.x() * cell, p.y() * cell, cell, cell);
     }
 
+    /** The black market items the player owns, bottom-left: the clock, and the hammer and whip with uses left. */
+    private void drawItemsHud(GraphicsContext g) {
+        double pad = cell * 0.6;
+        double size = cell * 0.9;
+        double x = pad;
+        double y = canvas.getHeight() - pad - size;
+        g.setFont(pixelFont(cell * 0.45));
+        g.setTextAlign(TextAlignment.LEFT);
+        Object[][] owned = {
+                {BlackMarket.Item.CLOCK, game.hasClock() ? "" : null},
+                {BlackMarket.Item.HAMMER, game.hammerUsesLeft() > 0 ? String.valueOf(game.hammerUsesLeft()) : null},
+                {BlackMarket.Item.WHIP, game.whipGrabsLeft() > 0 ? String.valueOf(game.whipGrabsLeft()) : null}};
+        for (Object[] item : owned) {
+            if (item[1] == null) {
+                continue;
+            }
+            g.drawImage(ITEM_ICONS.get((BlackMarket.Item) item[0]), x, y, size, size);
+            x += size + cell * 0.15;
+            String count = (String) item[1];
+            if (!count.isEmpty()) {
+                shadowText(g, count, x, y + size * 0.8, Color.WHITE);
+                x += textWidth(count, pixelFont(cell * 0.45));
+            }
+            x += cell * 0.5;
+        }
+    }
+
+    /** Room for all three items with their biggest numbers. */
+    private double itemsHudWidth() {
+        double size = cell * 0.9;
+        return 3 * (size + cell * 0.65) + 2 * textWidth("100", pixelFont(cell * 0.45));
+    }
+
+    /**
+     * The black market: a dark room. Everything is drawn, then darkness is laid over it
+     * square by square, lit up near the snake, the altar's candles, the door's lantern and the sign.
+     */
+    private void drawMarket() {
+        GraphicsContext g = canvas.getGraphicsContext2D();
+        g.setImageSmoothing(false);
+        double w = canvas.getWidth();
+        double h = canvas.getHeight();
+        double off = -cameraX * cell;                      // everything in the room shifts by this
+        int firstCol = (int) Math.floor(cameraX);
+        int lastCol = Math.min(BlackMarket.WIDTH - 1, firstCol + game.width());
+
+        // Floor: a barely visible stone checkerboard.
+        for (int x = firstCol; x <= lastCol; x++) {
+            for (int y = 0; y < BlackMarket.HEIGHT; y++) {
+                g.setFill((x + y) % 2 == 0 ? Color.web("#16141b") : Color.web("#1a1820"));
+                g.fillRect(x * cell + off, y * cell, cell + 1, cell);
+            }
+        }
+
+        // The sign that says which way to go.
+        Point arrow = BlackMarket.ARROW;
+        g.drawImage(MARKET_ARROW, arrow.x() * cell + off, arrow.y() * cell, cell, cell);
+        g.setFont(pixelFont(cell * 0.4));
+        g.setTextAlign(TextAlignment.CENTER);
+        shadowText(g, "MOVE RIGHT", (arrow.x() + 0.5) * cell + off, (arrow.y() + 1.8) * cell, Color.web("#f0e8c4"));
+
+        // The altar, with a skull candle at each end and the items for sale on top.
+        g.drawImage(MARKET_ALTAR, BlackMarket.ALTAR_X * cell + off, BlackMarket.ALTAR_Y * cell,
+                BlackMarket.ALTAR_W * cell, BlackMarket.ALTAR_H * cell);
+        double candleY = (BlackMarket.ALTAR_Y - 1.3) * cell;
+        g.drawImage(SKULL_CANDLE, (BlackMarket.ALTAR_X - 0.1) * cell + off, candleY, cell * 1.3, cell * 1.3);
+        g.drawImage(SKULL_CANDLE, (BlackMarket.ALTAR_X + BlackMarket.ALTAR_W - 1.2) * cell + off, candleY, cell * 1.3, cell * 1.3);
+
+        BlackMarket.Item selectedItem = market.selectedItem();
+        BlackMarket.Item[] all = BlackMarket.Item.values();
+        for (int i = 0; i < all.length; i++) {
+            if (!market.owns(all[i]) && all[i] != selectedItem) {   // bought ones aren't on the altar
+                Point spot = BlackMarket.ITEM_SPOTS[i];
+                g.drawImage(ITEM_ICONS.get(all[i]), spot.x() * cell + off, spot.y() * cell, cell, cell);
+            }
+        }
+        if (market.choices().isEmpty()) {
+            g.setFont(pixelFont(cell * 0.4));
+            g.setTextAlign(TextAlignment.CENTER);
+            shadowText(g, "SOLD OUT", (BlackMarket.ALTAR_X + BlackMarket.ALTAR_W / 2.0) * cell + off,
+                    (BlackMarket.ALTAR_Y + 1.3) * cell, Color.web("#c9c3d6"));
+        }
+
+        // The door in the corner, with a lantern beside it.
+        g.drawImage(MARKET_DOOR, BlackMarket.DOOR_X * cell + off, BlackMarket.DOOR_Y * cell, cell, cell * BlackMarket.DOOR_H);
+        g.drawImage(MARKET_LANTERN, (BlackMarket.DOOR_X - 1) * cell + off, (BlackMarket.DOOR_Y + 0.2) * cell, cell * 0.8, cell * 0.8);
+
+        drawSnakeBody(g, market.body(), market.direction(), false, off);
+
+        drawDarkness(g, firstCol, lastCol, off);
+
+        // Over the darkness so they're easy to read: the prices, and the selected item glowing and bobbing.
+        for (int i = 0; i < all.length; i++) {
+            if (market.owns(all[i])) {
+                continue;
+            }
+            Point spot = BlackMarket.ITEM_SPOTS[i];
+            double ix = spot.x() * cell + off;
+            if (all[i] == selectedItem) {
+                double iy = spot.y() * cell - cell * 0.2 * (1 + Math.sin(System.nanoTime() / 1.5e8));
+                g.setFill(Color.rgb(255, 214, 120, 0.3));
+                g.fillOval(ix - cell * 0.3, iy - cell * 0.3, cell * 1.6, cell * 1.6);
+                g.drawImage(ITEM_ICONS.get(all[i]), ix, iy, cell, cell);
+            }
+            g.drawImage(APPLE, ix + cell * 0.05, (BlackMarket.ALTAR_Y + 0.9) * cell, cell * 0.45, cell * 0.45);
+            g.setFont(pixelFont(cell * 0.3));
+            g.setTextAlign(TextAlignment.LEFT);
+            shadowText(g, String.valueOf(all[i].price), ix + cell * 0.5, (BlackMarket.ALTAR_Y + 1.3) * cell, Color.web("#ffe45c"));
+        }
+
+        // On top of the darkness: the apple counter and any question being asked.
+        drawAppleCounter(g, w);
+        switch (market.state()) {
+            case CHOOSING -> {
+                BlackMarket.Item item = market.selectedItem();
+                List<String> lines = new ArrayList<>(wrap(item.description, pixelFont(cell * 0.4), w * 0.8));
+                lines.add("");
+                lines.add("Arrows: choose   Enter: buy   Esc: back");
+                drawPanel(g, item.displayName.toUpperCase() + "  -  " + item.price + " apples", lines, market.message());
+            }
+            case AT_DOOR -> drawPanel(g, "Leave the black market?", List.of("Enter: yes   Esc: no"), "");
+            default -> {
+                if (!market.message().isEmpty()) {
+                    drawPanel(g, market.message(), List.of(), "");
+                }
+            }
+        }
+    }
+
+    /** Darkness, one square at a time: dark everywhere except near the lights (chunky, like the pixel art). */
+    private void drawDarkness(GraphicsContext g, int firstCol, int lastCol, double off) {
+        double flicker = 0.92 + 0.08 * Math.random();     // candle flames aren't steady
+        Point head = market.head();
+        double[][] lights = {
+                {head.x() + 0.5, head.y() + 0.5, SNAKE_LIGHT, 1.0},
+                {BlackMarket.ALTAR_X + 0.5, BlackMarket.ALTAR_Y - 0.5, CANDLE_LIGHT * flicker, 1.0},
+                {BlackMarket.ALTAR_X + BlackMarket.ALTAR_W - 0.5, BlackMarket.ALTAR_Y - 0.5, CANDLE_LIGHT * flicker, 1.0},
+                {BlackMarket.DOOR_X - 0.5, BlackMarket.DOOR_Y + 0.7, LANTERN_LIGHT * flicker, 0.9},
+                {BlackMarket.ARROW.x() + 0.5, BlackMarket.ARROW.y() + 0.8, SIGN_LIGHT, 0.7}};
+        for (int x = firstCol; x <= lastCol; x++) {
+            for (int y = 0; y < BlackMarket.HEIGHT; y++) {
+                double light = 0;
+                for (double[] l : lights) {
+                    double d = Math.hypot(x + 0.5 - l[0], y + 0.5 - l[1]);
+                    light = Math.max(light, Math.pow(Math.max(0, 1 - d / l[2]), 0.6) * l[3]);
+                }
+                double dark = Math.round((1 - light) * 8) / 8.0 * 0.96;   // 8 steps of darkness
+                if (dark > 0) {
+                    g.setFill(Color.rgb(0, 0, 0, dark));
+                    g.fillRect(x * cell + off, y * cell, cell + 1, cell);
+                }
+            }
+        }
+    }
+
+    /** An apple and how many the player has, in the top-left corner (the door's lantern is top-right). */
+    private void drawAppleCounter(GraphicsContext g, double w) {
+        double pad = cell * 0.6;
+        g.drawImage(APPLE, pad, pad, cell, cell);
+        g.setFont(pixelFont(cell * 0.6));
+        g.setTextAlign(TextAlignment.LEFT);
+        shadowText(g, "x " + market.apples(), pad + cell * 1.2, pad + cell * 0.8, Color.WHITE);
+    }
+
+    /** A dark box at the bottom of the screen with a title, some lines, and an optional message. */
+    private void drawPanel(GraphicsContext g, String title, List<String> lines, String message) {
+        double w = canvas.getWidth();
+        double h = canvas.getHeight();
+        Font small = pixelFont(cell * 0.4);
+        double lineH = small.getSize() * 1.8;
+        double boxH = cell * 1.6 + lines.size() * lineH + (message.isEmpty() ? 0 : lineH * 1.3);
+        double top = h - boxH - cell * 0.6;
+        g.setFill(Color.rgb(8, 6, 10, 0.88));
+        g.fillRect(cell * 0.6, top, w - cell * 1.2, boxH);
+        g.setStroke(Color.web("#6b4a2b"));
+        g.setLineWidth(3);
+        g.strokeRect(cell * 0.6, top, w - cell * 1.2, boxH);
+
+        g.setTextAlign(TextAlignment.CENTER);
+        g.setFont(pixelFont(cell * 0.5));
+        double y = top + cell * 0.9;
+        shadowText(g, title, w / 2, y, Color.web("#ffe45c"));
+        g.setFont(small);
+        y += cell * 0.4;
+        for (String line : lines) {
+            y += lineH;
+            shadowText(g, line, w / 2, y, SOFT_TEXT);
+        }
+        if (!message.isEmpty()) {
+            y += lineH * 1.3;
+            boolean bad = message.startsWith("Not");
+            shadowText(g, message, w / 2, y, bad ? Color.web("#ff6b6b") : Color.web("#9be37a"));
+        }
+    }
+
     /** Score and high score in the top-right corner; mode info (time, speed, rocks) top-left. */
     private void drawHud(GraphicsContext g) {
         double pad = cell * 0.6;
@@ -1028,6 +1462,13 @@ public class SnakeController {
         List<String> lines = new ArrayList<>();
         switch (game.state()) {
             case READY -> {
+                if (game.justRewound()) {
+                    title = "Rewind!";
+                    lines.add("The clock turned time back 3 seconds.");
+                    lines.add("");
+                    lines.add("Press an arrow key to keep going");
+                    break;
+                }
                 title = mode.displayName();
                 lines.add(mode.description());
                 lines.add("");
