@@ -5,11 +5,13 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.MenuButton?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.Spinner?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.ToggleButton?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
@@ -78,6 +80,7 @@
                     <Label fx:id="waitLabel" minWidth="150.0" prefWidth="170.0" textFill="WHITE"/>
                     <Spinner fx:id="waitSpinner" editable="true" prefWidth="105.0"/>
                 </HBox>
+                <CheckBox fx:id="waveBombCheck" focusTraversable="false" onAction="#onWaveBombToggled" text="Gives a bomb when cleared" textFill="WHITE"/>
                 <Button focusTraversable="false" onAction="#onPlayFromWave" text="Play from this wave"/>
 
                 <Separator/>
@@ -93,56 +96,227 @@
                     <ToggleButton fx:id="crabButton" focusTraversable="false" onAction="#onPickCrab" text="Crab"/>
                     <ToggleButton fx:id="octopusButton" focusTraversable="false" onAction="#onPickOctopus" text="Octopus"/>
                 </HBox>
+                <MenuButton fx:id="quickWaveMenu" focusTraversable="false" text="Add a quick wave"/>
 
                 <Separator/>
                 <Label fx:id="selectedTitle" minHeight="-Infinity" textFill="YELLOW" wrapText="true">
                     <font><Font name="System Bold" size="13.0"/></font>
                 </Label>
-                <TabPane fx:id="selectedTabs" focusTraversable="false" minHeight="-Infinity" prefHeight="300.0" tabClosingPolicy="UNAVAILABLE">
-                    <Tab text="Movement">
+                <TabPane fx:id="selectedTabs" focusTraversable="false" minHeight="-Infinity" tabClosingPolicy="UNAVAILABLE">
+                    <Tab text="Enemy" style="-fx-padding: 1 2 1 2;">
                         <VBox spacing="4.0" style="-fx-background-color: #151515;">
                     <padding><Insets top="6.0"/></padding>
+                    <CheckBox fx:id="bossCheck" focusTraversable="false" onAction="#onBossToggled"
+                              text="This is a boss  (opens the Boss tab)" textFill="GOLD"/>
                     <HBox alignment="CENTER_LEFT" spacing="4.0">
                         <Label fx:id="speedLabel" minWidth="150.0" prefWidth="170.0" textFill="WHITE"/>
                         <Spinner fx:id="speedSpinner" editable="true" prefWidth="105.0"/>
                     </HBox>
-                    <HBox alignment="CENTER_LEFT" spacing="4.0">
-                        <Label fx:id="countLabel" minWidth="150.0" prefWidth="170.0" textFill="WHITE"/>
-                        <Spinner fx:id="countSpinner" editable="true" prefWidth="105.0"/>
-                    </HBox>
+                    <VBox fx:id="groupBox" spacing="4.0">
+                        <HBox alignment="CENTER_LEFT" spacing="4.0">
+                            <Label fx:id="countLabel" minWidth="150.0" prefWidth="170.0" textFill="WHITE"/>
+                            <Spinner fx:id="countSpinner" editable="true" prefWidth="105.0"/>
+                        </HBox>
+                        <HBox alignment="CENTER_LEFT" spacing="4.0">
+                            <Label minWidth="150.0" prefWidth="170.0" text="Health, shots to kill" textFill="WHITE"/>
+                            <Spinner fx:id="healthSpinner" editable="true" prefWidth="105.0"/>
+                        </HBox>
+                        <HBox alignment="CENTER_LEFT" spacing="4.0">
+                            <Label minWidth="150.0" prefWidth="170.0" text="Repeats (sends again)" textFill="WHITE"/>
+                            <Spinner fx:id="repeatsSpinner" editable="true" prefWidth="105.0"/>
+                        </HBox>
+                        <HBox alignment="CENTER_LEFT" spacing="4.0">
+                            <Label fx:id="repeatGapLabel" minWidth="150.0" prefWidth="170.0" textFill="WHITE"/>
+                            <Spinner fx:id="repeatGapSpinner" editable="true" prefWidth="105.0"/>
+                        </HBox>
+                        <HBox alignment="CENTER_LEFT" spacing="4.0">
+                            <Label minWidth="-Infinity" text="Next batch:" textFill="GRAY"/>
+                            <ToggleButton fx:id="repeatTimerButton" focusTraversable="false" minWidth="-Infinity" onAction="#onRepeatOnTimer" text="Timer"/>
+                            <ToggleButton fx:id="repeatGoneButton" focusTraversable="false" minWidth="-Infinity" onAction="#onRepeatAfterGone" text="When gone"/>
+                        </HBox>
+                        <Label fx:id="untilLabel" minHeight="-Infinity" textFill="#9a9a9a" wrapText="true"/>
+                        <HBox spacing="6.0">
+                            <Button focusTraversable="false" minWidth="-Infinity" onAction="#onPickUntil" text="Keep coming until..."/>
+                            <Button focusTraversable="false" minWidth="-Infinity" onAction="#onClearUntil" text="Off"/>
+                        </HBox>
+                        <HBox alignment="CENTER_LEFT" spacing="4.0">
+                            <MenuButton fx:id="formationButton" focusTraversable="false" minWidth="150.0" prefWidth="170.0"/>
+                            <Spinner fx:id="spacingSpinner" editable="true" prefWidth="105.0"/>
+                        </HBox>
+                        <Label minHeight="-Infinity" text="Line: one after another. Other shapes fly together. The box is the gap, px." textFill="#9a9a9a" wrapText="true"/>
+                        <CheckBox fx:id="faceMovementCheck" focusTraversable="false" onAction="#onFaceMovementToggled"
+                                  text="Turns to face where it flies" textFill="WHITE"/>
+                        <MenuButton fx:id="pointingButton" focusTraversable="false" minWidth="150.0" prefWidth="279.0"/>
+                        <HBox alignment="CENTER_LEFT" spacing="4.0">
+                            <Label fx:id="firstShotLabel" minWidth="150.0" prefWidth="170.0" textFill="WHITE"/>
+                            <Spinner fx:id="firstShotSpinner" editable="true" prefWidth="105.0"/>
+                        </HBox>
+                    </VBox>
+                    <Separator/>
+                    <Label text="WHEN IT SPAWNS" textFill="GRAY"/>
                     <HBox alignment="CENTER_LEFT" spacing="4.0">
                         <Label fx:id="spawnLabel" minWidth="150.0" prefWidth="170.0" textFill="WHITE"/>
                         <Spinner fx:id="spawnSpinner" editable="true" prefWidth="105.0"/>
                     </HBox>
+                    <Label fx:id="followLabel" minHeight="-Infinity" textFill="#9a9a9a" wrapText="true"/>
+                    <HBox spacing="6.0">
+                        <Button focusTraversable="false" onAction="#onPickFollow" text="Wait for a group"/>
+                        <Button focusTraversable="false" onAction="#onClearFollow" text="Don't wait"/>
+                    </HBox>
+                    <HBox alignment="CENTER_LEFT" spacing="6.0">
+                        <Label text="Count from it:" textFill="GRAY"/>
+                        <ToggleButton fx:id="followClearedButton" focusTraversable="false" onAction="#onFollowCleared" text="Cleared"/>
+                        <ToggleButton fx:id="followSpawnedButton" focusTraversable="false" onAction="#onFollowSpawned" text="Spawned"/>
+                    </HBox>
+                    <Separator/>
+                    <Label fx:id="pathTitle" text="ITS PATH" textFill="GRAY"/>
                     <CheckBox fx:id="loopCheck" focusTraversable="false" onAction="#onLoopToggled"
                               text="Loop back to the start  (L)" textFill="WHITE"/>
+                    <HBox alignment="CENTER_LEFT" spacing="4.0">
+                        <Label minWidth="-Infinity" text="Stops at:" textFill="WHITE"/>
+                        <Button focusTraversable="false" minWidth="-Infinity" onAction="#onPrevStopPoint" text="&lt;"/>
+                        <Label fx:id="stopPointName" alignment="CENTER" minWidth="70.0" textFill="#ffcc33">
+                            <font><Font name="System Bold" size="13.0"/></font>
+                        </Label>
+                        <Button focusTraversable="false" minWidth="-Infinity" onAction="#onNextStopPoint" text="&gt;"/>
+                    </HBox>
                     <HBox alignment="CENTER_LEFT" spacing="4.0">
                         <Label fx:id="stopLabel" minWidth="150.0" prefWidth="170.0" textFill="WHITE"/>
                         <Spinner fx:id="stopSpinner" editable="true" prefWidth="105.0"/>
                     </HBox>
-                    <Label text="Holds still there, then flies on. Click a path dot (Place tool) to pick it." textFill="#9a9a9a" wrapText="true"/>
+                    <Label fx:id="stopHint" minHeight="-Infinity" textFill="#9a9a9a" wrapText="true"/>
                     <CheckBox fx:id="fireStoppedCheck" focusTraversable="false" onAction="#onFireStoppedToggled"
                               text="Shoot only while stopped" textFill="WHITE"/>
                     <HBox spacing="6.0">
                         <Button focusTraversable="false" onAction="#onUndoStroke" text="Undo"/>
                         <Button focusTraversable="false" onAction="#onClearPath" text="Clear path"/>
+                    </HBox>
+                    <Separator/>
+                    <HBox spacing="6.0">
+                        <Button focusTraversable="false" onAction="#onDuplicateEnemy" text="Duplicate"/>
+                        <Button focusTraversable="false" onAction="#onMirrorEnemy" text="Mirror"/>
                         <Button focusTraversable="false" onAction="#onDeleteEnemy" text="Delete enemy"/>
                     </HBox>
+                    <Label minHeight="-Infinity" text="Duplicate: same path, 2 s later. Mirror: flipped to the other side." textFill="#9a9a9a" wrapText="true"/>
                         </VBox>
                     </Tab>
-                    <Tab text="Bullets">
-                        <VBox spacing="4.0" style="-fx-background-color: #151515;">
+                    <Tab fx:id="bossTab" text="Boss" style="-fx-padding: 1 2 1 2;">
+                        <VBox fx:id="bossTabBox" spacing="4.0" style="-fx-background-color: #151515;">
                             <padding><Insets top="6.0"/></padding>
+                            <VBox fx:id="bossBox" spacing="4.0">
+                                <HBox alignment="CENTER_LEFT" spacing="4.0">
+                                    <Label minWidth="150.0" prefWidth="170.0" text="Spell card name" textFill="GOLD"/>
+                                    <TextField fx:id="cardNameField" focusTraversable="false" prefWidth="105.0" promptText="(plain attack)"/>
+                                </HBox>
+                                <HBox alignment="CENTER_LEFT" spacing="4.0">
+                                    <Label minWidth="150.0" prefWidth="170.0" text="Attack health, shots" textFill="WHITE"/>
+                                    <Spinner fx:id="cardHealthSpinner" editable="true" prefWidth="105.0"/>
+                                </HBox>
+                                <Separator/>
+                                <HBox alignment="CENTER_LEFT" spacing="4.0">
+                                    <Label text="MOVES:" textFill="GRAY" minWidth="-Infinity"/>
+                                    <ToggleButton fx:id="moveStayButton" focusTraversable="false" onAction="#onMoveStay" text="Still" minWidth="-Infinity"/>
+                                    <ToggleButton fx:id="moveWanderButton" focusTraversable="false" onAction="#onMoveWander" text="Wander" minWidth="-Infinity"/>
+                                    <ToggleButton fx:id="movePathButton" focusTraversable="false" onAction="#onMovePath" text="Path" minWidth="-Infinity"/>
+                                </HBox>
+                                <HBox alignment="CENTER_LEFT" spacing="4.0">
+                                    <Label minWidth="150.0" prefWidth="170.0" text="Moves every, s" textFill="WHITE"/>
+                                    <Spinner fx:id="hopSpinner" editable="true" prefWidth="105.0"/>
+                                </HBox>
+                                <VBox fx:id="routeBox" managed="false" spacing="4.0" visible="false">
+                                    <ToggleButton fx:id="drawRouteButton" focusTraversable="false" onAction="#onDrawRoute" text="Draw its path on the map"/>
+                                    <HBox alignment="CENTER_LEFT" spacing="4.0">
+                                        <Label minWidth="150.0" prefWidth="170.0" text="Path speed, px/s" textFill="WHITE"/>
+                                        <Spinner fx:id="routeSpeedSpinner" editable="true" prefWidth="105.0"/>
+                                    </HBox>
+                                    <HBox alignment="CENTER_LEFT" spacing="4.0">
+                                        <ToggleButton fx:id="routeOnceButton" focusTraversable="false" minWidth="-Infinity" onAction="#onRouteOnce" text="Stop at end"/>
+                                        <ToggleButton fx:id="routeLoopButton" focusTraversable="false" minWidth="-Infinity" onAction="#onRouteLoop" text="Loop"/>
+                                        <ToggleButton fx:id="routeBounceButton" focusTraversable="false" minWidth="-Infinity" onAction="#onRouteBounce" text="Back &amp; forth"/>
+                                    </HBox>
+                                    <HBox spacing="6.0">
+                                        <Button focusTraversable="false" onAction="#onUndoRoutePoint" text="Undo point"/>
+                                        <Button focusTraversable="false" onAction="#onClearRoute" text="Clear path"/>
+                                    </HBox>
+                                    <Label minHeight="-Infinity" text="Click the map to add points. Loop: 1, 2, 3, 1... Back and forth: 1, 2, 3, 2, 1..." textFill="#9a9a9a" wrapText="true"/>
+                                    <VBox spacing="4.0" style="-fx-border-color: #ffcc33; -fx-border-width: 1; -fx-padding: 6;">
+                                        <Label fx:id="pointAttacksTitle" minHeight="-Infinity" textFill="#ffcc33" wrapText="true">
+                                            <font><Font name="System Bold" size="13.0"/></font>
+                                        </Label>
+                                        <HBox alignment="CENTER_LEFT" spacing="4.0">
+                                            <Label fx:id="routeStopLabel" minWidth="140.0" prefWidth="160.0" textFill="WHITE"/>
+                                            <Spinner fx:id="routeStopSpinner" editable="true" prefWidth="95.0"/>
+                                        </HBox>
+                                        <VBox fx:id="pointAttackList" spacing="3.0"/>
+                                        <HBox fx:id="pointShotsRow" alignment="CENTER_LEFT" managed="false" spacing="4.0" visible="false">
+                                            <Label fx:id="pointShotsLabel" minWidth="140.0" prefWidth="160.0" textFill="WHITE" wrapText="true"/>
+                                            <Spinner fx:id="pointShotsSpinner" editable="true" prefWidth="95.0"/>
+                                        </HBox>
+                                        <MenuButton fx:id="addPointAttackMenu" focusTraversable="false" text="+ Add an attack at this point"/>
+                                        <Label minHeight="-Infinity" text="Click a gold point on the map to pick it. Click a pattern above to change it on the Bullets tab." textFill="#9a9a9a" wrapText="true"/>
+                                    </VBox>
+                                </VBox>
+                                <Label minHeight="-Infinity" text="An attack ends when its health is shot down or its time runs out. A name makes it a spell card." textFill="#9a9a9a" wrapText="true"/>
+                            </VBox>
+                        </VBox>
+                    </Tab>
+                    <Tab text="Bullets" style="-fx-padding: 1 2 1 2;">
+                        <VBox fx:id="bulletsBox" spacing="4.0" style="-fx-background-color: #151515;">
+                            <padding><Insets top="6.0"/></padding>
+                            <VBox fx:id="attackBox" spacing="4.0">
+                                <HBox alignment="CENTER_LEFT" spacing="4.0">
+                                    <Button focusTraversable="false" onAction="#onPrevAttack" text="&lt;"/>
+                                    <Label fx:id="attackTitle" alignment="CENTER" minWidth="78.0" textFill="GOLD">
+                                        <font><Font name="System Bold" size="13.0"/></font>
+                                    </Label>
+                                    <Button focusTraversable="false" onAction="#onNextAttack" text="&gt;"/>
+                                    <Button focusTraversable="false" onAction="#onAddPhase" text="+ New"/>
+                                    <Button focusTraversable="false" onAction="#onRemoveAttack" text="Delete"/>
+                                </HBox>
+                                <HBox alignment="CENTER_LEFT" spacing="4.0">
+                                    <Label fx:id="lastsLabel" minWidth="150.0" prefWidth="170.0" text="Lasts, s  (0 = for good)" textFill="WHITE"/>
+                                    <Spinner fx:id="lastsSpinner" editable="true" prefWidth="105.0"/>
+                                </HBox>
+                                <HBox spacing="6.0">
+                                    <Button focusTraversable="false" onAction="#onCopyAttack" text="Copy"/>
+                                    <Button focusTraversable="false" onAction="#onPasteAttack" text="Paste"/>
+                                </HBox>
+                                <Label fx:id="attackMessage" minHeight="-Infinity" textFill="LIGHTGREEN" wrapText="true"/>
+                                <Separator/>
+                            </VBox>
+                            <HBox alignment="CENTER_LEFT" spacing="4.0">
+                                <Button focusTraversable="false" onAction="#onPrevPhase" text="&lt;"/>
+                                <Label fx:id="phaseTitle" alignment="CENTER" minWidth="-Infinity" textFill="YELLOW"/>
+                                <Button focusTraversable="false" onAction="#onNextPhase" text="&gt;"/>
+                                <Button focusTraversable="false" minWidth="-Infinity" onAction="#onAddLayer" text="+ Add"/>
+                                <Button focusTraversable="false" minWidth="-Infinity" onAction="#onRemovePhase" text="Delete"/>
+                            </HBox>
+                            <Label fx:id="patternsInfo" minHeight="-Infinity" textFill="#9a9a9a" wrapText="true"/>
+                            <MenuButton fx:id="quickPatternMenu" focusTraversable="false" text="Use a ready-made pattern"/>
+                            <HBox fx:id="fromRow" alignment="CENTER_LEFT" spacing="4.0">
+                                <ToggleButton fx:id="fromSpotButton" focusTraversable="false" minWidth="-Infinity" onAction="#onFromSpot" text="+ Add a spot"/>
+                                <Button fx:id="fromEnemyButton" focusTraversable="false" minWidth="-Infinity" onAction="#onFromEnemy" text="Remove this spot"/>
+                            </HBox>
+                            <Label fx:id="fromHint" minHeight="-Infinity" textFill="#9a9a9a" wrapText="true"/>
+                            <VBox fx:id="pointFireBox" managed="false" spacing="4.0" visible="false">
+                                <MenuButton fx:id="atPointButton" focusTraversable="false" text="Fires anywhere"/>
+                            </VBox>
+                            <HBox alignment="CENTER_LEFT" spacing="4.0">
+                                <Label minWidth="150.0" prefWidth="170.0" text="Starts, s into the attack" textFill="WHITE"/>
+                                <Spinner fx:id="delaySpinner" editable="true" prefWidth="105.0"/>
+                            </HBox>
                             <Label text="Shot pattern  (T: next pattern)" textFill="GRAY"/>
                             <HBox spacing="4.0">
                                 <ToggleButton fx:id="patternNone" focusTraversable="false" onAction="#onPickPattern" text="None" userData="NONE"/>
                                 <ToggleButton fx:id="patternAimed" focusTraversable="false" onAction="#onPickPattern" text="Aimed" userData="AIMED"/>
                                 <ToggleButton fx:id="patternFan" focusTraversable="false" onAction="#onPickPattern" text="Fan" userData="FAN"/>
+                                <ToggleButton fx:id="patternWall" focusTraversable="false" onAction="#onPickPattern" text="Wall" userData="WALL"/>
                             </HBox>
                             <HBox spacing="4.0">
                                 <ToggleButton fx:id="patternRing" focusTraversable="false" onAction="#onPickPattern" text="Ring" userData="RING"/>
                                 <ToggleButton fx:id="patternSpiral" focusTraversable="false" onAction="#onPickPattern" text="Spiral" userData="SPIRAL"/>
                                 <ToggleButton fx:id="patternRandom" focusTraversable="false" onAction="#onPickPattern" text="Random" userData="RANDOM"/>
+                                <ToggleButton fx:id="patternLaser" focusTraversable="false" onAction="#onPickPattern" text="Laser" userData="LASER"/>
                             </HBox>
                             <Label fx:id="patternHint" minHeight="-Infinity" textFill="WHITE" wrapText="true"/>
                             <HBox alignment="CENTER_LEFT" spacing="4.0">
@@ -162,13 +336,121 @@
                                 <Spinner fx:id="intervalSpinner" editable="true" prefWidth="105.0"/>
                             </HBox>
                             <HBox alignment="CENTER_LEFT" spacing="4.0">
-                                <Label fx:id="firstShotLabel" minWidth="150.0" prefWidth="170.0" textFill="WHITE"/>
-                                <Spinner fx:id="firstShotSpinner" editable="true" prefWidth="105.0"/>
-                            </HBox>
-                            <HBox alignment="CENTER_LEFT" spacing="4.0">
                                 <Label fx:id="spinLabel" minWidth="150.0" prefWidth="170.0" textFill="WHITE"/>
                                 <Spinner fx:id="spinSpinner" editable="true" prefWidth="105.0"/>
                             </HBox>
+                            <HBox alignment="CENTER_LEFT" spacing="4.0">
+                                <Label minWidth="150.0" prefWidth="170.0" text="Laser beam lasts, s" textFill="WHITE"/>
+                                <Spinner fx:id="beamSpinner" editable="true" prefWidth="105.0"/>
+                            </HBox>
+                            <HBox alignment="CENTER_LEFT" spacing="4.0">
+                                <Label minWidth="150.0" prefWidth="170.0" text="Wall width, px" textFill="WHITE"/>
+                                <Spinner fx:id="wallWidthSpinner" editable="true" prefWidth="105.0"/>
+                            </HBox>
+                            <HBox alignment="CENTER_LEFT" spacing="4.0">
+                                <Label minWidth="150.0" prefWidth="170.0" text="Bullet size (radius), px" textFill="WHITE"/>
+                                <Spinner fx:id="bulletSizeSpinner" editable="true" prefWidth="105.0"/>
+                            </HBox>
+                            <HBox alignment="CENTER_LEFT" spacing="4.0">
+                                <Label minWidth="150.0" prefWidth="170.0" text="Bounces off the walls" textFill="WHITE"/>
+                                <Spinner fx:id="bouncesSpinner" editable="true" prefWidth="105.0"/>
+                            </HBox>
+                            <HBox spacing="6.0">
+                                <Button fx:id="colorButton" focusTraversable="false" onAction="#onNextColor"/>
+                                <Button fx:id="shapeButton" focusTraversable="false" onAction="#onNextShape"/>
+                            </HBox>
+                        </VBox>
+                    </Tab>
+                    <Tab text="Aim" style="-fx-padding: 1 2 1 2;">
+                        <VBox spacing="4.0" style="-fx-background-color: #151515;">
+                            <padding><Insets top="6.0"/></padding>
+                            <Label fx:id="aimTitle" textFill="GRAY"/>
+                            <HBox fx:id="aimButtons" spacing="4.0">
+                                <ToggleButton fx:id="aimPlayer" focusTraversable="false" onAction="#onPickAim" text="At you" userData="PLAYER"/>
+                                <ToggleButton fx:id="aimOnce" focusTraversable="false" onAction="#onPickAim" text="At you once" userData="ONCE"/>
+                                <ToggleButton fx:id="aimFixed" focusTraversable="false" onAction="#onPickAim" text="Fixed" userData="FIXED"/>
+                            </HBox>
+                            <Label fx:id="aimHint" minHeight="-Infinity" textFill="WHITE" wrapText="true"/>
+                            <VBox fx:id="aimSettings" spacing="4.0">
+                                <VBox fx:id="directionBox" spacing="4.0">
+                                    <HBox alignment="CENTER_LEFT" spacing="4.0">
+                                        <Label fx:id="directionLabel" minWidth="150.0" prefWidth="170.0" textFill="WHITE"/>
+                                        <Spinner fx:id="directionSpinner" editable="true" prefWidth="105.0"/>
+                                    </HBox>
+                                    <Label text="0 = right, 90 = down, 180 = left, 270 = up. The cyan line on the map shows it." textFill="#9a9a9a" wrapText="true"/>
+                                </VBox>
+                                <Separator/>
+                                <HBox alignment="CENTER_LEFT" spacing="4.0">
+                                    <Label minWidth="150.0" prefWidth="170.0" text="Sweeps, degrees per s" textFill="WHITE"/>
+                                    <Spinner fx:id="sweepSpinner" editable="true" prefWidth="105.0"/>
+                                </HBox>
+                                <HBox alignment="CENTER_LEFT" spacing="4.0">
+                                    <Label minWidth="150.0" prefWidth="170.0" text="Swings across, degrees" textFill="WHITE"/>
+                                    <Spinner fx:id="swingSpinner" editable="true" prefWidth="105.0"/>
+                                </HBox>
+                                <Label minHeight="-Infinity" text="Sweep turns the aim as it fires (below 0: the other way). Swing makes it go back and forth across that many degrees, like a wiper (0 = keeps turning)." textFill="#9a9a9a" wrapText="true"/>
+                            </VBox>
+                        </VBox>
+                    </Tab>
+                    <Tab text="Moves" style="-fx-padding: 1 2 1 2;">
+                        <VBox spacing="4.0" style="-fx-background-color: #151515;">
+                            <padding><Insets top="6.0"/></padding>
+                            <Label fx:id="movesTitle" textFill="GRAY"/>
+                            <HBox alignment="CENTER_LEFT" spacing="4.0">
+                                <Label minWidth="150.0" prefWidth="170.0" text="Speeds up, px/s per s" textFill="WHITE"/>
+                                <Spinner fx:id="accelSpinner" editable="true" prefWidth="105.0"/>
+                            </HBox>
+                            <HBox alignment="CENTER_LEFT" spacing="4.0">
+                                <Label minWidth="150.0" prefWidth="170.0" text="Curves, degrees per s" textFill="WHITE"/>
+                                <Spinner fx:id="curveSpinner" editable="true" prefWidth="105.0"/>
+                            </HBox>
+                            <HBox alignment="CENTER_LEFT" spacing="4.0">
+                                <Label minWidth="150.0" prefWidth="170.0" text="Wavy, px to each side" textFill="WHITE"/>
+                                <Spinner fx:id="waveSpinner" editable="true" prefWidth="105.0"/>
+                            </HBox>
+                            <HBox alignment="CENTER_LEFT" spacing="4.0">
+                                <Label minWidth="150.0" prefWidth="170.0" text="Waves per second" textFill="WHITE"/>
+                                <Spinner fx:id="waveRateSpinner" editable="true" prefWidth="105.0"/>
+                            </HBox>
+                            <Label minHeight="-Infinity" text="Wavy bullets swing side to side as they fly, like a snake (0 = straight)." textFill="#9a9a9a" wrapText="true"/>
+                            <Separator/>
+                            <Label text="Timed changes to each bullet" textFill="GRAY"/>
+                            <HBox alignment="CENTER_LEFT" spacing="4.0">
+                                <Button focusTraversable="false" onAction="#onPrevStep" text="&lt;"/>
+                                <Label fx:id="stepTitle" alignment="CENTER" minWidth="70.0" textFill="YELLOW"/>
+                                <Button focusTraversable="false" onAction="#onNextStep" text="&gt;"/>
+                                <Button focusTraversable="false" onAction="#onAddStep" text="+ Add"/>
+                                <Button focusTraversable="false" onAction="#onRemoveStep" text="Delete"/>
+                            </HBox>
+                            <VBox fx:id="stepBox" spacing="4.0">
+                                <HBox alignment="CENTER_LEFT" spacing="4.0">
+                                    <Label minWidth="146.0" prefWidth="166.0" text="At, s after it's fired" textFill="WHITE"/>
+                                    <Spinner fx:id="stepTimeSpinner" editable="true" prefWidth="105.0"/>
+                                </HBox>
+                                <HBox alignment="CENTER_LEFT" spacing="4.0">
+                                    <Label minWidth="146.0" prefWidth="166.0" text="Speed becomes, px/s" textFill="WHITE"/>
+                                    <Spinner fx:id="stepSpeedSpinner" editable="true" prefWidth="105.0"/>
+                                </HBox>
+                                <HBox alignment="CENTER_LEFT" spacing="4.0">
+                                    <Label minWidth="146.0" prefWidth="166.0" text="Speeds up, px/s per s" textFill="WHITE"/>
+                                    <Spinner fx:id="stepAccelSpinner" editable="true" prefWidth="105.0"/>
+                                </HBox>
+                                <HBox alignment="CENTER_LEFT" spacing="4.0">
+                                    <Label minWidth="146.0" prefWidth="166.0" text="Curves, degrees per s" textFill="WHITE"/>
+                                    <Spinner fx:id="stepCurveSpinner" editable="true" prefWidth="105.0"/>
+                                </HBox>
+                                <HBox alignment="CENTER_LEFT" spacing="4.0">
+                                    <Label minWidth="146.0" prefWidth="166.0" text="Turns, degrees" textFill="WHITE"/>
+                                    <Spinner fx:id="stepTurnSpinner" editable="true" prefWidth="105.0"/>
+                                </HBox>
+                                <HBox alignment="CENTER_LEFT" spacing="4.0">
+                                    <Label minWidth="146.0" prefWidth="166.0" text="Splits into, bullets" textFill="WHITE"/>
+                                    <Spinner fx:id="stepSplitSpinner" editable="true" prefWidth="105.0"/>
+                                </HBox>
+                                <CheckBox fx:id="stepAimCheck" focusTraversable="false" onAction="#onStepAimToggled"
+                                          text="Aims at the player first" textFill="WHITE"/>
+                                <Label minHeight="-Infinity" text="Try: change 1 at 0.6 s, speed 0. Change 2 at 1.2 s, speed 180, aims. The bullets stop, then all fly at you." textFill="#9a9a9a" wrapText="true"/>
+                            </VBox>
                         </VBox>
                     </Tab>
                 </TabPane>
@@ -187,6 +469,8 @@
                     <Button focusTraversable="false" onAction="#onLoadStage" text="4" userData="3"/>
                     <Button focusTraversable="false" onAction="#onPasteLevel" text="Paste"/>
                 </HBox>
+                <Button focusTraversable="false" onAction="#onAddLevelAtEnd" text="Paste waves at the end"/>
+                <Label minHeight="-Infinity" text="Paste replaces the whole level. Paste waves at the end keeps this level and adds the copied waves after it." textFill="#9a9a9a" wrapText="true"/>
                 <Label fx:id="saveMessage" minHeight="-Infinity" textFill="LIGHTGREEN" wrapText="true"/>
             </VBox>
         </ScrollPane>
