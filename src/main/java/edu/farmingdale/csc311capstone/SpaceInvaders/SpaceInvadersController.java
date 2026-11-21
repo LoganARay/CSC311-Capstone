@@ -191,6 +191,13 @@ public class SpaceInvadersController {
     private static final javafx.scene.image.Image[] OCTOPUS_FRAMES = {tint(loadImage("Octopus_v1.png"), OCTOPUS), tint(loadImage("Octopus_v2.png"), OCTOPUS)};
     /** How many screen pixels each picture pixel takes (keep it a whole number so the pixels stay even). */
     private static final double ALIEN_PIXEL_SCALE = 2;
+    /** Item pictures: a small power item (one bullet, tilted up-left or up-right) and a big one (three bullets). */
+    private static final javafx.scene.image.Image SMALL_POWER_ITEM = loadImage("small_power_box.png");
+    private static final javafx.scene.image.Image BIG_POWER_ITEM = loadImage("big_power_box.png");
+    private static final javafx.scene.image.Image POINT_ITEM = loadImage("score_box.png");
+    /** How many screen pixels each item picture pixel takes, and how far a small power item tilts (degrees). */
+    private static final double ITEM_PIXEL_SCALE = 1;
+    private static final double SMALL_POWER_TILT = 45;
     /** How long each alien frame shows, in milliseconds. */
     private static final int ALIEN_FRAME_MS = 400;
 
@@ -3306,6 +3313,26 @@ public class SpaceInvadersController {
         }
         g.setTextAlign(TextAlignment.CENTER);
         for (Extermination.Item item : sandbox.getItems()) {
+            javafx.scene.image.Image picture = switch (item.getType()) {
+                case SMALL_POWER -> SMALL_POWER_ITEM;
+                case BIG_POWER -> BIG_POWER_ITEM;
+                case POINT -> POINT_ITEM;
+                default -> null;
+            };
+            if (picture != null) {
+                double pw = picture.getWidth() * ITEM_PIXEL_SCALE;
+                double ph = picture.getHeight() * ITEM_PIXEL_SCALE;
+                g.save();
+                g.setImageSmoothing(false); // keeps pixel art sharp
+                g.translate(item.getX(), item.getY());
+                if (item.getType() == Extermination.ItemType.SMALL_POWER) {
+                    // Each small item leans up-left or up-right, picked at random once (it stays the same as it falls)
+                    g.rotate((System.identityHashCode(item) & 1) == 0 ? -SMALL_POWER_TILT : SMALL_POWER_TILT);
+                }
+                g.drawImage(picture, -pw / 2, -ph / 2, pw, ph);
+                g.restore();
+                continue;
+            }
             boolean big = item.getType() == Extermination.ItemType.BIG_POWER || item.getType() == Extermination.ItemType.BOMB;
             double size = Extermination.ITEM_SIZE * (big ? 1.6 : 1);
             Color fill = switch (item.getType()) {
