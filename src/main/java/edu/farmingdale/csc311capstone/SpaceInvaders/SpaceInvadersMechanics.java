@@ -911,14 +911,13 @@ public final class SpaceInvadersMechanics {
         /** How many hits one rocket counts as. Rockets fire this many times slower, so the total damage stays the same. */
         public static final int ROCKET_DAMAGE = 3;
         /**
-         * Flak: a rocket that hits a small enemy bursts into shrapnel that flies out in a circle and hurts only
-         * small enemies it touches (never tanks or bosses). Each piece hits once and is gone.
+         * Flak: when a rocket kills a small enemy or a tank, it explodes. In that instant the explosion destroys
+         * every small enemy and tank inside it, and every enemy bullet. Enemies it destroys don't explode again,
+         * and bosses aren't hurt by it.
          */
-        public static final int ROCKET_SHRAPNEL_PIECES = 8;        // pieces per burst, spread evenly around the circle
-        public static final double ROCKET_SHRAPNEL_RANGE = 45;     // px a piece flies before it fades out
-        public static final double ROCKET_SHRAPNEL_SPEED = 260;    // px per second
-        public static final int ROCKET_SHRAPNEL_DAMAGE = 1;        // hits one piece counts as
-        public static final double ROCKET_SHRAPNEL_SIZE = 6;       // how big a piece is, for touching enemies
+        public static final double FLAK_RADIUS = 36;               // px from the center the explosion reaches
+        public static final double FLAK_TIME = 0.48;               // how long the explosion animation plays (seconds)
+        public static final double ENEMY_DEATH_TIME = 0.32;        // how long an enemy's death animation plays (seconds)
 
         // Score
         public static final long SMALL_KILL_SCORE = 100;           // for shooting down a small enemy
@@ -1043,22 +1042,11 @@ public final class SpaceInvadersMechanics {
         private double shotCooldown = 0;
         /** Which side fires next when full-power rockets take turns. */
         private int nextShotSide = 0;
-        /** Flak shrapnel flying out from rocket hits. */
-        private final List<Shrapnel> shrapnel = new ArrayList<>();
+        /** Flak explosions playing: {x, y, seconds so far}. */
+        private final List<double[]> flaks = new ArrayList<>();
+        /** Enemy death animations playing: {x, y, seconds so far, size}. */
+        private final List<double[]> deaths = new ArrayList<>();
 
-        /** One piece of flak shrapnel: where it is, where it's going, how far it has gone, and the enemy it came from. */
-        private static final class Shrapnel {
-            double x, y, vx, vy, travelled;
-            final Enemy from;
-
-            Shrapnel(double x, double y, double angle, Enemy from) {
-                this.x = x;
-                this.y = y;
-                this.vx = Math.cos(angle) * ROCKET_SHRAPNEL_SPEED;
-                this.vy = Math.sin(angle) * ROCKET_SHRAPNEL_SPEED;
-                this.from = from;
-            }
-        }
         /** Player shots. Each one is {x, y, x speed, y speed, kind, power stage}: kind 0 is a bullet, 1 a full-power rocket; power stage is the POWER_LEVELS row it was fired at (picks its picture). */
         private final List<double[]> shots = new ArrayList<>();
         /** The enemies as they were designed: the level layout. */
@@ -1156,7 +1144,8 @@ public final class SpaceInvadersMechanics {
             }
             enemies.removeIf(Enemy::hasLeftScreen);
             shots.removeIf(this::hitEnemy);
-            moveShrapnel(deltaSeconds);
+            flaks.removeIf(flak -> (flak[2] += deltaSeconds) >= FLAK_TIME);
+            deaths.removeIf(death -> (death[2] += deltaSeconds) >= ENEMY_DEATH_TIME);
             updateBombs(deltaSeconds);
             moveEnemyBullets(deltaSeconds);
             moveItems(deltaSeconds);
@@ -1164,43 +1153,22 @@ public final class SpaceInvadersMechanics {
 
         // ---- The run: power, score, lives, items and bombs
 
-        /** A small enemy: not a boss, and less health than a tank. */
-        private boolean isSmallEnemy(Enemy enemy) {
-            return !enemy.getDesign().isBoss() && enemy.getDesign().getHealth() < TANK_HEALTH;
-        }
-
-        /** A rocket hit a small enemy: it bursts into shrapnel flying out in a circle. */
-        private void burstShrapnel(Enemy hit) {
-            for (int i = 0; i < ROCKET_SHRAPNEL_PIECES; i++) {
-                double angle = 2 * Math.PI * i / ROCKET_SHRAPNEL_PIECES;
-                shrapnel.add(new Shrapnel(hit.getX(), hit.getY(), angle, hit));
+        /**
+         * A rocket killed a small enemy or a tank: a flak explosion where it was. In that instant it destroys every
+         * small enemy and tank inside FLAK_RADIUS (they play their normal death, no new explosion) and every enemy bullet.
+         */
+        private void flakExplosion(double x, double y) {
+            deaths.remove(deaths.size() - 1); // the explosion shows instead of the killed enemy's own death animation
+            flaks.add(new double[]{x, y, 0});
+            for (Enemy enemy : new ArrayList<>(enemies)) {
+                if (enemy.getDesign().isBoss() || enemy.isAppearing()
+                        || Math.hypot(enemy.getX() - x, enemy.getY() - y) > FLAK_RADIUS) {
+                    continue;
+                }
+                enemies.remove(enemy);
+                enemyDestroyed(enemy);
             }
-        }
-
-        /** Moves the shrapnel; a piece that touches a small enemy (not the one it came from) hurts it and is gone. */
-        private void moveShrapnel(double deltaSeconds) {
-            shrapnel.removeIf(piece -> {
-                piece.x += piece.vx * deltaSeconds;
-                piece.y += piece.vy * deltaSeconds;
-                piece.travelled += ROCKET_SHRAPNEL_SPEED * deltaSeconds;
-                if (piece.travelled > ROCKET_SHRAPNEL_RANGE) {
-                    return true;
-                }
-                for (Enemy enemy : enemies) {
-                    double scale = enemy.getDesign().getScale();
-                    if (enemy == piece.from || enemy.isAppearing() || !isSmallEnemy(enemy)
-                            || Math.abs(piece.x - enemy.getX()) > (Alien.WIDTH * scale + ROCKET_SHRAPNEL_SIZE) / 2
-                            || Math.abs(piece.y - enemy.getY()) > (Alien.HEIGHT * scale + ROCKET_SHRAPNEL_SIZE) / 2) {
-                        continue;
-                    }
-                    if (enemy.takeHit(ROCKET_SHRAPNEL_DAMAGE)) {
-                        enemies.remove(enemy);
-                        enemyDestroyed(enemy);
-                    }
-                    return true;
-                }
-                return false;
-            });
+            enemyBullets.removeIf(b -> Math.hypot(b.getX() - x, b.getY() - y) < FLAK_RADIUS + b.getRadius());
         }
 
         /** The row of POWER_LEVELS the ship's power has reached. */
@@ -1264,6 +1232,7 @@ public final class SpaceInvadersMechanics {
         private void enemyDestroyed(Enemy enemy) {
             double x = enemy.getX();
             double y = enemy.getY();
+            deaths.add(new double[]{x, y, 0, enemy.getDesign().getScale()});
             if (enemy.getDesign().getHealth() >= TANK_HEALTH) {
                 addScore(TANK_KILL_SCORE);
                 dropBurst(x, y, ItemType.BIG_POWER, TANK_BIG_POWER_ITEMS, false);
@@ -2158,9 +2127,9 @@ public final class SpaceInvadersMechanics {
                     } else if (destroyed) {
                         enemies.remove(enemy);
                         enemyDestroyed(enemy);
-                    }
-                    if (rocket && isSmallEnemy(enemy)) {
-                        burstShrapnel(enemy);
+                        if (rocket) {
+                            flakExplosion(enemy.getX(), enemy.getY());
+                        }
                     }
                     return true;
                 }
@@ -2956,7 +2925,8 @@ public final class SpaceInvadersMechanics {
             batchStartTimes.clear();
             batchHistory.clear();
             shots.clear();
-            shrapnel.clear();
+            flaks.clear();
+            deaths.clear();
             enemyBullets.clear();
             lasers.clear();
             hits = 0;
@@ -2987,13 +2957,22 @@ public final class SpaceInvadersMechanics {
             return shots;
         }
 
-        /** Flak shrapnel on screen, each {x, y, how far along its range it is from 0 to 1}. */
-        public List<double[]> getShrapnel() {
-            List<double[]> pieces = new ArrayList<>();
-            for (Shrapnel piece : shrapnel) {
-                pieces.add(new double[]{piece.x, piece.y, piece.travelled / ROCKET_SHRAPNEL_RANGE});
+        /** Flak explosions on screen, each {x, y, how far along it is from 0 to 1}. */
+        public List<double[]> getFlaks() {
+            List<double[]> list = new ArrayList<>();
+            for (double[] flak : flaks) {
+                list.add(new double[]{flak[0], flak[1], flak[2] / FLAK_TIME});
             }
-            return pieces;
+            return list;
+        }
+
+        /** Enemy death animations: {x, y, how far along 0..1, size}. */
+        public List<double[]> getDeaths() {
+            List<double[]> list = new ArrayList<>();
+            for (double[] death : deaths) {
+                list.add(new double[]{death[0], death[1], death[2] / ENEMY_DEATH_TIME, death[3]});
+            }
+            return list;
         }
 
         public List<Enemy> getEnemies() {

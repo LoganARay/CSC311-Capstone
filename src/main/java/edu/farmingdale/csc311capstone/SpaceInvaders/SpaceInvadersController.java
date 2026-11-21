@@ -195,6 +195,25 @@ public class SpaceInvadersController {
     private static final javafx.scene.image.Image SMALL_POWER_ITEM = loadImage("small_power_box.png");
     private static final javafx.scene.image.Image BIG_POWER_ITEM = loadImage("big_power_box.png");
     private static final javafx.scene.image.Image POINT_ITEM = loadImage("score_box.png");
+    /** The bomb picture: the bomb pickup, and one per bomb in stock on the HUD. */
+    private static final javafx.scene.image.Image BOMB_ITEM = loadImage("bomb_stock_art.png");
+    // Heart picture for each life in the HUD
+    private static final javafx.scene.image.Image LIFE_ICON = loadImage("heart_stock_art.png");
+    /** Enemy death animation, played in order (small and tank enemies). */
+    private static final javafx.scene.image.Image[] ENEMY_DEATH_FRAMES = {
+            loadImage("enemy_death_frame1.png"), loadImage("enemy_death_frame2.png"),
+            loadImage("enemy_death_frame3.png"), loadImage("enemy_death_frame4.png")};
+    /** How many screen pixels each death animation pixel takes (bigger enemies get a bigger blast). */
+    private static final double ENEMY_DEATH_PIXEL_SCALE = 3;
+    /** Flak explosion from a rocket kill, played in order. */
+    private static final javafx.scene.image.Image[] FLAK_FRAMES = new javafx.scene.image.Image[8];
+    static {
+        for (int i = 0; i < FLAK_FRAMES.length; i++) {
+            FLAK_FRAMES[i] = loadImage("flak_gun_explosion_frame" + (i + 1) + ".png");
+        }
+    }
+    /** How many screen pixels each flak explosion pixel takes (4.8 makes the biggest frame about as wide as FLAK_RADIUS reaches). */
+    private static final double FLAK_PIXEL_SCALE = 4.8;
     /** How many screen pixels each item picture pixel takes, and how far a small power item tilts (degrees). */
     private static final double ITEM_PIXEL_SCALE = 1;
     private static final double SMALL_POWER_TILT = 45;
@@ -2691,7 +2710,8 @@ public class SpaceInvadersController {
         drawItems(g);
         drawEnemyBullets(g);
         drawBombs(g);
-        drawShrapnel(g);
+        drawDeaths(g);
+        drawFlaks(g);
         drawPlayerShots(g);
         drawShip(g);
         drawRunHud(g);
@@ -3108,7 +3128,8 @@ public class SpaceInvadersController {
         drawItems(g);
         drawEnemyBullets(g);
         drawBombs(g);
-        drawShrapnel(g);
+        drawDeaths(g);
+        drawFlaks(g);
 
         drawPlayerShots(g);
         drawShip(g);
@@ -3317,7 +3338,7 @@ public class SpaceInvadersController {
                 case SMALL_POWER -> SMALL_POWER_ITEM;
                 case BIG_POWER -> BIG_POWER_ITEM;
                 case POINT -> POINT_ITEM;
-                default -> null;
+                case BOMB -> BOMB_ITEM;
             };
             if (picture != null) {
                 double pw = picture.getWidth() * ITEM_PIXEL_SCALE;
@@ -3432,9 +3453,27 @@ public class SpaceInvadersController {
         g.setFill(Color.WHITE);
         g.fillText(String.format("Score  %09d", sandbox.getScore()), left, top + 14);
         g.setFill(Color.web("#ff6fa8"));
-        g.fillText("Lives  " + "\u2665".repeat(sandbox.getLives()), left, top + 30);
+        if (LIFE_ICON != null) {
+            // One heart picture per life
+            g.fillText("Lives", left, top + 30);
+            g.setImageSmoothing(false);
+            for (int i = 0; i < sandbox.getLives(); i++) {
+                g.drawImage(LIFE_ICON, left + 49 + i * (LIFE_ICON.getWidth() + 1), top + 31 - LIFE_ICON.getHeight());
+            }
+        } else {
+            g.fillText("Lives  " + "\u2665".repeat(sandbox.getLives()), left, top + 30);
+        }
         g.setFill(Color.web("#4cff6a"));
-        g.fillText("Bombs  " + "\u2605".repeat(sandbox.getBombs()), left, top + 46);
+        if (BOMB_ITEM != null) {
+            // One bomb picture per bomb in stock
+            g.fillText("Bombs", left, top + 46);
+            g.setImageSmoothing(false);
+            for (int i = 0; i < sandbox.getBombs(); i++) {
+                g.drawImage(BOMB_ITEM, left + 49 + i * (BOMB_ITEM.getWidth() + 1), top + 47 - BOMB_ITEM.getHeight());
+            }
+        } else {
+            g.fillText("Bombs  " + "\u2605".repeat(sandbox.getBombs()), left, top + 46);
+        }
         // Power: a bar that fills to MAX_POWER, with ticks where each power level starts
         g.setFill(Color.web("#ff9a2e"));
         g.fillText(String.format("Power  %3.0f/%.0f", sandbox.getPower(), Extermination.MAX_POWER), left, top + 62);
@@ -3600,13 +3639,34 @@ public class SpaceInvadersController {
     }
 
     /** Placeholder ship (a simple arrowhead) until there's a sprite. Focus shows the tiny hitbox. */
-    /** Flak shrapnel: small bright pieces that fade as they fly out (stand-in until there's shrapnel art). */
-    private void drawShrapnel(GraphicsContext g) {
-        for (double[] s : sandbox.getShrapnel()) {
-            double fade = 1 - Math.min(1, s[2]);
-            g.setFill(Color.web("#ffd060", 0.4 + 0.6 * fade));
-            g.fillRect(s[0] - 1.5, s[1] - 1.5, 3, 3);
+    /** Enemy deaths: the death animation's frames, one after another, centered where the enemy died. */
+    private void drawDeaths(GraphicsContext g) {
+        g.save();
+        g.setImageSmoothing(false);
+        for (double[] death : sandbox.getDeaths()) {
+            int frame = (int) Math.min(death[2] * ENEMY_DEATH_FRAMES.length, ENEMY_DEATH_FRAMES.length - 1);
+            javafx.scene.image.Image img = ENEMY_DEATH_FRAMES[frame];
+            if (img == null) continue;
+            double w = img.getWidth() * ENEMY_DEATH_PIXEL_SCALE * death[3];
+            double h = img.getHeight() * ENEMY_DEATH_PIXEL_SCALE * death[3];
+            g.drawImage(img, death[0] - w / 2, death[1] - h / 2, w, h);
         }
+        g.restore();
+    }
+
+    /** Flak explosions: the explosion's frames, one after another, centered where the rocket's kill was. */
+    private void drawFlaks(GraphicsContext g) {
+        g.save();
+        g.setImageSmoothing(false);
+        for (double[] flak : sandbox.getFlaks()) {
+            int frame = (int) Math.min(flak[2] * FLAK_FRAMES.length, FLAK_FRAMES.length - 1);
+            javafx.scene.image.Image img = FLAK_FRAMES[frame];
+            if (img == null) continue;
+            double w = img.getWidth() * FLAK_PIXEL_SCALE;
+            double h = img.getHeight() * FLAK_PIXEL_SCALE;
+            g.drawImage(img, flak[0] - w / 2, flak[1] - h / 2, w, h);
+        }
+        g.restore();
     }
 
     /** The ship's shots: bullet pictures, rockets at full power, or plain bars if a picture is missing. */
