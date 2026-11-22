@@ -359,6 +359,14 @@
                                 <Button fx:id="colorButton" focusTraversable="false" onAction="#onNextColor"/>
                                 <Button fx:id="shapeButton" focusTraversable="false" onAction="#onNextShape"/>
                             </HBox>
+                            <HBox fx:id="bulletPictureRow" alignment="CENTER_LEFT" spacing="6.0">
+                                <MenuButton fx:id="bulletPictureButton" focusTraversable="false" minWidth="150.0" prefWidth="170.0"/>
+                                <Canvas fx:id="bulletPreview" width="100.0" height="76.0"/>
+                            </HBox>
+                            <HBox alignment="CENTER_LEFT" spacing="4.0">
+                                <Label minWidth="150.0" prefWidth="170.0" text="Picture size, % (look only)" textFill="WHITE"/>
+                                <Spinner fx:id="pictureSizeSpinner" editable="true" prefWidth="105.0"/>
+                            </HBox>
                         </VBox>
                     </Tab>
                     <Tab text="Aim" style="-fx-padding: 1 2 1 2;">

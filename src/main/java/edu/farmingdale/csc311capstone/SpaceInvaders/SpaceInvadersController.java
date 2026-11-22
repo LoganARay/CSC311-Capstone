@@ -199,6 +199,8 @@ public class SpaceInvadersController {
     private static final javafx.scene.image.Image BOMB_ITEM = loadImage("bomb_stock_art.png");
     // Heart picture for each life in the HUD
     private static final javafx.scene.image.Image LIFE_ICON = loadImage("heart_stock_art.png");
+    /** Enemy bullet pictures, all on one sheet (FoX71's shot sheet); BULLET_PICTURES says where each one is. */
+    private static final javafx.scene.image.Image BULLET_SHEET = loadImage("enemy_bullets.png");
     /** Enemy death animation, played in order (small and tank enemies). */
     private static final javafx.scene.image.Image[] ENEMY_DEATH_FRAMES = {
             loadImage("enemy_death_frame1.png"), loadImage("enemy_death_frame2.png"),
@@ -374,6 +376,10 @@ public class SpaceInvadersController {
     @FXML private Spinner<Double> bulletSizeSpinner;
     @FXML private Button colorButton;
     @FXML private Button shapeButton;
+    @FXML private HBox bulletPictureRow;
+    @FXML private MenuButton bulletPictureButton;
+    @FXML private Canvas bulletPreview;
+    @FXML private Spinner<Double> pictureSizeSpinner;
     @FXML private Spinner<Double> bouncesSpinner;
     @FXML private Spinner<Double> stepSplitSpinner;
     @FXML private Label patternHint;
@@ -610,6 +616,8 @@ public class SpaceInvadersController {
                 v -> { if (phase() != null) phase().setSpin(v); });
         setUpNumberBox(bulletSizeSpinner, Extermination.MIN_BULLET_SIZE, Extermination.MAX_BULLET_SIZE, 1, 0,
                 v -> { if (phase() != null) phase().setBulletSize(v); });
+        setUpNumberBox(pictureSizeSpinner, Extermination.MIN_PICTURE_SIZE * 100, Extermination.MAX_PICTURE_SIZE * 100, 10, 0,
+                v -> { if (phase() != null) phase().setPictureSize(v / 100); });
         setUpNumberBox(bouncesSpinner, 0, Extermination.MAX_BOUNCES, 1, 0,
                 v -> { if (phase() != null) phase().setBounces((int) Math.round(v)); });
         setUpNumberBox(stepSplitSpinner, 0, Extermination.MAX_SPLIT, 1, 0,
@@ -620,6 +628,7 @@ public class SpaceInvadersController {
             item.setOnAction(e -> { if (selectedEnemy != null) selectedEnemy.setFormation(shape); });
             formationButton.getItems().add(item);
         }
+        setUpBulletPictures();
         // How each enemy's picture points as it flies
         for (Extermination.Pointing pointing : Extermination.Pointing.values()) {
             MenuItem item = new MenuItem(pointingName(pointing));
@@ -1419,6 +1428,102 @@ public class SpaceInvadersController {
         if (phase() != null) phase().nextShape();
     }
 
+    /**
+     * The bullet picture menu: "Drawn bullet" first, then one submenu per group (orbs, rice, stars...) with a
+     * small picture of each bullet next to its color. The preview next to it shows the chosen bullet flying,
+     * with its hitbox outlined.
+     */
+    private void setUpBulletPictures() {
+        MenuItem drawn = new MenuItem("Drawn bullet (uses Color and Shape)");
+        drawn.setOnAction(e -> { if (phase() != null) { phase().setPicture(null); refreshPanel(); } });
+        bulletPictureButton.getItems().add(drawn);
+        javafx.scene.control.Menu groupMenu = null;
+        for (Extermination.BulletPicture picture : Extermination.BULLET_PICTURES) {
+            if (groupMenu == null || !groupMenu.getText().equals(picture.group)) {
+                groupMenu = new javafx.scene.control.Menu(picture.group);
+                groupMenu.setGraphic(bulletIcon(picture));
+                bulletPictureButton.getItems().add(groupMenu);
+            }
+            MenuItem item = new MenuItem(bulletColorName(picture), bulletIcon(picture));
+            item.setOnAction(e -> { if (phase() != null) { phase().setPicture(picture); refreshPanel(); } });
+            groupMenu.getItems().add(item);
+        }
+        AnimationTimer previewLoop = new AnimationTimer() {
+            @Override
+            public void handle(long now) {
+                if (bulletPreview.isVisible() && bulletPreview.getScene() != null) {
+                    drawBulletPreview(now / 1_000_000_000.0);
+                }
+            }
+        };
+        previewLoop.start();
+    }
+
+    /** A bullet picture's color, from the end of its name ("rice_red" is "Red"). */
+    private static String bulletColorName(Extermination.BulletPicture picture) {
+        String color = picture.name.substring(picture.name.lastIndexOf('_') + 1);
+        return Character.toUpperCase(color.charAt(0)) + color.substring(1);
+    }
+
+    /** A small picture of one bullet for the menu, up to 2x its size but no bigger than 28 px, on a dark square so white bullets show. */
+    private javafx.scene.Node bulletIcon(Extermination.BulletPicture picture) {
+        javafx.scene.image.ImageView icon = new javafx.scene.image.ImageView(BULLET_SHEET);
+        icon.setViewport(new javafx.geometry.Rectangle2D(picture.x, picture.y, picture.width, picture.height));
+        double zoom = Math.min(2, 28.0 / Math.max(picture.width, picture.height));
+        icon.setFitWidth(picture.width * zoom);
+        icon.setFitHeight(picture.height * zoom);
+        icon.setSmooth(false);
+        javafx.scene.layout.StackPane square = new javafx.scene.layout.StackPane(icon);
+        square.setMinSize(32, 32);
+        square.setStyle("-fx-background-color: #10101a;");
+        return square;
+    }
+
+    /**
+     * The bullet preview: the chosen picture flying in a slow circle, zoomed in and turned the way it flies,
+     * with its hitbox outlined in red. Only the hitbox can hit the ship.
+     */
+    private void drawBulletPreview(double seconds) {
+        GraphicsContext g = bulletPreview.getGraphicsContext2D();
+        double w = bulletPreview.getWidth();
+        double h = bulletPreview.getHeight();
+        g.setFill(Color.web("#0b0b14"));
+        g.fillRect(0, 0, w, h);
+        g.setStroke(Color.web("#333344"));
+        g.strokeRect(0.5, 0.5, w - 1, h - 1);
+        Extermination.BulletPicture picture = phase() == null ? null : phase().getPicture();
+        if (picture == null || BULLET_SHEET == null) {
+            g.setFill(Color.GRAY);
+            g.setFont(Font.font("Monospaced", 10));
+            g.setTextAlign(TextAlignment.CENTER);
+            g.fillText("drawn bullet", w / 2, h / 2 + 3);
+            g.setTextAlign(TextAlignment.LEFT);
+            return;
+        }
+        // The picture at the pattern's Size, then zoomed in to fill the box
+        double size = picture.scaleFor(phase().getBulletSize()) * phase().getPictureSize();
+        double zoom = Math.min(4, (h - 16) / (Math.max(picture.width, picture.height) * size));
+        double turn = seconds * 1.2;
+        double x = w / 2 + Math.cos(turn) * (w / 2 - 20);
+        double y = h / 2 + Math.sin(turn) * (h / 2 - 20) * 0.4;
+        double heading = Math.toDegrees(Math.atan2(Math.cos(turn) * 0.4, -Math.sin(turn))) + 90;
+        g.save();
+        g.translate(x, y);
+        g.rotate(heading);
+        g.setImageSmoothing(false);
+        double pw = picture.width * size * zoom;
+        double ph = picture.height * size * zoom;
+        g.drawImage(BULLET_SHEET, picture.x, picture.y, picture.width, picture.height, -pw / 2, -ph / 2, pw, ph);
+        g.restore();
+        double r = phase().getBulletSize() * zoom;
+        g.setStroke(Color.RED);
+        g.setLineWidth(1);
+        g.strokeOval(x - r, y - r, r * 2, r * 2);
+        g.setFill(Color.web("#ff8080"));
+        g.setFont(Font.font("Monospaced", 9));
+        g.fillText("hitbox", 3, h - 4);
+    }
+
     @FXML
     private void onNextColor() {
         if (phase() != null) phase().nextColor();
@@ -2022,6 +2127,7 @@ public class SpaceInvadersController {
             showNumber(firstShotSpinner, e.getFirstShotDelay());
             showNumber(spinSpinner, p.getSpin());
             showNumber(bulletSizeSpinner, p.getBulletSize());
+            showNumber(pictureSizeSpinner, p.getPictureSize() * 100);
             showNumber(bouncesSpinner, p.getBounces());
             showNumber(directionSpinner, p.getDirection());
             showNumber(sweepSpinner, p.getSweep());
@@ -2033,6 +2139,13 @@ public class SpaceInvadersController {
             colorButton.setTextFill(BULLET_COLORS.get(p.getColor()).darker());
             String shapeName = p.getShape().name();
             shapeButton.setText("Shape: " + shapeName.charAt(0) + shapeName.substring(1).toLowerCase());
+            // A bullet picture has its own color and shape, so those only matter for drawn bullets; Size still sets the hitbox
+            Extermination.BulletPicture picture = p.getPicture();
+            bulletPictureButton.setText(picture == null ? "Bullet: drawn" : "Bullet: " + picture.group + ", " + bulletColorName(picture).toLowerCase());
+            bulletPictureButton.setGraphic(picture == null ? null : bulletIcon(picture));
+            boolean laserShot = p.getPattern() == Extermination.Pattern.LASER;
+            colorButton.setDisable(picture != null && !laserShot);
+            shapeButton.setDisable(picture != null);
             // The attack being edited, and which of its patterns (they all fire at the same time)
             int start = e.attackStart(selectedPhase);
             int inAttack = e.attackEnd(start) - start;
@@ -2154,6 +2267,8 @@ public class SpaceInvadersController {
         show(bulletSizeSpinner.getParent(), shoots);
         show(colorButton, shoots);
         show(shapeButton, shoots && !laser);
+        show(bulletPictureRow, shoots && !laser);
+        show(pictureSizeSpinner.getParent(), shoots && !laser && e != null && e.getPicture() != null);
         show(bouncesSpinner.getParent(), shoots && !laser);
         show(intervalSpinner.getParent(), shoots);
         show(spreadSpinner.getParent(), usesSpread);
@@ -2266,7 +2381,7 @@ public class SpaceInvadersController {
         Object focused = scene.getFocusOwner();
         for (Spinner<Double> box : List.of(speedSpinner, countSpinner, healthSpinner, repeatsSpinner, repeatGapSpinner, spacingSpinner, spawnSpinner, waitSpinner, bulletCountSpinner,
                 spreadSpinner, bulletSpeedSpinner, intervalSpinner, firstShotSpinner, spinSpinner, stopSpinner, lastsSpinner, accelSpinner, curveSpinner, waveSpinner, waveRateSpinner,
-                stepTimeSpinner, stepSpeedSpinner, stepAccelSpinner, stepCurveSpinner, stepTurnSpinner, bulletSizeSpinner,
+                stepTimeSpinner, stepSpeedSpinner, stepAccelSpinner, stepCurveSpinner, stepTurnSpinner, bulletSizeSpinner, pictureSizeSpinner,
                 bouncesSpinner, stepSplitSpinner, directionSpinner, sweepSpinner, swingSpinner, beamSpinner, wallWidthSpinner,
                 cardHealthSpinner, hopSpinner, delaySpinner, routeStopSpinner, routeSpeedSpinner, pointShotsSpinner)) {
             if (focused == box || focused == box.getEditor()) {
@@ -3292,6 +3407,7 @@ public class SpaceInvadersController {
         List<Extermination.EnemyBullet> bullets = sandbox.getEnemyBullets();
         g.setGlobalBlendMode(javafx.scene.effect.BlendMode.ADD);
         for (Extermination.EnemyBullet bullet : bullets) {
+            if (bullet.getPicture() != null && BULLET_SHEET != null) continue; // pictures bring their own glow
             double r = bullet.getRadius() * 2.3;
             g.setFill(BULLET_GLOWS.get(bullet.getColor()));
             g.fillOval(bullet.getX() - r, bullet.getY() - r, r * 2, r * 2);
@@ -3499,8 +3615,22 @@ public class SpaceInvadersController {
         }
     }
 
-    /** One bullet's body in its shape, pointing the way it flies. */
+    /** One bullet's body: its picture, or else its drawn shape, pointing the way it flies. */
     private void drawBullet(GraphicsContext g, Extermination.EnemyBullet bullet) {
+        Extermination.BulletPicture picture = bullet.getPicture();
+        if (picture != null && BULLET_SHEET != null) {
+            // The picture grows or shrinks with the Size setting, times its Picture size (which leaves the hitbox alone)
+            double size = picture.scaleFor(bullet.getRadius()) * bullet.getPictureSize();
+            double pw = picture.width * size;
+            double ph = picture.height * size;
+            g.save();
+            g.translate(bullet.getX(), bullet.getY());
+            g.rotate(Math.toDegrees(bullet.getAngle()) + 90); // pictures point up
+            g.setImageSmoothing(false);
+            g.drawImage(BULLET_SHEET, picture.x, picture.y, picture.width, picture.height, -pw / 2, -ph / 2, pw, ph);
+            g.restore();
+            return;
+        }
         double r = bullet.getRadius();
         double x = bullet.getX();
         double y = bullet.getY();

@@ -644,7 +644,9 @@ public final class SpaceInvadersMechanics {
          * follows=N makes a group wait for group N of the same wave (counting its enemy lines from 1) to
          * be cleared; its spawn= then counts from that moment instead of from the wave's start. With
          * when=spawned it counts from when group N's first enemy spawns instead (when=cleared is the default).
-         * Bullet look and extras: size= (radius in px), color=, bounces= (times a bullet bounces off the
+         * Bullet look and extras: size= (radius in px), color=, pic= (a bullet picture from BULLET_PICTURES,
+         * like pic=rice_red; size= still sets the hitbox and the picture is scaled to fit it, picsize= (percent, left out:
+         * 100) makes just the picture bigger or smaller, color= only matters for lasers), bounces= (times a bullet bounces off the
          * sides and top). A step can have a 7th part, split: the bullet bursts into that many
          * bullets in a ring (0 = no split). shot=LASER fires beams: a warning line for LASER_WARN_TIME,
          * then a beam for beam= seconds, size= sets its width. shot=WALL fires a straight line of bullets
@@ -683,69 +685,70 @@ public final class SpaceInvadersMechanics {
         public static final String[] STAGES = {
                 // Stage 1 (an example to start from)
                 """
-                WAVE 1 after=cleared wait=2.0
-                OCTOPUS start=588,84 speed=185 count=6 repeats=0 gap=3.0 hp=1 formation=LINE spacing=40 face=no spawn=2.5 loop=no first=1.0 fire=always point=head follows=2 when=cleared lasts=0.0 shot=NONE bullets=12 spread=0 bulletSpeed=120 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=588,87 588,87 588,87 588,87 588,87 588,87 534,87 522,85 510,84 498,83 486,83 474,83 462,83 450,84 438,86 426,86 414,86 402,88 389,89 377,92 364,96 352,100 340,105 329,110 318,115 307,122 297,130 287,138 278,146 269,154 261,164 253,174 247,186 241,197 238,209 234,221 232,234 230,246 230,258 235,269 241,280 248,291 256,301 265,310 277,316 289,321 301,321 313,318 322,310 331,301 331,289 329,276 326,263 321,252 310,245 298,241 286,238 273,233 261,231 249,230 237,232 225,234 213,237 200,241 189,246 178,252 167,258 155,264 144,272 134,279 124,288 114,297 104,305 92,314 79,320 67,327 54,333 43,338 32,342 -28,348 -28,349 -28,350 -28,351 -28,351 -28,353 -28,354 -28,354 -28,354 -28,354 -28,354 -28,355 -28,355 -28,355 -28,355 -28,355 -28,355 -28,355
-                OCTOPUS start=-28,104 speed=185 count=6 repeats=0 gap=3.0 hp=1 formation=LINE spacing=40 face=no spawn=0.0 loop=no first=1.0 fire=always point=head lasts=0.0 shot=NONE bullets=12 spread=0 bulletSpeed=120 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=35,106 47,110 57,119 70,125 81,131 92,138 102,145 112,154 121,165 128,174 136,184 145,194 152,204 158,216 164,228 170,239 177,250 184,262 190,273 198,282 206,293 215,303 225,312 234,319 246,325 258,328 270,330 282,331 294,331 306,330 320,326 332,322 344,315 356,306 364,297 371,287 372,275 369,262 362,251 354,242 345,234 333,228 321,223 309,222 297,223 286,230 282,242 282,254 282,268 286,280 290,291 298,302 306,312 317,320 327,326 339,333 352,338 364,342 378,346 390,348 402,351 416,353 429,356 441,356 455,358 467,363 479,369 491,376 500,386 507,395 516,406 525,415 588,423 588,425 588,426 588,427 588,429 588,430 588,432 588,433 588,434 588,436 588,436 588,437 588,438 588,438 588,438 588,438 588,439 588,439 588,439 588,439 588,439
-                OCTOPUS start=-28,104 speed=185 count=6 repeats=0 gap=3.0 hp=1 formation=LINE spacing=40 face=no spawn=2.0 loop=no first=1.0 fire=always point=head follows=4 when=cleared lasts=0.0 shot=NONE bullets=12 spread=0 bulletSpeed=120 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=35,106 47,110 57,119 70,125 81,131 92,138 102,145 112,154 121,165 128,174 136,184 145,194 152,204 158,216 164,228 170,239 177,250 184,262 190,273 198,282 206,293 215,303 225,312 234,319 246,325 258,328 270,330 282,331 294,331 306,330 320,326 332,322 344,315 356,306 364,297 371,287 372,275 369,262 362,251 354,242 345,234 333,228 321,223 309,222 297,223 286,230 282,242 282,254 282,268 286,280 290,291 298,302 306,312 317,320 327,326 339,333 352,338 364,342 378,346 390,348 402,351 416,353 429,356 441,356 455,358 467,363 479,369 491,376 500,386 507,395 516,406 525,415 588,423 588,425 588,426 588,427 588,429 588,430 588,432 588,433 588,434 588,436 588,436 588,437 588,438 588,438 588,438 588,438 588,439 588,439 588,439 588,439 588,439
-                OCTOPUS start=424,-20 speed=185 count=6 repeats=0 gap=3.0 hp=1 formation=LINE spacing=40 face=no spawn=0.5 loop=no first=1.0 fire=always point=head follows=6 when=cleared lasts=0.0 shot=NONE bullets=12 spread=0 bulletSpeed=120 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=425,50 425,50 425,62 426,74 426,86 427,98 429,110 430,122 432,134 434,146 438,158 441,170 445,182 450,194 454,206 458,218 463,229 470,239 478,249 487,258 498,266 508,275 518,284 527,292 588,300 588,301 588,302 588,302 588,302 588,303 588,305 588,306 588,306 588,307 588,308 588,308 588,309 588,309 588,310 588,310 588,311 588,311 588,311 588,312 588,313 588,313 588,314 588,314 588,314 588,314 588,315 588,316 588,317
-                OCTOPUS start=424,-20 speed=185 count=6 repeats=0 gap=3.0 hp=1 formation=LINE spacing=40 face=no spawn=2.5 loop=no first=1.0 fire=always point=head follows=6 when=cleared lasts=0.0 shot=NONE bullets=12 spread=0 bulletSpeed=120 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=425,50 425,50 425,62 426,74 426,86 427,98 429,110 430,122 432,134 434,146 438,158 441,170 445,182 450,194 454,206 458,218 463,229 470,239 478,249 487,258 498,266 508,275 518,284 527,292 588,300 588,301 588,302 588,302 588,302 588,303 588,305 588,306 588,306 588,307 588,308 588,308 588,309 588,309 588,310 588,310 588,311 588,311 588,311 588,312 588,313 588,313 588,314 588,314 588,314 588,314 588,315 588,316 588,317
-                OCTOPUS start=86,-20 speed=185 count=6 repeats=0 gap=3.0 hp=1 formation=LINE spacing=40 face=no spawn=0.5 loop=no first=1.0 fire=always point=head lasts=0.0 shot=NONE bullets=12 spread=0 bulletSpeed=120 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=90,46 90,58 90,70 94,83 98,95 100,107 102,119 105,131 106,143 109,155 111,167 112,180 112,192 112,204 112,216 110,228 106,241 102,253 97,264 89,274 78,282 69,290 58,296 47,302 37,308 -28,313 -28,314 -28,314 -28,317 -28,318 -28,319 -28,319 -28,320 -28,321 -28,322 -28,322 -28,323 -28,324 -28,325 -28,325 -28,325 -28,326 -28,326 -28,326 -28,326 -28,326
-                OCTOPUS start=86,-20 speed=185 count=6 repeats=0 gap=3.0 hp=1 formation=LINE spacing=40 face=no spawn=2.5 loop=no first=1.0 fire=always point=head lasts=0.0 shot=NONE bullets=12 spread=0 bulletSpeed=120 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=90,46 90,58 90,70 94,83 98,95 100,107 102,119 105,131 106,143 109,155 111,167 112,180 112,192 112,204 112,216 110,228 106,241 102,253 97,264 89,274 78,282 69,290 58,296 47,302 37,308 -28,313 -28,314 -28,314 -28,317 -28,318 -28,319 -28,319 -28,320 -28,321 -28,322 -28,322 -28,323 -28,324 -28,325 -28,325 -28,325 -28,326 -28,326 -28,326 -28,326 -28,326
-                OCTOPUS start=206,-20 speed=175 count=6 repeats=0 gap=3.0 hp=1 formation=LINE spacing=40 face=no spawn=0.0 loop=no first=1.0 fire=always lasts=0.0 shot=NONE bullets=12 spread=0 bulletSpeed=120 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=206,-20 206,26 208,38 208,50 208,62 208,74 206,86 206,98 206,110 205,122 202,135 200,147 198,160 194,173 191,185 189,197 186,209 182,221 182,233 182,246 184,258 187,270 188,283 189,295 189,308 189,320 189,333 189,345 184,356 179,369 174,380 167,393 158,405 150,416 142,426 132,434 120,438 108,444 98,452 91,462 83,471 76,482 70,493 66,505 66,517 63,530 60,580 60,580 59,580 59,580 58,580 58,580 58,580 58,580 57,580 57,580 57,580 56,580 56,580 56,580 56,580 56,580 56,580 56,580 56,580 56,580 56,580 56,580 56,580
-                OCTOPUS start=354,-20 speed=175 count=6 repeats=0 gap=3.0 hp=1 formation=LINE spacing=40 face=no spawn=0.0 loop=no first=1.0 fire=always point=head follows=2 when=cleared lasts=0.0 shot=NONE bullets=12 spread=0 bulletSpeed=120 every=2.00 spin=-15 size=4 color=PINK bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=354,-20 354,26 352,38 352,50 352,62 352,74 354,86 354,98 354,110 355,122 358,135 360,147 362,160 366,173 369,185 371,197 374,209 378,221 378,233 378,246 376,258 373,270 372,283 371,295 371,308 371,320 371,333 371,345 376,356 381,369 386,380 393,393 402,405 410,416 418,426 428,434 440,438 452,444 462,452 469,462 477,471 484,482 490,493 494,505 494,517 497,530 500,580 500,580 501,580 501,580 502,580 502,580 502,580 502,580 503,580 503,580 503,580 504,580 504,580 504,580 504,580 504,580 504,580 504,580 504,580 504,580 504,580 504,580 504,580
-                OCTOPUS start=354,-20 speed=175 count=6 repeats=0 gap=3.0 hp=1 formation=LINE spacing=40 face=no spawn=2.0 loop=no first=1.0 fire=always point=head follows=6 when=cleared lasts=0.0 shot=NONE bullets=12 spread=0 bulletSpeed=120 every=2.00 spin=-15 size=4 color=PINK bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=354,-20 354,26 352,38 352,50 352,62 352,74 354,86 354,98 354,110 355,122 358,135 360,147 362,160 366,173 369,185 371,197 374,209 378,221 378,233 378,246 376,258 373,270 372,283 371,295 371,308 371,320 371,333 371,345 376,356 381,369 386,380 393,393 402,405 410,416 418,426 428,434 440,438 452,444 462,452 469,462 477,471 484,482 490,493 494,505 494,517 497,530 500,580 500,580 501,580 501,580 502,580 502,580 502,580 502,580 503,580 503,580 503,580 504,580 504,580 504,580 504,580 504,580 504,580 504,580 504,580 504,580 504,580 504,580 504,580
-                OCTOPUS start=279,-20 speed=175 count=5 repeats=0 gap=3.0 hp=1 formation=LINE spacing=40 face=no spawn=14.3 loop=no first=1.0 fire=always point=head lasts=0.0 shot=NONE bullets=12 spread=0 bulletSpeed=120 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=281,-20 281,26 281,38 281,50 281,62 280,75 279,87 278,100 274,112 270,126 268,138 265,150 262,162 258,174 255,186 253,198 250,211 249,224 246,237 244,249 243,262 242,274 242,286 240,298 237,310 230,321 223,332 214,340 203,346 192,351 181,356 169,362 158,369 147,376 137,382 126,388 114,394 103,399 92,404 78,409 67,414 54,418 42,422 29,426 -28,431 -28,431 -28,432 -28,433 -28,434 -28,434 -28,434 -28,435 -28,435 -28,436 -28,436 -28,437 -28,438 -28,438 -28,438 -28,439 -28,439 -28,440 -28,440 -28,440 -28,440 -28,441
-                WAVE 2 after=cleared wait=2.0
-                OCTOPUS start=406,-20 speed=140 count=10 repeats=2 gap=6.0 hp=1 formation=LINE spacing=40 face=no spawn=0.0 loop=no first=1.0 fire=always point=head lasts=0.0 shot=NONE bullets=12 spread=0 bulletSpeed=120 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=404,-20 404,-20 404,-20 404,-20 404,26 396,35 386,43 376,50 366,57 358,66 351,77 345,87 342,99 342,111 343,124 348,136 356,146 368,152 379,158 391,163 403,167 415,171 427,176 438,182 448,193 457,202 463,214 470,226 472,238 476,250 477,262 475,275 468,285 458,293 450,302 441,311 430,318 419,322 406,326 395,332 384,337 374,343 363,350 354,357 344,365 336,374 327,385 321,395 315,407 316,420 322,430 330,440 339,448 351,452 363,456 376,457 388,460 400,462 412,466 424,470 435,475 447,482 457,490 464,500 471,510 478,521 479,534 481,580 481,580 481,580 481,580 481,580 481,580 481,580 481,580 481,580 481,580 481,580 481,580 481,580 481,580 481,580 481,580 481,580 481,580 481,580 481,580 481,580 481,580 481,580 481,580 481,580 480,580
-                OCTOPUS start=154,-20 speed=140 count=10 repeats=2 gap=6.0 hp=1 formation=LINE spacing=40 face=no spawn=3.0 loop=no first=1.0 fire=always point=head follows=1 when=spawned lasts=0.0 shot=NONE bullets=12 spread=0 bulletSpeed=120 every=2.00 spin=-15 size=4 color=PINK bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=156,-20 156,-20 156,-20 156,-20 156,26 164,35 174,43 184,50 194,57 202,66 209,77 215,87 218,99 218,111 217,124 212,136 204,146 192,152 181,158 169,163 157,167 145,171 133,176 122,182 112,193 103,202 97,214 90,226 88,238 84,250 83,262 85,275 92,285 102,293 110,302 119,311 130,318 141,322 154,326 165,332 176,337 186,343 197,350 206,357 216,365 224,374 233,385 239,395 245,407 244,420 238,430 230,440 221,448 209,452 197,456 184,457 172,460 160,462 148,466 136,470 125,475 113,482 103,490 96,500 89,510 82,521 81,534 79,580 79,580 79,580 79,580 79,580 79,580 79,580 79,580 79,580 79,580 79,580 79,580 79,580 79,580 79,580 79,580 79,580 79,580 79,580 79,580 79,580 79,580 79,580 79,580 79,580 80,580
-                OCTOPUS start=449,-21 speed=140 count=10 repeats=2 gap=6.0 hp=1 formation=LINE spacing=40 face=no spawn=0.0 loop=no first=1.0 fire=always point=head lasts=0.0 shot=NONE bullets=12 spread=0 bulletSpeed=120 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=447,-20 447,-20 447,-20 447,-20 447,25 439,34 429,42 419,49 409,56 401,65 394,76 388,86 385,98 385,110 386,123 391,135 399,145 411,151 422,157 434,162 446,166 458,170 470,175 481,181 491,192 500,201 506,213 513,225 515,237 519,249 520,261 518,274 511,284 501,292 493,301 484,310 473,317 462,321 449,325 438,331 427,336 417,342 406,349 397,356 387,364 379,373 370,384 364,394 358,406 359,419 365,429 373,439 382,447 394,451 406,455 419,456 431,459 443,461 455,465 467,469 478,474 490,481 500,489 507,499 514,509 521,520 522,533 524,580 524,580 524,580 524,580 524,580 524,580 524,580 524,580 524,580 524,580 524,580 524,580 524,580 524,580 524,580 524,580 524,580 524,580 524,580 524,580 524,580 524,580 524,580 524,580 524,580 523,580
-                OCTOPUS start=111,-21 speed=140 count=10 repeats=2 gap=6.0 hp=1 formation=LINE spacing=40 face=no spawn=3.0 loop=no first=1.0 fire=always point=head follows=3 when=spawned lasts=0.0 shot=NONE bullets=12 spread=0 bulletSpeed=120 every=2.00 spin=-15 size=4 color=PINK bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=113,-20 113,-20 113,-20 113,-20 113,25 121,34 131,42 141,49 151,56 159,65 166,76 172,86 175,98 175,110 174,123 169,135 161,145 149,151 138,157 126,162 114,166 102,170 90,175 79,181 69,192 60,201 54,213 47,225 45,237 41,249 40,261 42,274 49,284 59,292 67,301 76,310 87,317 98,321 111,325 122,331 133,336 143,342 154,349 163,356 173,364 181,373 190,384 196,394 202,406 201,419 195,429 187,439 178,447 166,451 154,455 141,456 129,459 117,461 105,465 93,469 82,474 70,481 60,489 53,499 46,509 39,520 38,533 36,580 36,580 36,580 36,580 36,580 36,580 36,580 36,580 36,580 36,580 36,580 36,580 36,580 36,580 36,580 36,580 36,580 36,580 36,580 36,580 36,580 36,580 36,580 36,580 36,580 37,580
-                WAVE 3 after=cleared wait=2.0
-                OCTOPUS start=273,92 speed=120 count=1 repeats=0 gap=3.0 hp=1 formation=LINE spacing=40 face=no spawn=0.0 loop=no first=1.0 fire=always boss=yes lasts=60.0 shot=NONE bullets=12 spread=0 bulletSpeed=120 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= cardhp=150 move=PATH hop=2.0 movespeed=140 moveloop=bounce movepath=272,91@2.0;56,141@2.0;272,78@2.0;485,125@2.0 name=Blessed_rain path=
-                  PHASE lasts=0.0 shot=RANDOM bullets=5 spread=150 bulletSpeed=120 every=0.15 spin=15 size=3 color=BLUE bounces=0 aim=FIXED direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= together=yes atpoint=1 cardhp=150 move=STAY hop=2.0
-                  PHASE lasts=0.0 shot=RANDOM bullets=5 spread=150 bulletSpeed=120 every=0.15 spin=15 size=3 color=BLUE bounces=0 aim=FIXED direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= together=yes atpoint=3 cardhp=150 move=STAY hop=2.0
-                  PHASE lasts=0.0 shot=RING bullets=30 spread=0 bulletSpeed=150 every=1.50 spin=15 size=8 color=WHITE bounces=1 aim=FIXED direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= together=yes atpoint=2 volleys=2 cardhp=150 move=STAY hop=2.0
-                  PHASE lasts=0.0 shot=RING bullets=30 spread=0 bulletSpeed=150 every=1.50 spin=15 size=8 color=WHITE bounces=1 aim=FIXED direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= together=yes atpoint=4 volleys=2 cardhp=150 move=STAY hop=2.0
-                WAVE 4 after=cleared wait=2.0
-                OCTOPUS start=64,-20 speed=120 count=1 repeats=3 gap=9.0 hp=1 formation=LINE spacing=40 face=no spawn=0.0 loop=no first=1.0 fire=stopped lasts=0.0 shot=RING bullets=22 spread=0 bulletSpeed=200 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=FIXED direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=70,63@2.0 -28,118
-                OCTOPUS start=172,-20 speed=120 count=1 repeats=3 gap=9.0 hp=1 formation=LINE spacing=40 face=no spawn=1.0 loop=no first=1.0 fire=stopped follows=4 when=spawned lasts=0.0 shot=RING bullets=22 spread=0 bulletSpeed=200 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=FIXED direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=170,54@2.0 -28,174
-                OCTOPUS start=294,-20 speed=120 count=1 repeats=3 gap=9.0 hp=1 formation=LINE spacing=40 face=no spawn=1.0 loop=no first=1.0 fire=stopped follows=9 when=spawned lasts=0.0 shot=RING bullets=22 spread=0 bulletSpeed=200 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=FIXED direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=290,62@2.0 315,-20
-                OCTOPUS start=432,-20 speed=120 count=1 repeats=3 gap=9.0 hp=1 formation=LINE spacing=40 face=no spawn=1.0 loop=no first=1.0 fire=stopped follows=1 when=spawned lasts=0.0 shot=RING bullets=22 spread=0 bulletSpeed=200 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=FIXED direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=432,60@2.0 588,181
-                OCTOPUS start=528,-20 speed=120 count=1 repeats=3 gap=9.0 hp=1 formation=LINE spacing=40 face=no spawn=1.0 loop=no first=1.0 fire=always follows=2 when=spawned lasts=0.0 shot=RING bullets=22 spread=0 bulletSpeed=200 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=FIXED direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=525,58@2.0 588,128
-                OCTOPUS start=-28,93 speed=120 count=1 repeats=3 gap=9.0 hp=1 formation=LINE spacing=40 face=no spawn=1.0 loop=no first=1.0 fire=stopped follows=7 when=spawned lasts=0.0 shot=RING bullets=22 spread=0 bulletSpeed=200 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=FIXED direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=71,149@2.0 -28,174
-                OCTOPUS start=588,102 speed=120 count=1 repeats=3 gap=9.0 hp=1 formation=LINE spacing=40 face=no spawn=1.0 loop=no first=1.0 fire=stopped follows=8 when=spawned lasts=0.0 shot=RING bullets=22 spread=0 bulletSpeed=200 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=FIXED direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=502,154@2.0 588,166
-                OCTOPUS start=-28,235 speed=120 count=1 repeats=3 gap=9.0 hp=1 formation=LINE spacing=40 face=no spawn=1.0 loop=no first=1.0 fire=stopped follows=5 when=spawned lasts=0.0 shot=RING bullets=22 spread=0 bulletSpeed=200 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=FIXED direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=100,273@2.0 -28,316
-                OCTOPUS start=588,261 speed=120 count=1 repeats=3 gap=9.0 hp=1 formation=LINE spacing=40 face=no spawn=1.0 loop=no first=1.0 fire=stopped follows=6 when=spawned lasts=0.0 shot=RING bullets=22 spread=0 bulletSpeed=200 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=FIXED direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=492,303@2.0 588,336
-                WAVE 5 after=cleared wait=2.5
-                CRAB start=95,114 speed=120 count=1 repeats=2 gap=3.0 hp=15 formation=LINE spacing=40 face=no spawn=0.0 loop=no first=0.8 fire=always next=gone lasts=0.0 shot=AIMED bullets=3 spread=0 bulletSpeed=160 every=2.00 spin=15 size=8 color=RED bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=
-                  PHASE lasts=0.0 shot=RING bullets=16 spread=0 bulletSpeed=100 every=1.50 spin=11 size=4 color=BLUE bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= together=yes
-                CRAB start=465,114 speed=120 count=1 repeats=2 gap=8.5 hp=15 formation=LINE spacing=40 face=no spawn=0.0 loop=no first=0.8 fire=always follows=1 when=spawned next=gone lasts=0.0 shot=AIMED bullets=3 spread=0 bulletSpeed=160 every=2.00 spin=-15 size=8 color=RED bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=
-                  PHASE lasts=0.0 shot=RING bullets=16 spread=0 bulletSpeed=100 every=1.50 spin=-11 size=4 color=BLUE bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= together=yes
-                OCTOPUS start=465,-20 speed=200 count=6 repeats=2 gap=6.0 hp=1 formation=LINE spacing=80 face=no spawn=2.0 loop=no first=1.0 fire=always point=head follows=2 when=spawned until=1 lasts=0.0 shot=NONE bullets=12 spread=0 bulletSpeed=120 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=414,-20 413,-20 411,-20 407,-20 406,-20 405,-20 404,-20 402,-20 402,-20 401,-20 400,-20 399,-20 398,-20 398,-20 398,-20 397,-20 397,-20 396,-20 395,-20 395,-20 394,-20 394,-20 394,-20 393,-20 392,-20 392,-20 391,-20 390,-20 390,-20 389,-20 389,-20 389,-20 385,26 374,33 363,38 351,42 339,46 327,50 315,54 305,60 294,66 283,72 274,79 264,86 254,94 244,103 236,113 227,122 218,132 211,142 203,151 196,161 190,171 182,182 178,194 173,206 168,217 162,228 157,239 152,252 147,264 142,276 139,289 137,301 134,313 133,325 130,338 128,350 126,363 125,377 125,389 125,401 126,413 127,425 129,438 131,450 134,464 139,476 146,487 155,498 166,506 176,513 187,518 199,521 212,524 225,524 238,524 250,524 262,522 274,519 286,515 297,507 307,501 317,493 326,484 333,474 338,462 342,450 346,438 348,426 349,414 347,402 347,390 346,378 341,366 335,355 328,346 319,337 310,330 298,324 286,318 274,314 264,307 252,302 241,298 229,294 217,291 205,288 193,287 181,286 169,286 156,286 144,286 132,286 119,284 107,284 95,284 82,284 70,286 58,288 46,291 34,296 -28,300 -28,301 -28,302 -28,302 -28,303 -28,304 -28,305 -28,306 -28,306 -28,306 -28,308 -28,308 -28,309 -28,310 -28,310 -28,311 -28,311 -28,312 -28,314 -28,314 -28,314 -28,314 -28,314 -28,314 -28,314 -28,315 -28,316 -28,317 -28,318 -28,318 -28,318 -28,319 -28,319
-                OCTOPUS start=95,-20 speed=200 count=6 repeats=2 gap=6.0 hp=1 formation=LINE spacing=150 face=yes spawn=3.0 loop=no first=1.0 fire=always point=head follows=3 when=spawned until=1 lasts=0.0 shot=NONE bullets=12 spread=0 bulletSpeed=120 every=2.00 spin=-15 size=4 color=PINK bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=146,-20 147,-20 149,-20 153,-20 154,-20 155,-20 156,-20 158,-20 158,-20 159,-20 160,-20 161,-20 162,-20 162,-20 162,-20 163,-20 163,-20 164,-20 165,-20 165,-20 166,-20 166,-20 166,-20 167,-20 168,-20 168,-20 169,-20 170,-20 170,-20 171,-20 171,-20 171,-20 175,26 186,33 197,38 209,42 221,46 233,50 245,54 255,60 266,66 277,72 286,79 296,86 306,94 316,103 324,113 333,122 342,132 349,142 357,151 364,161 370,171 378,182 382,194 387,206 392,217 398,228 403,239 408,252 413,264 418,276 421,289 423,301 426,313 427,325 430,338 432,350 434,363 435,377 435,389 435,401 434,413 433,425 431,438 429,450 426,464 421,476 414,487 405,498 394,506 384,513 373,518 361,521 348,524 335,524 322,524 310,524 298,522 286,519 274,515 263,507 253,501 243,493 234,484 227,474 222,462 218,450 214,438 212,426 211,414 213,402 213,390 214,378 219,366 225,355 232,346 241,337 250,330 262,324 274,318 286,314 296,307 308,302 319,298 331,294 343,291 355,288 367,287 379,286 391,286 404,286 416,286 428,286 441,284 453,284 465,284 478,284 490,286 502,288 514,291 526,296 588,300 588,301 588,302 588,302 588,303 588,304 588,305 588,306 588,306 588,306 588,308 588,308 588,309 588,310 588,310 588,311 588,311 588,312 588,314 588,314 588,314 588,314 588,314 588,314 588,314 588,315 588,316 588,317 588,318 588,318 588,318 588,319 588,319
-                WAVE 6 after=cleared wait=2.0
-                OCTOPUS start=588,-20 speed=400 count=1 repeats=0 gap=3.0 hp=1 formation=LINE spacing=40 face=no spawn=0.0 loop=no first=1.0 fire=always boss=yes lasts=40.0 shot=RING bullets=20 spread=0 bulletSpeed=170 every=2.70 spin=15 size=15 color=WHITE bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=260 accel=200 curve=5 steps=0.70/10/20/5/40/no/0 cardhp=150 move=STAY hop=2.0 name=Undulating_Waves path=521,35 512,45 500,50 488,54 475,58 462,62 450,64 438,66 425,69 412,72 400,74 388,76 375,79 363,83 350,85 338,88 326,90 314,91 302,91 290,91
-                  PHASE lasts=0.0 shot=WALL bullets=12 spread=0 bulletSpeed=90 every=3.00 spin=15 size=4 color=PINK bounces=0 aim=PLAYER direction=45 sweep=0 swing=0 beam=0.8 width=40 accel=0 curve=0 steps= from=8,9 together=yes delay=1.0 cardhp=150 move=STAY hop=2.0
-                  PHASE lasts=0.0 shot=WALL bullets=12 spread=0 bulletSpeed=70 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=FIXED direction=315 sweep=5 swing=90 beam=0.8 width=60 accel=0 curve=0 steps= from=8,551 together=yes delay=2.0 cardhp=150 move=STAY hop=2.0
-                  PHASE lasts=0.0 shot=WALL bullets=12 spread=0 bulletSpeed=70 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=FIXED direction=225 sweep=5 swing=90 beam=0.8 width=60 accel=0 curve=0 steps= from=550,552 together=yes delay=4.0 cardhp=150 move=STAY hop=2.0
-                  PHASE lasts=0.0 shot=WALL bullets=12 spread=0 bulletSpeed=90 every=3.00 spin=15 size=4 color=PINK bounces=0 aim=PLAYER direction=135 sweep=0 swing=0 beam=0.8 width=60 accel=0 curve=0 steps= from=552,5 together=yes delay=3.0 cardhp=150 move=STAY hop=2.0
-                  PHASE lasts=0.0 shot=WALL bullets=12 spread=0 bulletSpeed=50 every=5.00 spin=15 size=4 color=PINK bounces=2 aim=FIXED direction=175 sweep=5 swing=90 beam=0.8 width=60 accel=0 curve=0 steps= from=550,286 together=yes cardhp=150 move=STAY hop=2.0
-                  PHASE lasts=0.0 shot=WALL bullets=12 spread=0 bulletSpeed=50 every=5.00 spin=15 size=4 color=PINK bounces=2 aim=FIXED direction=0 sweep=5 swing=90 beam=0.8 width=60 accel=0 curve=0 steps= from=15,284 together=yes cardhp=150 move=STAY hop=2.0
-                WAVE 7 after=cleared wait=2.0
-                OCTOPUS start=278,74 speed=120 count=1 repeats=0 gap=3.0 hp=1 formation=LINE spacing=40 face=no spawn=0.0 loop=no first=1.0 fire=always boss=yes lasts=50.0 shot=RANDOM bullets=14 spread=220 bulletSpeed=200 every=3.00 spin=15 size=9 color=BLUE bounces=0 aim=FIXED direction=270 sweep=0 swing=0 beam=0.8 width=200 accel=-300 curve=0 steps=0.85/0/0/0/0/no/0;1.25/150/0/0/0/aim/0 cardhp=150 move=WANDER hop=2.0 name=Hail_Storm path=
-                  PHASE lasts=0.0 shot=WALL bullets=13 spread=0 bulletSpeed=80 every=3.00 spin=15 size=10 color=PURPLE bounces=1 aim=FIXED direction=90 sweep=50 swing=80 beam=0.8 width=100 accel=0 curve=0 steps= together=yes cardhp=150 move=STAY hop=2.0
-                  PHASE lasts=0.0 shot=AIMED bullets=1 spread=0 bulletSpeed=100 every=0.12 spin=15 size=5 color=WHITE bounces=0 aim=FIXED direction=90 sweep=90 swing=140 beam=0.8 width=200 accel=0 curve=0 steps= together=yes cardhp=150 move=STAY hop=2.0
-                  PHASE lasts=0.0 shot=RING bullets=12 spread=0 bulletSpeed=120 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=FIXED direction=90 sweep=5 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= from=10,546 together=yes cardhp=150 move=STAY hop=2.0
-                  PHASE lasts=0.0 shot=RING bullets=12 spread=0 bulletSpeed=120 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=FIXED direction=90 sweep=5 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= from=554,6 together=yes cardhp=150 move=STAY hop=2.0
-                WAVE 8 after=cleared wait=2.0
-                OCTOPUS start=594,-31 speed=400 count=1 repeats=0 gap=3.0 hp=1 formation=LINE spacing=40 face=no spawn=0.0 loop=no first=1.0 fire=always boss=yes lasts=60.0 shot=NONE bullets=12 spread=0 bulletSpeed=120 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= cardhp=150 move=PATH hop=2.0 movespeed=400 moveloop=bounce movepath=276,80@2.0;60,184@3.0;275,91@2.5;490,185@3.0 path=588,-20 588,-20
-                  PHASE lasts=0.0 shot=RING bullets=25 spread=0 bulletSpeed=60 every=1.50 spin=15 size=8 color=WHITE bounces=1 aim=FIXED direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= together=yes atpoint=1 volleys=2 cardhp=150 move=STAY hop=2.0
-                  PHASE lasts=0.0 shot=SPIRAL bullets=4 spread=0 bulletSpeed=120 every=0.10 spin=11 size=4 color=BLUE bounces=0 aim=FIXED direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= together=yes atpoint=3 cardhp=150 move=STAY hop=2.0
-                  PHASE lasts=0.0 shot=RANDOM bullets=3 spread=150 bulletSpeed=120 every=0.15 spin=15 size=3 color=BLUE bounces=0 aim=FIXED direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= together=yes atpoint=2 cardhp=150 move=STAY hop=2.0
-                  PHASE lasts=0.0 shot=RANDOM bullets=3 spread=150 bulletSpeed=120 every=0.15 spin=15 size=3 color=BLUE bounces=0 aim=FIXED direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= together=yes atpoint=4 cardhp=150 move=STAY hop=2.0
-                  PHASE lasts=0.0 shot=RING bullets=40 spread=0 bulletSpeed=130 every=1.00 spin=15 size=4 color=PINK bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= together=yes atpoint=3 volleys=2 cardhp=150 move=STAY hop=2.0
-                  PHASE lasts=0.0 shot=RANDOM bullets=14 spread=220 bulletSpeed=260 every=5.00 spin=15 size=6 color=BLUE bounces=0 aim=FIXED direction=135 sweep=1 swing=90 beam=0.8 width=200 accel=-300 curve=0 steps=0.85/0/0/0/0/no/0;1.25/150/0/0/0/aim/0 from=535,27 together=yes cardhp=150 move=STAY hop=2.0
-                  PHASE lasts=0.0 shot=RANDOM bullets=14 spread=220 bulletSpeed=260 every=5.00 spin=15 size=6 color=BLUE bounces=0 aim=FIXED direction=270 sweep=0 swing=0 beam=0.8 width=200 accel=-300 curve=0 steps=0.85/0/0/0/0/no/0;1.25/150/0/0/0/aim/0 from=31,25 together=yes delay=3.5 cardhp=150 move=STAY hop=2.0
+              WAVE 1 after=cleared wait=2.0
+              OCTOPUS start=588,84 speed=185 count=6 repeats=0 gap=3.0 hp=1 formation=LINE spacing=40 face=no spawn=0.5 loop=no first=1.0 fire=always follows=3 when=cleared lasts=0.0 shot=NONE bullets=12 spread=0 bulletSpeed=120 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=588,87 588,87 588,87 588,87 588,87 588,87 534,87 522,85 510,84 498,83 486,83 474,83 462,83 450,84 438,86 426,86 414,86 402,88 389,89 377,92 364,96 352,100 340,105 329,110 318,115 307,122 297,130 287,138 278,146 269,154 261,164 253,174 247,186 241,197 238,209 234,221 232,234 230,246 230,258 235,269 241,280 248,291 256,301 265,310 277,316 289,321 301,321 313,318 322,310 331,301 331,289 329,276 326,263 321,252 310,245 298,241 286,238 273,233 261,231 249,230 237,232 225,234 213,237 200,241 189,246 178,252 167,258 155,264 144,272 134,279 124,288 114,297 104,305 92,314 79,320 67,327 54,333 43,338 32,342 -28,348 -28,349 -28,350 -28,351 -28,351 -28,353 -28,354 -28,354 -28,354 -28,354 -28,354 -28,355 -28,355 -28,355 -28,355 -28,355 -28,355 -28,355
+              OCTOPUS start=588,84 speed=185 count=6 repeats=0 gap=3.0 hp=1 formation=LINE spacing=40 face=no spawn=2.5 loop=no first=1.0 fire=always follows=3 when=cleared lasts=0.0 shot=NONE bullets=12 spread=0 bulletSpeed=120 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=588,87 588,87 588,87 588,87 588,87 588,87 534,87 522,85 510,84 498,83 486,83 474,83 462,83 450,84 438,86 426,86 414,86 402,88 389,89 377,92 364,96 352,100 340,105 329,110 318,115 307,122 297,130 287,138 278,146 269,154 261,164 253,174 247,186 241,197 238,209 234,221 232,234 230,246 230,258 235,269 241,280 248,291 256,301 265,310 277,316 289,321 301,321 313,318 322,310 331,301 331,289 329,276 326,263 321,252 310,245 298,241 286,238 273,233 261,231 249,230 237,232 225,234 213,237 200,241 189,246 178,252 167,258 155,264 144,272 134,279 124,288 114,297 104,305 92,314 79,320 67,327 54,333 43,338 32,342 -28,348 -28,349 -28,350 -28,351 -28,351 -28,353 -28,354 -28,354 -28,354 -28,354 -28,354 -28,355 -28,355 -28,355 -28,355 -28,355 -28,355 -28,355
+              OCTOPUS start=-28,104 speed=185 count=6 repeats=0 gap=3.0 hp=1 formation=LINE spacing=40 face=no spawn=0.0 loop=no first=1.0 fire=always lasts=0.0 shot=NONE bullets=12 spread=0 bulletSpeed=120 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=35,106 47,110 57,119 70,125 81,131 92,138 102,145 112,154 121,165 128,174 136,184 145,194 152,204 158,216 164,228 170,239 177,250 184,262 190,273 198,282 206,293 215,303 225,312 234,319 246,325 258,328 270,330 282,331 294,331 306,330 320,326 332,322 344,315 356,306 364,297 371,287 372,275 369,262 362,251 354,242 345,234 333,228 321,223 309,222 297,223 286,230 282,242 282,254 282,268 286,280 290,291 298,302 306,312 317,320 327,326 339,333 352,338 364,342 378,346 390,348 402,351 416,353 429,356 441,356 455,358 467,363 479,369 491,376 500,386 507,395 516,406 525,415 588,423 588,425 588,426 588,427 588,429 588,430 588,432 588,433 588,434 588,436 588,436 588,437 588,438 588,438 588,438 588,438 588,439 588,439 588,439 588,439 588,439
+              OCTOPUS start=-28,104 speed=185 count=6 repeats=0 gap=3.0 hp=1 formation=LINE spacing=40 face=no spawn=2.0 loop=no first=1.0 fire=always follows=5 when=cleared lasts=0.0 shot=NONE bullets=12 spread=0 bulletSpeed=120 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=35,106 47,110 57,119 70,125 81,131 92,138 102,145 112,154 121,165 128,174 136,184 145,194 152,204 158,216 164,228 170,239 177,250 184,262 190,273 198,282 206,293 215,303 225,312 234,319 246,325 258,328 270,330 282,331 294,331 306,330 320,326 332,322 344,315 356,306 364,297 371,287 372,275 369,262 362,251 354,242 345,234 333,228 321,223 309,222 297,223 286,230 282,242 282,254 282,268 286,280 290,291 298,302 306,312 317,320 327,326 339,333 352,338 364,342 378,346 390,348 402,351 416,353 429,356 441,356 455,358 467,363 479,369 491,376 500,386 507,395 516,406 525,415 588,423 588,425 588,426 588,427 588,429 588,430 588,432 588,433 588,434 588,436 588,436 588,437 588,438 588,438 588,438 588,438 588,439 588,439 588,439 588,439 588,439
+              OCTOPUS start=424,-20 speed=185 count=6 repeats=0 gap=3.0 hp=1 formation=LINE spacing=40 face=no spawn=0.5 loop=no first=1.0 fire=always follows=7 when=cleared lasts=0.0 shot=NONE bullets=12 spread=0 bulletSpeed=120 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=425,50 425,50 425,62 426,74 426,86 427,98 429,110 430,122 432,134 434,146 438,158 441,170 445,182 450,194 454,206 458,218 463,229 470,239 478,249 487,258 498,266 508,275 518,284 527,292 588,300 588,301 588,302 588,302 588,302 588,303 588,305 588,306 588,306 588,307 588,308 588,308 588,309 588,309 588,310 588,310 588,311 588,311 588,311 588,312 588,313 588,313 588,314 588,314 588,314 588,314 588,315 588,316 588,317
+              OCTOPUS start=424,-20 speed=185 count=6 repeats=0 gap=3.0 hp=1 formation=LINE spacing=40 face=no spawn=2.5 loop=no first=1.0 fire=always follows=7 when=cleared lasts=0.0 shot=NONE bullets=12 spread=0 bulletSpeed=120 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=425,50 425,50 425,62 426,74 426,86 427,98 429,110 430,122 432,134 434,146 438,158 441,170 445,182 450,194 454,206 458,218 463,229 470,239 478,249 487,258 498,266 508,275 518,284 527,292 588,300 588,301 588,302 588,302 588,302 588,303 588,305 588,306 588,306 588,307 588,308 588,308 588,309 588,309 588,310 588,310 588,311 588,311 588,311 588,312 588,313 588,313 588,314 588,314 588,314 588,314 588,315 588,316 588,317
+              OCTOPUS start=86,-20 speed=185 count=6 repeats=0 gap=3.0 hp=1 formation=LINE spacing=40 face=no spawn=0.5 loop=no first=1.0 fire=always follows=1 when=cleared lasts=0.0 shot=NONE bullets=12 spread=0 bulletSpeed=120 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=90,46 90,58 90,70 94,83 98,95 100,107 102,119 105,131 106,143 109,155 111,167 112,180 112,192 112,204 112,216 110,228 106,241 102,253 97,264 89,274 78,282 69,290 58,296 47,302 37,308 -28,313 -28,314 -28,314 -28,317 -28,318 -28,319 -28,319 -28,320 -28,321 -28,322 -28,322 -28,323 -28,324 -28,325 -28,325 -28,325 -28,326 -28,326 -28,326 -28,326 -28,326
+              OCTOPUS start=86,-20 speed=185 count=6 repeats=0 gap=3.0 hp=1 formation=LINE spacing=40 face=no spawn=2.5 loop=no first=1.0 fire=always follows=1 when=cleared lasts=0.0 shot=NONE bullets=12 spread=0 bulletSpeed=120 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=90,46 90,58 90,70 94,83 98,95 100,107 102,119 105,131 106,143 109,155 111,167 112,180 112,192 112,204 112,216 110,228 106,241 102,253 97,264 89,274 78,282 69,290 58,296 47,302 37,308 -28,313 -28,314 -28,314 -28,317 -28,318 -28,319 -28,319 -28,320 -28,321 -28,322 -28,322 -28,323 -28,324 -28,325 -28,325 -28,325 -28,326 -28,326 -28,326 -28,326 -28,326
+              OCTOPUS start=206,-20 speed=175 count=6 repeats=0 gap=3.0 hp=1 formation=LINE spacing=40 face=no spawn=0.0 loop=no first=1.0 fire=always follows=1 when=cleared lasts=0.0 shot=NONE bullets=12 spread=0 bulletSpeed=120 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=206,-20 206,26 208,38 208,50 208,62 208,74 206,86 206,98 206,110 205,122 202,135 200,147 198,160 194,173 191,185 189,197 186,209 182,221 182,233 182,246 184,258 187,270 188,283 189,295 189,308 189,320 189,333 189,345 184,356 179,369 174,380 167,393 158,405 150,416 142,426 132,434 120,438 108,444 98,452 91,462 83,471 76,482 70,493 66,505 66,517 63,530 60,580 60,580 59,580 59,580 58,580 58,580 58,580 58,580 57,580 57,580 57,580 56,580 56,580 56,580 56,580 56,580 56,580 56,580 56,580 56,580 56,580 56,580 56,580
+              OCTOPUS start=354,-20 speed=175 count=6 repeats=0 gap=3.0 hp=1 formation=LINE spacing=40 face=no spawn=0.0 loop=no first=1.0 fire=always follows=3 when=cleared lasts=0.0 shot=NONE bullets=12 spread=0 bulletSpeed=120 every=2.00 spin=-15 size=4 color=PINK bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=354,-20 354,26 352,38 352,50 352,62 352,74 354,86 354,98 354,110 355,122 358,135 360,147 362,160 366,173 369,185 371,197 374,209 378,221 378,233 378,246 376,258 373,270 372,283 371,295 371,308 371,320 371,333 371,345 376,356 381,369 386,380 393,393 402,405 410,416 418,426 428,434 440,438 452,444 462,452 469,462 477,471 484,482 490,493 494,505 494,517 497,530 500,580 500,580 501,580 501,580 502,580 502,580 502,580 502,580 503,580 503,580 503,580 504,580 504,580 504,580 504,580 504,580 504,580 504,580 504,580 504,580 504,580 504,580 504,580
+              OCTOPUS start=354,-20 speed=175 count=6 repeats=0 gap=3.0 hp=1 formation=LINE spacing=40 face=no spawn=2.0 loop=no first=1.0 fire=always follows=7 when=cleared lasts=0.0 shot=NONE bullets=12 spread=0 bulletSpeed=120 every=2.00 spin=-15 size=4 color=PINK bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=354,-20 354,26 352,38 352,50 352,62 352,74 354,86 354,98 354,110 355,122 358,135 360,147 362,160 366,173 369,185 371,197 374,209 378,221 378,233 378,246 376,258 373,270 372,283 371,295 371,308 371,320 371,333 371,345 376,356 381,369 386,380 393,393 402,405 410,416 418,426 428,434 440,438 452,444 462,452 469,462 477,471 484,482 490,493 494,505 494,517 497,530 500,580 500,580 501,580 501,580 502,580 502,580 502,580 502,580 503,580 503,580 503,580 504,580 504,580 504,580 504,580 504,580 504,580 504,580 504,580 504,580 504,580 504,580 504,580
+              OCTOPUS start=279,-20 speed=175 count=5 repeats=0 gap=3.0 hp=1 formation=LINE spacing=40 face=no spawn=14.3 loop=no first=1.0 fire=always lasts=0.0 shot=NONE bullets=12 spread=0 bulletSpeed=120 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=281,-20 281,26 281,38 281,50 281,62 280,75 279,87 278,100 274,112 270,126 268,138 265,150 262,162 258,174 255,186 253,198 250,211 249,224 246,237 244,249 243,262 242,274 242,286 240,298 237,310 230,321 223,332 214,340 203,346 192,351 181,356 169,362 158,369 147,376 137,382 126,388 114,394 103,399 92,404 78,409 67,414 54,418 42,422 29,426 -28,431 -28,431 -28,432 -28,433 -28,434 -28,434 -28,434 -28,435 -28,435 -28,436 -28,436 -28,437 -28,438 -28,438 -28,438 -28,439 -28,439 -28,440 -28,440 -28,440 -28,440 -28,441
+              WAVE 2 after=cleared wait=2.0
+              OCTOPUS start=406,-20 speed=140 count=10 repeats=2 gap=6.0 hp=1 formation=LINE spacing=40 face=no spawn=0.0 loop=no first=1.0 fire=always lasts=0.0 shot=NONE bullets=12 spread=0 bulletSpeed=120 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=404,-20 404,-20 404,-20 404,-20 404,26 396,35 386,43 376,50 366,57 358,66 351,77 345,87 342,99 342,111 343,124 348,136 356,146 368,152 379,158 391,163 403,167 415,171 427,176 438,182 448,193 457,202 463,214 470,226 472,238 476,250 477,262 475,275 468,285 458,293 450,302 441,311 430,318 419,322 406,326 395,332 384,337 374,343 363,350 354,357 344,365 336,374 327,385 321,395 315,407 316,420 322,430 330,440 339,448 351,452 363,456 376,457 388,460 400,462 412,466 424,470 435,475 447,482 457,490 464,500 471,510 478,521 479,534 481,580 481,580 481,580 481,580 481,580 481,580 481,580 481,580 481,580 481,580 481,580 481,580 481,580 481,580 481,580 481,580 481,580 481,580 481,580 481,580 481,580 481,580 481,580 481,580 481,580 480,580
+              OCTOPUS start=154,-20 speed=140 count=10 repeats=2 gap=6.0 hp=1 formation=LINE spacing=40 face=no spawn=3.0 loop=no first=1.0 fire=always follows=1 when=spawned lasts=0.0 shot=NONE bullets=12 spread=0 bulletSpeed=120 every=2.00 spin=-15 size=4 color=PINK bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=156,-20 156,-20 156,-20 156,-20 156,26 164,35 174,43 184,50 194,57 202,66 209,77 215,87 218,99 218,111 217,124 212,136 204,146 192,152 181,158 169,163 157,167 145,171 133,176 122,182 112,193 103,202 97,214 90,226 88,238 84,250 83,262 85,275 92,285 102,293 110,302 119,311 130,318 141,322 154,326 165,332 176,337 186,343 197,350 206,357 216,365 224,374 233,385 239,395 245,407 244,420 238,430 230,440 221,448 209,452 197,456 184,457 172,460 160,462 148,466 136,470 125,475 113,482 103,490 96,500 89,510 82,521 81,534 79,580 79,580 79,580 79,580 79,580 79,580 79,580 79,580 79,580 79,580 79,580 79,580 79,580 79,580 79,580 79,580 79,580 79,580 79,580 79,580 79,580 79,580 79,580 79,580 79,580 80,580
+              OCTOPUS start=449,-21 speed=140 count=10 repeats=2 gap=6.0 hp=1 formation=LINE spacing=40 face=no spawn=0.0 loop=no first=1.0 fire=always lasts=0.0 shot=NONE bullets=12 spread=0 bulletSpeed=120 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=447,-20 447,-20 447,-20 447,-20 447,25 439,34 429,42 419,49 409,56 401,65 394,76 388,86 385,98 385,110 386,123 391,135 399,145 411,151 422,157 434,162 446,166 458,170 470,175 481,181 491,192 500,201 506,213 513,225 515,237 519,249 520,261 518,274 511,284 501,292 493,301 484,310 473,317 462,321 449,325 438,331 427,336 417,342 406,349 397,356 387,364 379,373 370,384 364,394 358,406 359,419 365,429 373,439 382,447 394,451 406,455 419,456 431,459 443,461 455,465 467,469 478,474 490,481 500,489 507,499 514,509 521,520 522,533 524,580 524,580 524,580 524,580 524,580 524,580 524,580 524,580 524,580 524,580 524,580 524,580 524,580 524,580 524,580 524,580 524,580 524,580 524,580 524,580 524,580 524,580 524,580 524,580 524,580 523,580
+              OCTOPUS start=111,-21 speed=140 count=10 repeats=2 gap=6.0 hp=1 formation=LINE spacing=40 face=no spawn=3.0 loop=no first=1.0 fire=always follows=3 when=spawned lasts=0.0 shot=NONE bullets=12 spread=0 bulletSpeed=120 every=2.00 spin=-15 size=4 color=PINK bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=113,-20 113,-20 113,-20 113,-20 113,25 121,34 131,42 141,49 151,56 159,65 166,76 172,86 175,98 175,110 174,123 169,135 161,145 149,151 138,157 126,162 114,166 102,170 90,175 79,181 69,192 60,201 54,213 47,225 45,237 41,249 40,261 42,274 49,284 59,292 67,301 76,310 87,317 98,321 111,325 122,331 133,336 143,342 154,349 163,356 173,364 181,373 190,384 196,394 202,406 201,419 195,429 187,439 178,447 166,451 154,455 141,456 129,459 117,461 105,465 93,469 82,474 70,481 60,489 53,499 46,509 39,520 38,533 36,580 36,580 36,580 36,580 36,580 36,580 36,580 36,580 36,580 36,580 36,580 36,580 36,580 36,580 36,580 36,580 36,580 36,580 36,580 36,580 36,580 36,580 36,580 36,580 36,580 37,580
+              WAVE 3 after=cleared wait=2.0 bomb=yes
+              OCTOPUS start=273,92 speed=120 count=1 repeats=0 gap=3.0 hp=1 formation=LINE spacing=40 face=no spawn=0.0 loop=no first=1.0 fire=always boss=yes lasts=60.0 shot=NONE bullets=12 spread=0 bulletSpeed=120 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= cardhp=150 move=PATH hop=2.0 movespeed=140 moveloop=bounce movepath=272,91@2.0;56,141@2.0;272,78@2.0;485,125@2.0 name=Blessed_rain path=
+                PHASE lasts=0.0 shot=RANDOM bullets=5 spread=150 bulletSpeed=120 every=0.15 spin=15 size=3 color=BLUE bounces=0 aim=FIXED direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= pic=rice_blue picsize=60 together=yes atpoint=1 cardhp=150 move=STAY hop=2.0
+                PHASE lasts=0.0 shot=RANDOM bullets=5 spread=150 bulletSpeed=120 every=0.15 spin=15 size=3 color=BLUE bounces=0 aim=FIXED direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= pic=rice_blue picsize=60 together=yes atpoint=3 cardhp=150 move=STAY hop=2.0
+                PHASE lasts=0.0 shot=RING bullets=30 spread=0 bulletSpeed=150 every=1.50 spin=15 size=8 color=WHITE bounces=1 aim=FIXED direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= pic=orb_white together=yes atpoint=2 volleys=2 cardhp=150 move=STAY hop=2.0
+                PHASE lasts=0.0 shot=RING bullets=30 spread=0 bulletSpeed=150 every=1.50 spin=15 size=8 color=WHITE bounces=1 aim=FIXED direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= pic=orb_white together=yes atpoint=4 volleys=2 cardhp=150 move=STAY hop=2.0
+              WAVE 4 after=cleared wait=2.0
+              OCTOPUS start=64,-20 speed=120 count=1 repeats=3 gap=9.0 hp=1 formation=LINE spacing=40 face=no spawn=0.0 loop=no first=1.0 fire=stopped lasts=0.0 shot=RING bullets=22 spread=0 bulletSpeed=200 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=FIXED direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= pic=tiny_orb_red path=70,63@2.0 -28,118
+              OCTOPUS start=172,-20 speed=120 count=1 repeats=3 gap=9.0 hp=1 formation=LINE spacing=40 face=no spawn=1.0 loop=no first=1.0 fire=stopped follows=4 when=spawned lasts=0.0 shot=RING bullets=22 spread=0 bulletSpeed=200 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=FIXED direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= pic=tiny_orb_red path=170,54@2.0 -28,174
+              OCTOPUS start=294,-20 speed=120 count=1 repeats=3 gap=9.0 hp=1 formation=LINE spacing=40 face=no spawn=1.0 loop=no first=1.0 fire=stopped follows=9 when=spawned lasts=0.0 shot=RING bullets=22 spread=0 bulletSpeed=200 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=FIXED direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= pic=tiny_orb_red path=290,62@2.0 315,-20
+              OCTOPUS start=432,-20 speed=120 count=1 repeats=3 gap=9.0 hp=1 formation=LINE spacing=40 face=no spawn=1.0 loop=no first=1.0 fire=stopped follows=1 when=spawned lasts=0.0 shot=RING bullets=22 spread=0 bulletSpeed=200 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=FIXED direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= pic=tiny_orb_red path=432,60@2.0 588,181
+              OCTOPUS start=528,-20 speed=120 count=1 repeats=3 gap=9.0 hp=1 formation=LINE spacing=40 face=no spawn=1.0 loop=no first=1.0 fire=always follows=2 when=spawned lasts=0.0 shot=RING bullets=22 spread=0 bulletSpeed=200 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=FIXED direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= pic=tiny_orb_red path=525,58@2.0 588,128
+              OCTOPUS start=-28,93 speed=120 count=1 repeats=3 gap=9.0 hp=1 formation=LINE spacing=40 face=no spawn=1.0 loop=no first=1.0 fire=stopped follows=7 when=spawned lasts=0.0 shot=RING bullets=22 spread=0 bulletSpeed=200 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=FIXED direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= pic=tiny_orb_red path=71,149@2.0 -28,174
+              OCTOPUS start=588,102 speed=120 count=1 repeats=3 gap=9.0 hp=1 formation=LINE spacing=40 face=no spawn=1.0 loop=no first=1.0 fire=stopped follows=8 when=spawned lasts=0.0 shot=RING bullets=22 spread=0 bulletSpeed=200 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=FIXED direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= pic=tiny_orb_red path=502,154@2.0 588,166
+              OCTOPUS start=-28,235 speed=120 count=1 repeats=3 gap=9.0 hp=1 formation=LINE spacing=40 face=no spawn=1.0 loop=no first=1.0 fire=stopped follows=5 when=spawned lasts=0.0 shot=RING bullets=22 spread=0 bulletSpeed=200 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=FIXED direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= pic=tiny_orb_red path=100,273@2.0 -28,316
+              OCTOPUS start=588,261 speed=120 count=1 repeats=3 gap=9.0 hp=1 formation=LINE spacing=40 face=no spawn=1.0 loop=no first=1.0 fire=stopped follows=6 when=spawned lasts=0.0 shot=RING bullets=22 spread=0 bulletSpeed=200 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=FIXED direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= pic=tiny_orb_red path=492,303@2.0 588,336
+              WAVE 5 after=cleared wait=2.5
+              CRAB start=95,114 speed=120 count=1 repeats=2 gap=3.0 hp=15 formation=LINE spacing=40 face=no spawn=0.0 loop=no first=0.8 fire=always next=gone lasts=0.0 shot=AIMED bullets=3 spread=0 bulletSpeed=160 every=2.00 spin=15 size=8 color=RED bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= pic=arrowhead_red picsize=60 path=
+                PHASE lasts=0.0 shot=RING bullets=16 spread=0 bulletSpeed=100 every=1.50 spin=11 size=4 color=BLUE bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= pic=tiny_orb_cyan picsize=70 together=yes
+              CRAB start=465,114 speed=120 count=1 repeats=2 gap=8.5 hp=15 formation=LINE spacing=40 face=no spawn=0.0 loop=no first=0.8 fire=always follows=1 when=spawned next=gone lasts=0.0 shot=AIMED bullets=3 spread=0 bulletSpeed=160 every=2.00 spin=-15 size=8 color=RED bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= pic=arrowhead_red picsize=60 path=
+                PHASE lasts=0.0 shot=RING bullets=16 spread=0 bulletSpeed=100 every=1.50 spin=-11 size=4 color=BLUE bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= pic=tiny_orb_cyan picsize=70 together=yes
+              OCTOPUS start=465,-20 speed=200 count=6 repeats=2 gap=6.0 hp=1 formation=LINE spacing=80 face=no spawn=2.0 loop=no first=1.0 fire=always follows=2 when=spawned until=1 lasts=0.0 shot=NONE bullets=12 spread=0 bulletSpeed=120 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=414,-20 413,-20 411,-20 407,-20 406,-20 405,-20 404,-20 402,-20 402,-20 401,-20 400,-20 399,-20 398,-20 398,-20 398,-20 397,-20 397,-20 396,-20 395,-20 395,-20 394,-20 394,-20 394,-20 393,-20 392,-20 392,-20 391,-20 390,-20 390,-20 389,-20 389,-20 389,-20 385,26 374,33 363,38 351,42 339,46 327,50 315,54 305,60 294,66 283,72 274,79 264,86 254,94 244,103 236,113 227,122 218,132 211,142 203,151 196,161 190,171 182,182 178,194 173,206 168,217 162,228 157,239 152,252 147,264 142,276 139,289 137,301 134,313 133,325 130,338 128,350 126,363 125,377 125,389 125,401 126,413 127,425 129,438 131,450 134,464 139,476 146,487 155,498 166,506 176,513 187,518 199,521 212,524 225,524 238,524 250,524 262,522 274,519 286,515 297,507 307,501 317,493 326,484 333,474 338,462 342,450 346,438 348,426 349,414 347,402 347,390 346,378 341,366 335,355 328,346 319,337 310,330 298,324 286,318 274,314 264,307 252,302 241,298 229,294 217,291 205,288 193,287 181,286 169,286 156,286 144,286 132,286 119,284 107,284 95,284 82,284 70,286 58,288 46,291 34,296 -28,300 -28,301 -28,302 -28,302 -28,303 -28,304 -28,305 -28,306 -28,306 -28,306 -28,308 -28,308 -28,309 -28,310 -28,310 -28,311 -28,311 -28,312 -28,314 -28,314 -28,314 -28,314 -28,314 -28,314 -28,314 -28,315 -28,316 -28,317 -28,318 -28,318 -28,318 -28,319 -28,319
+              OCTOPUS start=95,-20 speed=200 count=6 repeats=2 gap=6.0 hp=1 formation=LINE spacing=150 face=yes spawn=3.0 loop=no first=1.0 fire=always follows=3 when=spawned until=1 lasts=0.0 shot=NONE bullets=12 spread=0 bulletSpeed=120 every=2.00 spin=-15 size=4 color=PINK bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= path=146,-20 147,-20 149,-20 153,-20 154,-20 155,-20 156,-20 158,-20 158,-20 159,-20 160,-20 161,-20 162,-20 162,-20 162,-20 163,-20 163,-20 164,-20 165,-20 165,-20 166,-20 166,-20 166,-20 167,-20 168,-20 168,-20 169,-20 170,-20 170,-20 171,-20 171,-20 171,-20 175,26 186,33 197,38 209,42 221,46 233,50 245,54 255,60 266,66 277,72 286,79 296,86 306,94 316,103 324,113 333,122 342,132 349,142 357,151 364,161 370,171 378,182 382,194 387,206 392,217 398,228 403,239 408,252 413,264 418,276 421,289 423,301 426,313 427,325 430,338 432,350 434,363 435,377 435,389 435,401 434,413 433,425 431,438 429,450 426,464 421,476 414,487 405,498 394,506 384,513 373,518 361,521 348,524 335,524 322,524 310,524 298,522 286,519 274,515 263,507 253,501 243,493 234,484 227,474 222,462 218,450 214,438 212,426 211,414 213,402 213,390 214,378 219,366 225,355 232,346 241,337 250,330 262,324 274,318 286,314 296,307 308,302 319,298 331,294 343,291 355,288 367,287 379,286 391,286 404,286 416,286 428,286 441,284 453,284 465,284 478,284 490,286 502,288 514,291 526,296 588,300 588,301 588,302 588,302 588,303 588,304 588,305 588,306 588,306 588,306 588,308 588,308 588,309 588,310 588,310 588,311 588,311 588,312 588,314 588,314 588,314 588,314 588,314 588,314 588,314 588,315 588,316 588,317 588,318 588,318 588,318 588,319 588,319
+              WAVE 6 after=cleared wait=2.0
+              OCTOPUS start=588,-20 speed=400 count=1 repeats=0 gap=3.0 hp=1 formation=LINE spacing=40 face=no spawn=0.0 loop=no first=1.0 fire=always boss=yes lasts=40.0 shot=RING bullets=20 spread=0 bulletSpeed=170 every=2.70 spin=15 size=16 color=WHITE bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=260 accel=200 curve=5 steps=0.70/10/20/5/40/no/0 pic=giant_orb_white picsize=90 cardhp=150 move=STAY hop=2.0 name=Undulating_Waves path=521,35 512,45 500,50 488,54 475,58 462,62 450,64 438,66 425,69 412,72 400,74 388,76 375,79 363,83 350,85 338,88 326,90 314,91 302,91 290,91
+                PHASE lasts=0.0 shot=WALL bullets=12 spread=0 bulletSpeed=90 every=3.00 spin=15 size=4 color=PINK bounces=0 aim=PLAYER direction=45 sweep=0 swing=0 beam=0.8 width=40 accel=0 curve=0 steps= pic=flame_red picsize=70 from=8,9 together=yes delay=1.0 cardhp=150 move=STAY hop=2.0
+                PHASE lasts=0.0 shot=WALL bullets=12 spread=0 bulletSpeed=70 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=FIXED direction=315 sweep=5 swing=90 beam=0.8 width=60 accel=0 curve=0 steps= pic=flame_red picsize=70 from=8,551 together=yes delay=2.0 cardhp=150 move=STAY hop=2.0
+                PHASE lasts=0.0 shot=WALL bullets=12 spread=0 bulletSpeed=70 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=FIXED direction=225 sweep=5 swing=90 beam=0.8 width=60 accel=0 curve=0 steps= pic=flame_red picsize=70 from=550,552 together=yes delay=4.0 cardhp=150 move=STAY hop=2.0
+                PHASE lasts=0.0 shot=WALL bullets=12 spread=0 bulletSpeed=90 every=3.00 spin=15 size=4 color=PINK bounces=0 aim=PLAYER direction=135 sweep=0 swing=0 beam=0.8 width=60 accel=0 curve=0 steps= pic=flame_red picsize=70 from=552,5 together=yes delay=3.0 cardhp=150 move=STAY hop=2.0
+                PHASE lasts=0.0 shot=WALL bullets=12 spread=0 bulletSpeed=50 every=5.00 spin=15 size=4 color=PINK bounces=2 aim=FIXED direction=175 sweep=5 swing=90 beam=0.8 width=60 accel=0 curve=0 steps= pic=flame_blue picsize=70 from=550,286 together=yes cardhp=150 move=STAY hop=2.0
+                PHASE lasts=0.0 shot=WALL bullets=12 spread=0 bulletSpeed=50 every=5.00 spin=15 size=4 color=PINK bounces=2 aim=FIXED direction=0 sweep=5 swing=90 beam=0.8 width=60 accel=0 curve=0 steps= pic=flame_blue picsize=70 from=15,284 together=yes cardhp=150 move=STAY hop=2.0
+              WAVE 7 after=cleared wait=2.0
+              OCTOPUS start=278,74 speed=120 count=1 repeats=0 gap=3.0 hp=1 formation=LINE spacing=40 face=no spawn=0.0 loop=no first=1.0 fire=always boss=yes lasts=50.0 shot=RANDOM bullets=14 spread=220 bulletSpeed=200 every=3.00 spin=15 size=9 color=BLUE bounces=0 aim=FIXED direction=270 sweep=0 swing=0 beam=0.8 width=200 accel=-300 curve=0 steps=0.85/0/0/0/0/no/0;1.25/150/0/0/0/aim/0 pic=ringed_orb_blue picsize=70 cardhp=150 move=WANDER hop=2.0 name=Hail_Storm path=
+                PHASE lasts=0.0 shot=WALL bullets=13 spread=0 bulletSpeed=80 every=3.00 spin=15 size=10 color=PURPLE bounces=1 aim=FIXED direction=90 sweep=50 swing=80 beam=0.8 width=100 accel=0 curve=0 steps= pic=tiny_orb_pink picsize=60 together=yes cardhp=150 move=STAY hop=2.0
+                PHASE lasts=0.0 shot=AIMED bullets=1 spread=0 bulletSpeed=100 every=0.12 spin=15 size=5 color=WHITE bounces=0 aim=FIXED direction=90 sweep=90 swing=140 beam=0.8 width=200 accel=0 curve=0 steps= pic=star_green picsize=80 together=yes cardhp=150 move=STAY hop=2.0
+                PHASE lasts=0.0 shot=RING bullets=12 spread=0 bulletSpeed=120 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=FIXED direction=90 sweep=5 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= pic=trail_red picsize=70 from=10,546 together=yes cardhp=150 move=STAY hop=2.0
+                PHASE lasts=0.0 shot=RING bullets=12 spread=0 bulletSpeed=120 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=FIXED direction=90 sweep=5 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= pic=trail_red picsize=70 from=554,6 together=yes cardhp=150 move=STAY hop=2.0
+              WAVE 8 after=cleared wait=2.0
+              OCTOPUS start=594,-31 speed=400 count=1 repeats=0 gap=3.0 hp=1 formation=LINE spacing=40 face=no spawn=0.0 loop=no first=1.0 fire=always boss=yes lasts=60.0 shot=NONE bullets=12 spread=0 bulletSpeed=120 every=2.00 spin=15 size=4 color=PINK bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= cardhp=150 move=PATH hop=2.0 movespeed=400 moveloop=bounce movepath=276,80@2.0;60,184@3.0;275,91@2.5;490,185@3.0 path=588,-20 588,-20
+                PHASE lasts=0.0 shot=RING bullets=25 spread=0 bulletSpeed=60 every=1.50 spin=15 size=8 color=WHITE bounces=1 aim=FIXED direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= pic=orb_white together=yes atpoint=1 volleys=2 cardhp=150 move=STAY hop=2.0
+                PHASE lasts=0.0 shot=SPIRAL bullets=4 spread=0 bulletSpeed=120 every=0.10 spin=11 size=4 color=BLUE bounces=0 aim=FIXED direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= pic=arrowhead_cyan picsize=60 together=yes atpoint=3 cardhp=150 move=STAY hop=2.0
+                PHASE lasts=0.0 shot=RANDOM bullets=3 spread=150 bulletSpeed=120 every=0.15 spin=15 size=3 color=BLUE bounces=0 aim=FIXED direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= pic=rice_cyan picsize=60 together=yes atpoint=2 cardhp=150 move=STAY hop=2.0
+                PHASE lasts=0.0 shot=RANDOM bullets=3 spread=150 bulletSpeed=120 every=0.15 spin=15 size=3 color=BLUE bounces=0 aim=FIXED direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= pic=rice_cyan picsize=60 together=yes atpoint=4 cardhp=150 move=STAY hop=2.0
+                PHASE lasts=0.0 shot=RING bullets=40 spread=0 bulletSpeed=130 every=1.00 spin=15 size=4 color=PINK bounces=0 aim=PLAYER direction=90 sweep=0 swing=0 beam=0.8 width=200 accel=0 curve=0 steps= pic=crystal_red picsize=70 together=yes atpoint=3 volleys=2 cardhp=150 move=STAY hop=2.0
+                PHASE lasts=0.0 shot=RANDOM bullets=14 spread=220 bulletSpeed=260 every=5.00 spin=15 size=6 color=BLUE bounces=0 aim=FIXED direction=135 sweep=1 swing=90 beam=0.8 width=200 accel=-300 curve=0 steps=0.85/0/0/0/0/no/0;1.25/150/0/0/0/aim/0 pic=ringed_orb_blue picsize=90 from=535,27 together=yes cardhp=150 move=STAY hop=2.0
+                PHASE lasts=0.0 shot=RANDOM bullets=14 spread=220 bulletSpeed=260 every=5.00 spin=15 size=6 color=BLUE bounces=0 aim=FIXED direction=270 sweep=0 swing=0 beam=0.8 width=200 accel=-300 curve=0 steps=0.85/0/0/0/0/no/0;1.25/150/0/0/0/aim/0 pic=ringed_orb_blue picsize=90 from=31,25 together=yes delay=3.5 cardhp=150 move=STAY hop=2.0
                 
                 """,
                 // Stage 2 (built like a song: intro, buildup, melody, break, climax, outro; no boss yet)
@@ -849,6 +852,9 @@ public final class SpaceInvadersMechanics {
         public static final int MAX_PHASES = 24;                   // patterns an enemy can have, layers included
         public static final double MIN_BULLET_SIZE = 2;
         public static final double MAX_BULLET_SIZE = 16;
+        /** Picture size limits (1 = the picture fits the hitbox as usual): it only changes the look, never the hitbox. */
+        public static final double MIN_PICTURE_SIZE = 0.25;
+        public static final double MAX_PICTURE_SIZE = 3;
         public static final int MAX_BOUNCES = 5;
         public static final int MAX_SPLIT = 36;
         public static final double LASER_WARN_TIME = 0.6;          // seconds a laser shows as a thin warning line
@@ -888,8 +894,8 @@ public final class SpaceInvadersMechanics {
         public static final double ENEMY_TOUCH_SIZE = 0.7;         // how much of an enemy's drawing counts for touching (1 = all of it)
         public static final double DEATH_POWER_LOSS = 25;          // power lost each time the ship is hit
         public static final double DEATH_INVINCIBLE_TIME = 3;      // s the ship can't be hit after losing a life
-        public static final boolean DEATH_CLEARS_BULLETS = true;   // losing a life wipes the bullets off the screen
-        public static final boolean DEATH_RESPAWNS_AT_START = true; // the ship comes back at the bottom middle
+        public static final boolean DEATH_CLEARS_BULLETS = false;  // true: losing a life wipes the bullets off the screen (off: everything keeps going)
+        public static final boolean DEATH_RESPAWNS_AT_START = false; // true: the ship comes back at the bottom middle (off: it stays where it was hit)
 
         // Power: the meter goes from 0 to MAX_POWER and changes how the ship shoots
         public static final double MAX_POWER = 120;
@@ -1035,6 +1041,167 @@ public final class SpaceInvadersMechanics {
 
         /** How a bullet looks: a round orb, a long rice grain, a pointed knife or a spinning star. Only the look changes. */
         public enum BulletShape { ORB, RICE, KNIFE, STAR }
+
+        /**
+         * One enemy bullet picture on enemy_bullets.png (from FoX71's shot sheet): its name (saved in levels as
+         * pic=), the group it's listed under, and where it is on the sheet (x, y, width, height in px).
+         * Pictures point up; in the game they turn to point the way they fly.
+         */
+        public static final class BulletPicture {
+            public final String name;
+            public final String group;
+            public final int x, y, width, height;
+
+            BulletPicture(String name, String group, int x, int y, int width, int height) {
+                this.name = name;
+                this.group = group;
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = height;
+            }
+
+            /** The hitbox radius at the picture's own size: BULLET_HITBOX_SCALE of its thinner side, so grazing its edge is safe. */
+            public double getHitRadius() {
+                return BULLET_HITBOX_SCALE * Math.min(width, height) / 2;
+            }
+
+            /** How much to grow or shrink the picture so its hitbox is the given radius (the pattern's bullet size). */
+            public double scaleFor(double hitRadius) {
+                return hitRadius / getHitRadius();
+            }
+        }
+
+        /** How big a picture bullet's hitbox is next to the picture (0.6 = 60% of its thinner side). */
+        public static final double BULLET_HITBOX_SCALE = 0.6;
+
+        /** Every bullet picture, grouped by shape, each group in the same color order. */
+        public static final List<BulletPicture> BULLET_PICTURES = List.of(
+                new BulletPicture("tiny_orb_red", "Tiny orb", 1, 1, 8, 8),
+                new BulletPicture("tiny_orb_orange", "Tiny orb", 13, 1, 8, 8),
+                new BulletPicture("tiny_orb_yellow", "Tiny orb", 25, 1, 8, 8),
+                new BulletPicture("tiny_orb_green", "Tiny orb", 37, 1, 8, 8),
+                new BulletPicture("tiny_orb_cyan", "Tiny orb", 49, 1, 8, 8),
+                new BulletPicture("tiny_orb_blue", "Tiny orb", 61, 1, 8, 8),
+                new BulletPicture("tiny_orb_pink", "Tiny orb", 73, 1, 8, 8),
+                new BulletPicture("tiny_orb_white", "Tiny orb", 85, 1, 8, 8),
+                new BulletPicture("tiny_orb_plain", "Tiny orb", 97, 1, 10, 10),
+                new BulletPicture("orb_red", "Orb", 1, 13, 16, 16),
+                new BulletPicture("orb_orange", "Orb", 19, 13, 16, 16),
+                new BulletPicture("orb_yellow", "Orb", 37, 13, 16, 16),
+                new BulletPicture("orb_green", "Orb", 55, 13, 16, 16),
+                new BulletPicture("orb_cyan", "Orb", 73, 13, 16, 16),
+                new BulletPicture("orb_blue", "Orb", 91, 13, 16, 16),
+                new BulletPicture("orb_pink", "Orb", 109, 13, 16, 16),
+                new BulletPicture("orb_white", "Orb", 127, 13, 16, 16),
+                new BulletPicture("ringed_orb_red", "Ringed orb", 1, 31, 16, 16),
+                new BulletPicture("ringed_orb_orange", "Ringed orb", 19, 31, 16, 16),
+                new BulletPicture("ringed_orb_yellow", "Ringed orb", 37, 31, 16, 16),
+                new BulletPicture("ringed_orb_green", "Ringed orb", 55, 31, 16, 16),
+                new BulletPicture("ringed_orb_cyan", "Ringed orb", 73, 31, 16, 16),
+                new BulletPicture("ringed_orb_blue", "Ringed orb", 91, 31, 16, 16),
+                new BulletPicture("ringed_orb_pink", "Ringed orb", 109, 31, 16, 16),
+                new BulletPicture("ringed_orb_white", "Ringed orb", 127, 31, 16, 16),
+                new BulletPicture("big_orb_red", "Big orb", 1, 49, 32, 32),
+                new BulletPicture("big_orb_orange", "Big orb", 35, 49, 32, 32),
+                new BulletPicture("big_orb_yellow", "Big orb", 69, 49, 32, 32),
+                new BulletPicture("big_orb_green", "Big orb", 103, 49, 32, 32),
+                new BulletPicture("big_orb_cyan", "Big orb", 137, 49, 32, 32),
+                new BulletPicture("big_orb_blue", "Big orb", 171, 49, 32, 32),
+                new BulletPicture("big_orb_pink", "Big orb", 205, 49, 32, 32),
+                new BulletPicture("big_orb_white", "Big orb", 239, 49, 32, 32),
+                new BulletPicture("big_orb_plain", "Big orb", 273, 49, 30, 30),
+                new BulletPicture("giant_orb_red", "Giant orb", 1, 83, 64, 64),
+                new BulletPicture("giant_orb_orange", "Giant orb", 67, 83, 64, 64),
+                new BulletPicture("giant_orb_yellow", "Giant orb", 133, 83, 64, 64),
+                new BulletPicture("giant_orb_green", "Giant orb", 199, 83, 64, 64),
+                new BulletPicture("giant_orb_cyan", "Giant orb", 265, 83, 64, 64),
+                new BulletPicture("giant_orb_blue", "Giant orb", 331, 83, 64, 64),
+                new BulletPicture("giant_orb_pink", "Giant orb", 397, 83, 64, 64),
+                new BulletPicture("giant_orb_white", "Giant orb", 463, 83, 64, 64),
+                new BulletPicture("pellet_red", "Pellet", 1, 149, 5, 9),
+                new BulletPicture("pellet_orange", "Pellet", 8, 149, 5, 9),
+                new BulletPicture("pellet_yellow", "Pellet", 15, 149, 5, 9),
+                new BulletPicture("pellet_green", "Pellet", 22, 149, 5, 9),
+                new BulletPicture("pellet_cyan", "Pellet", 29, 149, 5, 9),
+                new BulletPicture("pellet_blue", "Pellet", 36, 149, 5, 9),
+                new BulletPicture("pellet_pink", "Pellet", 43, 149, 5, 9),
+                new BulletPicture("pellet_white", "Pellet", 50, 149, 5, 9),
+                new BulletPicture("rice_red", "Rice", 1, 160, 5, 12),
+                new BulletPicture("rice_orange", "Rice", 8, 160, 5, 12),
+                new BulletPicture("rice_yellow", "Rice", 15, 160, 5, 12),
+                new BulletPicture("rice_green", "Rice", 22, 160, 5, 12),
+                new BulletPicture("rice_cyan", "Rice", 29, 160, 5, 12),
+                new BulletPicture("rice_blue", "Rice", 36, 160, 5, 12),
+                new BulletPicture("rice_pink", "Rice", 43, 160, 5, 12),
+                new BulletPicture("rice_white", "Rice", 50, 160, 5, 12),
+                new BulletPicture("bar_red", "Bar", 1, 174, 12, 16),
+                new BulletPicture("bar_orange", "Bar", 15, 174, 12, 16),
+                new BulletPicture("bar_yellow", "Bar", 29, 174, 12, 16),
+                new BulletPicture("bar_green", "Bar", 43, 174, 12, 16),
+                new BulletPicture("bar_cyan", "Bar", 57, 174, 12, 16),
+                new BulletPicture("bar_blue", "Bar", 71, 174, 12, 16),
+                new BulletPicture("bar_pink", "Bar", 85, 174, 12, 16),
+                new BulletPicture("bar_white", "Bar", 99, 174, 12, 16),
+                new BulletPicture("bar_rainbow", "Bar", 113, 174, 12, 16),
+                new BulletPicture("arrowhead_red", "Arrowhead", 1, 192, 7, 12),
+                new BulletPicture("arrowhead_orange", "Arrowhead", 10, 192, 7, 12),
+                new BulletPicture("arrowhead_yellow", "Arrowhead", 19, 192, 7, 12),
+                new BulletPicture("arrowhead_green", "Arrowhead", 28, 192, 7, 12),
+                new BulletPicture("arrowhead_cyan", "Arrowhead", 37, 192, 7, 12),
+                new BulletPicture("arrowhead_blue", "Arrowhead", 46, 192, 7, 12),
+                new BulletPicture("arrowhead_pink", "Arrowhead", 55, 192, 7, 12),
+                new BulletPicture("arrowhead_white", "Arrowhead", 64, 192, 7, 12),
+                new BulletPicture("dart_red", "Dart", 1, 206, 13, 14),
+                new BulletPicture("dart_orange", "Dart", 16, 206, 13, 14),
+                new BulletPicture("dart_yellow", "Dart", 31, 206, 13, 14),
+                new BulletPicture("dart_green", "Dart", 46, 206, 13, 14),
+                new BulletPicture("dart_cyan", "Dart", 61, 206, 13, 14),
+                new BulletPicture("dart_blue", "Dart", 76, 206, 13, 14),
+                new BulletPicture("dart_pink", "Dart", 91, 206, 13, 14),
+                new BulletPicture("dart_white", "Dart", 106, 206, 13, 14),
+                new BulletPicture("crystal_red", "Crystal", 1, 222, 11, 17),
+                new BulletPicture("crystal_orange", "Crystal", 14, 222, 11, 17),
+                new BulletPicture("crystal_yellow", "Crystal", 27, 222, 11, 17),
+                new BulletPicture("crystal_green", "Crystal", 40, 222, 11, 17),
+                new BulletPicture("crystal_cyan", "Crystal", 53, 222, 11, 17),
+                new BulletPicture("crystal_blue", "Crystal", 66, 222, 11, 17),
+                new BulletPicture("crystal_pink", "Crystal", 79, 222, 11, 17),
+                new BulletPicture("crystal_white", "Crystal", 92, 222, 11, 17),
+                new BulletPicture("star_red", "Star", 1, 241, 15, 15),
+                new BulletPicture("star_orange", "Star", 18, 241, 15, 15),
+                new BulletPicture("star_yellow", "Star", 35, 241, 15, 15),
+                new BulletPicture("star_green", "Star", 52, 241, 15, 15),
+                new BulletPicture("star_cyan", "Star", 69, 241, 15, 15),
+                new BulletPicture("star_blue", "Star", 86, 241, 15, 15),
+                new BulletPicture("star_pink", "Star", 103, 241, 15, 15),
+                new BulletPicture("star_white", "Star", 120, 241, 15, 15),
+                new BulletPicture("flame_red", "Flame", 1, 258, 9, 16),
+                new BulletPicture("flame_orange", "Flame", 12, 258, 9, 16),
+                new BulletPicture("flame_yellow", "Flame", 23, 258, 9, 16),
+                new BulletPicture("flame_green", "Flame", 34, 258, 9, 16),
+                new BulletPicture("flame_cyan", "Flame", 45, 258, 9, 16),
+                new BulletPicture("flame_blue", "Flame", 56, 258, 9, 16),
+                new BulletPicture("flame_pink", "Flame", 67, 258, 9, 16),
+                new BulletPicture("flame_white", "Flame", 78, 258, 9, 16),
+                new BulletPicture("trail_red", "Trail", 1, 276, 11, 30),
+                new BulletPicture("trail_orange", "Trail", 14, 276, 11, 30),
+                new BulletPicture("trail_yellow", "Trail", 27, 276, 11, 30),
+                new BulletPicture("trail_green", "Trail", 40, 276, 11, 30),
+                new BulletPicture("trail_cyan", "Trail", 53, 276, 11, 30),
+                new BulletPicture("trail_blue", "Trail", 66, 276, 11, 30),
+                new BulletPicture("trail_pink", "Trail", 79, 276, 11, 30),
+                new BulletPicture("trail_white", "Trail", 92, 276, 11, 30));
+
+        /** The bullet picture with this name, or null if there isn't one. */
+        public static BulletPicture bulletPicture(String name) {
+            for (BulletPicture picture : BULLET_PICTURES) {
+                if (picture.name.equals(name)) {
+                    return picture;
+                }
+            }
+            return null;
+        }
 
         private double playerX = PLAYFIELD_WIDTH / 2;
         private double playerY = PLAYER_START_Y;
@@ -2510,6 +2677,12 @@ public final class SpaceInvadersMechanics {
             if (p.getShape() != BulletShape.ORB) {
                 shots += " shape=" + p.getShape();
             }
+            if (p.getPicture() != null) {
+                shots += " pic=" + p.getPicture().name;
+                if (p.getPictureSize() != 1) {
+                    shots += " picsize=" + Math.round(p.getPictureSize() * 100);
+                }
+            }
             if (p.getWave() > 0) {
                 shots += String.format(Locale.ROOT, " wave=%d waverate=%.1f", Math.round(p.getWave()), p.getWaveRate());
             }
@@ -2831,6 +3004,8 @@ public final class SpaceInvadersMechanics {
             if (settings.containsKey("beam")) phase.setBeamTime(Double.parseDouble(settings.get("beam")));
             if (settings.containsKey("width")) phase.setWallWidth(Double.parseDouble(settings.get("width")));
             if (settings.containsKey("shape")) phase.setShape(BulletShape.valueOf(settings.get("shape").toUpperCase()));
+            if (settings.containsKey("pic")) phase.setPicture(bulletPicture(settings.get("pic")));
+            if (settings.containsKey("picsize")) phase.setPictureSize(Double.parseDouble(settings.get("picsize")) / 100);
             if (settings.containsKey("wave")) phase.setWave(Double.parseDouble(settings.get("wave")));
             if (settings.containsKey("waverate")) phase.setWaveRate(Double.parseDouble(settings.get("waverate")));
             if (settings.containsKey("from")) {
@@ -3803,6 +3978,10 @@ public final class SpaceInvadersMechanics {
             private double bulletSize = BULLET_RADIUS;
             private BulletColor color = BulletColor.PINK;
             private BulletShape shape = BulletShape.ORB;
+            /** The bullet picture, or null to draw the bullet from shape, color and size. */
+            private BulletPicture picture = null;
+            /** How big the picture is drawn next to its usual size (1); the hitbox stays the same. */
+            private double pictureSize = 1;
             private int bounces = 0;            // times a bullet bounces off the sides and top
             private Aim aim = Aim.PLAYER;
             private double direction = 90;      // degrees, for Aim.FIXED: 0 right, 90 down, 180 left, 270 up
@@ -3985,6 +4164,23 @@ public final class SpaceInvadersMechanics {
             public void nextShape() {
                 BulletShape[] all = BulletShape.values();
                 shape = all[(shape.ordinal() + 1) % all.length];
+            }
+
+            /** The bullet picture, or null when the bullet is drawn from its shape, color and size. */
+            public BulletPicture getPicture() {
+                return picture;
+            }
+
+            public void setPicture(BulletPicture picture) {
+                this.picture = picture;
+            }
+
+            public double getPictureSize() {
+                return pictureSize;
+            }
+
+            public void setPictureSize(double times) {
+                pictureSize = Math.max(MIN_PICTURE_SIZE, Math.min(MAX_PICTURE_SIZE, times));
             }
 
             public void setBounces(int times) {
@@ -4413,8 +4609,19 @@ public final class SpaceInvadersMechanics {
                 }
             }
 
+            /** How close it has to be to hit: the pattern's bullet size, with a picture or without (the picture is scaled to fit it). */
             public double getRadius() {
                 return phase.getBulletSize();
+            }
+
+            /** Its picture, or null when it's drawn from shape, color and size. */
+            public BulletPicture getPicture() {
+                return phase.getPicture();
+            }
+
+            /** How big its picture is drawn next to its usual size (the hitbox doesn't change). */
+            public double getPictureSize() {
+                return phase.getPictureSize();
             }
 
             public BulletColor getColor() {
