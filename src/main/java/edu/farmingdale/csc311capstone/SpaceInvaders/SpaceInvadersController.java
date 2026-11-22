@@ -96,7 +96,7 @@ public class SpaceInvadersController {
     private enum Screen { MENU, MODE_SELECT, INTRO, PLAYING, SANDBOX, RUN, SCORES }
 
     /** Where an Extermination run is: playing a level, between levels, just ended, or typing a name. */
-    private enum RunPhase { PLAYING, STAGE_CLEAR, CONTINUE, ENDED, NAME }
+    private enum RunPhase { MAP, PLAYING, STAGE_CLEAR, CONTINUE, ENDED, NAME }
 
     private static final String RUN_CONTROLS =
             "Arrows: move    Shift: focus    Z: fire    X: bomb    Enter: pause    Esc: quit";
@@ -214,6 +214,74 @@ public class SpaceInvadersController {
             FLAK_FRAMES[i] = loadImage("flak_gun_explosion_frame" + (i + 1) + ".png");
         }
     }
+    /**
+     * Stage backgrounds. Each stage picks one from STAGE_BACKGROUNDS (null = plain black).
+     * Bottom: the back and star pictures, each followed by a left-right flipped copy so the loop is twice as
+     * long (the planet shows up on the other side), crawling down slowly. Props (planets, asteroids) drift a
+     * bit faster. Top: big glowing stars that move slightly faster than the bottom, for depth. Passers: things
+     * that go by every so often. Scrolling follows the level clock, so it stops whenever the game stops.
+     * Art: ansimuz's Space Background (CC0) and Foozle's Void Environment Pack (CC0).
+     */
+    private static final class StageBackground {
+        javafx.scene.image.Image back, stars;
+        double backSpeed, starSpeed;                     // screen pixels per second
+        Object[][] props = {};                           // {picture, x, start y, speed}
+        Object[][] top = {};                             // {strip, frames, x, y in the top strip, scale}
+        double topLength = 1400, topSpeed;               // the top strip's height (it repeats) and speed
+        Object[][] passers = {};                         // {strip, frames, x, first time s, speed, every s, scale}
+    }
+    private static final StageBackground BLUE_SPACE = new StageBackground();
+    static {
+        BLUE_SPACE.back = loadImage("bg_blue_back.png");
+        BLUE_SPACE.backSpeed = 15;
+        BLUE_SPACE.stars = loadImage("bg_blue_stars.png");
+        BLUE_SPACE.starSpeed = 30;
+        BLUE_SPACE.props = new Object[][]{
+                {loadImage("bg_planet_big.png"), 60.0, 0.0, 38.0},
+                {loadImage("bg_planet_small.png"), 470.0, 300.0, 34.0},
+                {loadImage("bg_asteroid_1.png"), 400.0, 150.0, 68.0},
+                {loadImage("bg_asteroid_2.png"), 230.0, 520.0, 80.0}};
+        BLUE_SPACE.top = new Object[][]{
+                {loadImage("bg_big_star.png"), 9, 330.0, 0.0, 1.0},
+                {loadImage("bg_big_star_2.png"), 9, 40.0, 800.0, 1.0}};
+        BLUE_SPACE.topSpeed = 24;
+        BLUE_SPACE.passers = new Object[][]{
+                {loadImage("bg_rotary_star.png"), 9, 380.0, 4.0, 50.0, 25.0, 1.5},
+                {loadImage("bg_black_hole.png"), 9, 90.0, 14.0, 40.0, 25.0, 1.5}};
+    }
+    /**
+     * The journey map shown before each stage: one destination per stage, Stage 1 first, joined by a dotted
+     * track. Planet art: Batuhan's Pixel Planet Pack (CC BY 4.0, credit required).
+     * Each is {name, picture, x, y} (x, y = the planet's center on the map).
+     */
+    private static final Object[][] DESTINATIONS = {
+            {"URANUS", loadImage("map_uranus.png"), 130.0, 290.0},
+            {"EARTH", loadImage("map_earth.png"), 280.0, 290.0},
+            {"SUN", loadImage("map_sun.png"), 430.0, 290.0}};
+    /** How many screen pixels each map planet pixel takes. */
+    private static final double MAP_PIXEL_SCALE = 3;
+    /** Seconds the map stays up before the stage starts, its last FIZZLE_TIME fizzling out (Z or Space skips ahead). */
+    private static final double MAP_TIME = 4;
+    /** Seconds the map takes to fizzle into black, and the stage to fizzle in from black. */
+    private static final double FIZZLE_TIME = 0.8;
+    /** Size of the fizzle's squares, in screen pixels. */
+    private static final int FIZZLE_BLOCK = 8;
+    /** When each fizzle square turns (0 to 1), shuffled once so the squares go in a random order. */
+    private static final double[] FIZZLE_ORDER = new double[(560 / FIZZLE_BLOCK) * (560 / FIZZLE_BLOCK)];
+    static {
+        java.util.Random random = new java.util.Random(311);
+        for (int i = 0; i < FIZZLE_ORDER.length; i++) {
+            FIZZLE_ORDER[i] = random.nextDouble();
+        }
+    }
+    /** Frames per second for the twinkling background stars and passers. */
+    private static final double BACKGROUND_FRAME_RATE = 8;
+    /** Which background each stage uses, Stage 1 first. A stage past the end of the list is plain black. */
+    private static final StageBackground[] STAGE_BACKGROUNDS = {BLUE_SPACE, null};
+    /** How many screen pixels each background pixel takes. */
+    private static final double BACKGROUND_PIXEL_SCALE = 3;
+    /** How dark the background is made so bullets stand out (0 = as drawn, 1 = black). */
+    private static final double BACKGROUND_DIM = 0.3;
     /** How many screen pixels each flak explosion pixel takes (4.8 makes the biggest frame about as wide as FLAK_RADIUS reaches). */
     private static final double FLAK_PIXEL_SCALE = 4.8;
     /** How many screen pixels each item picture pixel takes, and how far a small power item tilts (degrees). */
@@ -2624,7 +2692,7 @@ public class SpaceInvadersController {
         sandbox.resetRun();
         runStage = 0;
         sandbox.startNextLevel(runLevels.get(0));
-        runPhase = RunPhase.PLAYING;
+        showMapOrPlay();
         runPaused = false;
         runTimeOwed = 0;
         bombQueued = false;
@@ -2644,11 +2712,47 @@ public class SpaceInvadersController {
         }
     }
 
+    /**
+     * After a stage is cleared the ship flies itself out: it glides to the bottom center, waits while
+     * "STAGE CLEAR" blinks, pulls back a little, then boosts off the top. Times are seconds from the clear.
+     */
+    private static final double CLEAR_GLIDE_END = 1.0;     // reached the bottom center
+    private static final double CLEAR_RECOIL_START = 2.4;  // starts pulling back
+    private static final double CLEAR_BOOST_START = 2.9;   // starts boosting up
+    private static final double CLEAR_BOOST_END = 3.5;     // gone off the top
+    private static final double CLEAR_TOTAL = 4.1;         // then the map
+    private static final double CLEAR_RECOIL = 22;         // pixels it pulls back
+    /** Where the ship was when the stage was cleared (it glides from here). */
+    private double clearShipX, clearShipY;
+
+    /** Seconds left of the stage fizzling in from black after the map. */
+    private double fizzleInLeft;
+
+    /** Before a stage: the journey map if that stage has a destination, otherwise straight into play. */
+    private void showMapOrPlay() {
+        fizzleInLeft = 0;
+        if (runStage < DESTINATIONS.length) {
+            runPhase = RunPhase.MAP;
+            runTimer = MAP_TIME;
+        } else {
+            runPhase = RunPhase.PLAYING;
+        }
+    }
+
     /** Plays the run in fixed ticks and moves it on: next level, game over, all clear, then the name. */
     private void updateRun(double deltaSeconds) {
         if (runPaused || runPhase == RunPhase.NAME) {
             return;
         }
+        if (runPhase == RunPhase.MAP) {
+            runTimer -= deltaSeconds; // the stage waits, so its clock starts when the map goes away
+            if (runTimer <= 0) {
+                runPhase = RunPhase.PLAYING;
+                fizzleInLeft = FIZZLE_TIME;
+            }
+            return;
+        }
+        fizzleInLeft = Math.max(0, fizzleInLeft - deltaSeconds);
         if (runPhase == RunPhase.CONTINUE) {
             runTimer -= deltaSeconds;
             if (runTimer <= 0) {
@@ -2674,9 +2778,11 @@ public class SpaceInvadersController {
             }
             return;
         }
-        tickRun(deltaSeconds, runPhase == RunPhase.PLAYING);
+        tickRun(deltaSeconds, runPhase == RunPhase.PLAYING, runPhase == RunPhase.PLAYING);
         if (runPhase == RunPhase.PLAYING) {
-            if (sandbox.isOutOfLives() && sandbox.getContinuesLeft() > 0) {
+            if (sandbox.isShipExploding()) {
+                // Let the ship's explosion play out before the continue or game over screen
+            } else if (sandbox.isOutOfLives() && sandbox.getContinuesLeft() > 0) {
                 runPhase = RunPhase.CONTINUE; // the game holds still while the player decides
                 continueYes = true;
                 runTimer = Extermination.CONTINUE_TIME;
@@ -2689,24 +2795,31 @@ public class SpaceInvadersController {
                 boolean last = runStage == runLevels.size() - 1;
                 runPhase = last ? RunPhase.ENDED : RunPhase.STAGE_CLEAR;
                 runWon = last;
-                runTimer = last ? 4 : Extermination.STAGE_CLEAR_TIME;
+                runTimer = last ? 4 : CLEAR_TOTAL;
+                clearShipX = sandbox.getPlayerX();
+                clearShipY = sandbox.getPlayerY();
             }
         } else if (runPhase == RunPhase.STAGE_CLEAR) {
             runTimer -= deltaSeconds;
             if (runTimer <= 0) {
                 runStage++;
                 sandbox.startNextLevel(runLevels.get(runStage));
-                runPhase = RunPhase.PLAYING;
+                showMapOrPlay();
             }
         }
     }
 
     /** Runs the game's 1/60 s ticks owed for this frame; firing and bombs only while a level is on. */
     private void tickRun(double deltaSeconds, boolean canShoot) {
+        tickRun(deltaSeconds, canShoot, true);
+    }
+
+    /** The same, and the arrow keys only move the ship when canMove (not while it flies itself out). */
+    private void tickRun(double deltaSeconds, boolean canShoot, boolean canMove) {
         boolean fire = canShoot && heldKeys.contains(KeyCode.Z) && !waitForSpaceRelease;
         runTimeOwed += deltaSeconds;
         while (runTimeOwed >= Extermination.TICK) {
-            sandbox.tick(axis(KeyCode.LEFT, KeyCode.RIGHT), axis(KeyCode.UP, KeyCode.DOWN),
+            sandbox.tick(canMove ? axis(KeyCode.LEFT, KeyCode.RIGHT) : 0, canMove ? axis(KeyCode.UP, KeyCode.DOWN) : 0,
                     heldKeys.contains(KeyCode.SHIFT), fire, bombQueued && canShoot);
             bombQueued = false;
             runTimeOwed -= Extermination.TICK;
@@ -2729,6 +2842,15 @@ public class SpaceInvadersController {
                 }
                 case ESCAPE -> answerContinue(false);
                 default -> { }
+            }
+            return;
+        }
+        if (runPhase == RunPhase.MAP) {
+            // Z or Space skips the map (after a moment, so the key that started the run doesn't skip it)
+            if ((code == KeyCode.Z || code == KeyCode.SPACE) && !waitForSpaceRelease && runTimer < MAP_TIME - 0.5) {
+                runTimer = Math.min(runTimer, FIZZLE_TIME); // go straight to the fizzle out
+            } else if (code == KeyCode.ESCAPE) {
+                showMenu();
             }
             return;
         }
@@ -2811,8 +2933,13 @@ public class SpaceInvadersController {
             drawNameEntry(g);
             return;
         }
+        if (runPhase == RunPhase.MAP) {
+            drawJourneyMap(g);
+            return;
+        }
         g.setFill(Color.BLACK);
         g.fillRect(0, 0, w, h);
+        drawStageBackground(g, runStage < STAGE_BACKGROUNDS.length ? STAGE_BACKGROUNDS[runStage] : null);
         for (Extermination.Enemy enemy : sandbox.getEnemies()) {
             if (enemy.isAppearing()) {
                 drawAppearing(g, enemy);
@@ -2835,7 +2962,9 @@ public class SpaceInvadersController {
         if (runPhase == RunPhase.PLAYING && sandbox.getLevelTime() < 2.5) {
             banner = "STAGE " + (runStage + 1);
         } else if (runPhase == RunPhase.STAGE_CLEAR) {
-            banner = "STAGE CLEAR";
+            double since = CLEAR_TOTAL - runTimer;
+            boolean blinkOn = since > CLEAR_GLIDE_END * 0.5 && since < CLEAR_BOOST_END && (int) (since * 4) % 2 == 0;
+            banner = blinkOn ? "STAGE CLEAR" : null;
         } else if (runPhase == RunPhase.ENDED) {
             banner = runWon ? "ALL CLEAR!" : "GAME OVER";
         } else if (runPaused) {
@@ -2844,6 +2973,9 @@ public class SpaceInvadersController {
         if (banner != null) {
             g.setFill(runPhase == RunPhase.ENDED && !runWon ? Color.RED : Color.web("#ffe08a"));
             drawPixelTextCentered(g, banner, h / 2 - 60, 6);
+        }
+        if (fizzleInLeft > 0) {
+            drawFizzle(g, fizzleInLeft / FIZZLE_TIME); // black squares clearing away
         }
         if (runPhase == RunPhase.CONTINUE) {
             // CONTINUE? with a countdown, YES / NO, and how many continues are left
@@ -3133,6 +3265,168 @@ public class SpaceInvadersController {
             g.strokeLine(x, y, x + Math.cos(a) * 120, y + Math.sin(a) * 120);
         }
         g.setLineDashes((double[]) null);
+    }
+
+    /**
+     * The journey map: black, the destinations in a row joined by a dotted track (the legs already flown
+     * bright, the rest dim), a blinking box on the stage about to start, and "DESTINATION: NAME" above.
+     * At the end it fizzles into black, square by square.
+     */
+    private void drawJourneyMap(GraphicsContext g) {
+        double w = canvas.getWidth();
+        double h = canvas.getHeight();
+        double shown = MAP_TIME - runTimer; // seconds the map has been up
+        g.setFill(Color.BLACK);
+        g.fillRect(0, 0, w, h);
+        g.save();
+        g.setImageSmoothing(false); // keeps pixel art sharp
+        // The track: a dot every 10 pixels between each planet and the next
+        for (int i = 0; i + 1 < DESTINATIONS.length; i++) {
+            double x1 = (double) DESTINATIONS[i][2], y1 = (double) DESTINATIONS[i][3];
+            double x2 = (double) DESTINATIONS[i + 1][2], y2 = (double) DESTINATIONS[i + 1][3];
+            double length = Math.hypot(x2 - x1, y2 - y1);
+            g.setFill(i < runStage ? Color.web("#ffe08a") : Color.web("#ffe08a", 0.35));
+            for (double d = 55; d < length - 55; d += 10) {
+                g.fillRect(x1 + (x2 - x1) * d / length - 2, y1 + (y2 - y1) * d / length - 2, 4, 4);
+            }
+        }
+        for (int i = 0; i < DESTINATIONS.length; i++) {
+            javafx.scene.image.Image planet = (javafx.scene.image.Image) DESTINATIONS[i][1];
+            double x = (double) DESTINATIONS[i][2], y = (double) DESTINATIONS[i][3];
+            double pw = planet.getWidth() * MAP_PIXEL_SCALE;
+            double ph = planet.getHeight() * MAP_PIXEL_SCALE;
+            g.setGlobalAlpha(i <= runStage ? 1 : 0.55); // places still ahead are a little dim
+            g.drawImage(planet, x - pw / 2, y - ph / 2, pw, ph);
+            g.setGlobalAlpha(1);
+        }
+        // The blinking box on this stage's destination
+        Object[] here = DESTINATIONS[runStage];
+        javafx.scene.image.Image planet = (javafx.scene.image.Image) here[1];
+        double x = (double) here[2], y = (double) here[3];
+        double half = planet.getWidth() * MAP_PIXEL_SCALE / 2 + 10;
+        if ((int) (shown * 3) % 2 == 0) {
+            g.setStroke(Color.web("#ffe08a"));
+            g.setLineWidth(3);
+            double c = 14; // corner length
+            for (int sx = -1; sx <= 1; sx += 2) {
+                for (int sy = -1; sy <= 1; sy += 2) {
+                    double cx = x + sx * half, cy = y + sy * half;
+                    g.strokeLine(cx, cy, cx - sx * c, cy);
+                    g.strokeLine(cx, cy, cx, cy - sy * c);
+                }
+            }
+        }
+        // The label, centered above the row
+        g.setFill(Color.web("#ffe08a"));
+        drawPixelTextCentered(g, "DESTINATION: " + here[0], y - 130, 4);
+        g.restore();
+        if (runTimer < FIZZLE_TIME) {
+            drawFizzle(g, 1 - runTimer / FIZZLE_TIME); // squares going black
+        }
+    }
+
+    /** Covers the screen with black squares, a random amount of them: none at 0, all at 1. */
+    private void drawFizzle(GraphicsContext g, double amount) {
+        int across = (int) Math.ceil(canvas.getWidth() / FIZZLE_BLOCK);
+        g.setFill(Color.BLACK);
+        for (int i = 0; i < FIZZLE_ORDER.length; i++) {
+            if (FIZZLE_ORDER[i] < amount) {
+                g.fillRect((i % across) * FIZZLE_BLOCK, (i / across) * FIZZLE_BLOCK, FIZZLE_BLOCK, FIZZLE_BLOCK);
+            }
+        }
+    }
+
+    /** A stage's scrolling background: back layer, stars, drifting props, then a dim and a dark fade at the top. */
+    private void drawStageBackground(GraphicsContext g, StageBackground bg) {
+        if (bg == null) {
+            return;
+        }
+        double w = canvas.getWidth();
+        double h = canvas.getHeight();
+        double t = sandbox.getLevelTime();
+        g.save();
+        g.setImageSmoothing(false); // keeps pixel art sharp
+        drawScrollingLayer(g, bg.back, t * bg.backSpeed);
+        if (bg.stars != null) {
+            drawScrollingLayer(g, bg.stars, t * bg.starSpeed);
+        }
+        // Every time something comes back in at the top it gets a new random spot, on the other half of the screen
+        int frame = (int) (t * BACKGROUND_FRAME_RATE);
+        for (int i = 0; i < bg.top.length; i++) {
+            Object[] star = bg.top[i];
+            double scale = (double) star[4];
+            double sw = ((javafx.scene.image.Image) star[0]).getWidth() / (int) star[1] * scale;
+            double sh = ((javafx.scene.image.Image) star[0]).getHeight() * scale;
+            double travelled = (double) star[3] + t * bg.topSpeed;
+            long pass = (long) Math.floor(travelled / bg.topLength);
+            drawStripFrame(g, star, frame, backgroundSpot(100 + i, pass, sw), travelled - pass * bg.topLength - sh, scale);
+        }
+        for (int i = 0; i < bg.passers.length; i++) {
+            Object[] passer = bg.passers[i];
+            double since = t - (double) passer[3];
+            if (since >= 0) {
+                double scale = (double) passer[6];
+                double pw = ((javafx.scene.image.Image) passer[0]).getWidth() / (int) passer[1] * scale;
+                double ph = ((javafx.scene.image.Image) passer[0]).getHeight() * scale;
+                long pass = (long) Math.floor(since / (double) passer[5]);
+                double y = (since - pass * (double) passer[5]) * (double) passer[4];
+                drawStripFrame(g, passer, frame, backgroundSpot(200 + i, pass, pw), y - ph, scale);
+            }
+        }
+        for (int i = 0; i < bg.props.length; i++) {
+            Object[] prop = bg.props[i];
+            javafx.scene.image.Image picture = (javafx.scene.image.Image) prop[0];
+            double pw = picture.getWidth() * BACKGROUND_PIXEL_SCALE;
+            double ph = picture.getHeight() * BACKGROUND_PIXEL_SCALE;
+            double loop = h + ph + 200; // off the bottom, a short gap, then back in at the top
+            double travelled = (double) prop[2] + t * (double) prop[3];
+            long pass = (long) Math.floor(travelled / loop);
+            g.drawImage(picture, backgroundSpot(i, pass, pw), travelled - pass * loop - ph, pw, ph);
+        }
+        g.setFill(Color.color(0, 0, 0, BACKGROUND_DIM));
+        g.fillRect(0, 0, w, h);
+        g.setFill(new javafx.scene.paint.LinearGradient(0, 0, 0, h / 3, false, javafx.scene.paint.CycleMethod.NO_CYCLE,
+                new javafx.scene.paint.Stop(0, Color.color(0, 0, 0, 0.5)), new javafx.scene.paint.Stop(1, Color.TRANSPARENT)));
+        g.fillRect(0, 0, w, h / 3);
+        g.restore();
+    }
+
+    /**
+     * One background layer, scaled up and centered across, then its left-right flipped copy under it, repeated
+     * top to bottom and moved down by offset pixels.
+     */
+    private void drawScrollingLayer(GraphicsContext g, javafx.scene.image.Image layer, double offset) {
+        double lw = layer.getWidth() * BACKGROUND_PIXEL_SCALE;
+        double lh = layer.getHeight() * BACKGROUND_PIXEL_SCALE;
+        double x = (canvas.getWidth() - lw) / 2;
+        for (double y = offset % (2 * lh) - 2 * lh; y < canvas.getHeight(); y += 2 * lh) {
+            g.drawImage(layer, x, y, lw, lh);
+            g.drawImage(layer, 0, 0, layer.getWidth(), layer.getHeight(), x + lw, y + lh, -lw, lh); // flipped
+        }
+    }
+
+    /**
+     * Where across the screen a background thing goes on one trip down: a random spot that stays the same
+     * for that whole trip, on the left half one trip and the right half the next (which half it starts on
+     * depends on the thing, so they don't all bunch up on one side).
+     */
+    private double backgroundSpot(int thing, long pass, double width) {
+        java.util.Random random = new java.util.Random(thing * 7919L + pass * 104729L);
+        double half = Math.max(0, (canvas.getWidth() - width) / 2);
+        boolean right = Math.floorMod(pass + thing, 2) == 1;
+        return (right ? half : 0) + random.nextDouble() * half;
+    }
+
+    /** One frame of a sprite strip (frames side by side), drawn at x, y and scale, skipped when off screen. */
+    private void drawStripFrame(GraphicsContext g, Object[] sprite, int frame, double x, double y, double scale) {
+        javafx.scene.image.Image strip = (javafx.scene.image.Image) sprite[0];
+        int frames = (int) sprite[1];
+        double fw = strip.getWidth() / frames;
+        double fh = strip.getHeight();
+        if (y + fh * scale < 0 || y > canvas.getHeight()) {
+            return;
+        }
+        g.drawImage(strip, (frame % frames) * fw, 0, fw, fh, x, y, fw * scale, fh * scale);
     }
 
     /** The sandbox: flight paths, the enemies, a preview of the next one, and the ship and its shots. */
@@ -3824,12 +4118,41 @@ public class SpaceInvadersController {
     }
 
     private void drawShip(GraphicsContext g) {
+        if (sandbox.isShipExploding()) {
+            return; // it's blowing up; it comes back when the stop is over
+        }
+        if (sandbox.isOutOfLives() && screen != Screen.SANDBOX) {
+            return; // the run is over (continue or game over screen), so the ship is gone
+        }
         double x = sandbox.getPlayerX();
         double y = sandbox.getPlayerY();
+        boolean flyingOut = screen == Screen.RUN && runPhase == RunPhase.STAGE_CLEAR;
+        if (flyingOut) {
+            double since = CLEAR_TOTAL - runTimer;
+            double centerX = canvas.getWidth() / 2;
+            double bottomY = Extermination.PLAYER_START_Y;
+            if (since < CLEAR_GLIDE_END) {
+                double k = since / CLEAR_GLIDE_END;
+                k = k * k * (3 - 2 * k); // eases in and out
+                x = clearShipX + (centerX - clearShipX) * k;
+                y = clearShipY + (bottomY - clearShipY) * k;
+            } else if (since < CLEAR_RECOIL_START) {
+                x = centerX;
+                y = bottomY;
+            } else if (since < CLEAR_BOOST_START) {
+                double k = (since - CLEAR_RECOIL_START) / (CLEAR_BOOST_START - CLEAR_RECOIL_START);
+                x = centerX;
+                y = bottomY + CLEAR_RECOIL * Math.sin(k * Math.PI / 2); // pulls back, slowing at the end
+            } else {
+                double k = Math.min(1, (since - CLEAR_BOOST_START) / (CLEAR_BOOST_END - CLEAR_BOOST_START));
+                x = centerX;
+                y = bottomY + CLEAR_RECOIL - (bottomY + CLEAR_RECOIL + 80) * k * k; // speeds up off the top
+            }
+        }
         double w = Extermination.PLAYER_WIDTH;
         double h = Extermination.PLAYER_HEIGHT;
         // Leans the way it's flying, easing in and out
-        boolean flying = screen == Screen.RUN ? !runPaused : screen == Screen.SANDBOX && !paused;
+        boolean flying = !flyingOut && (screen == Screen.RUN ? !runPaused : screen == Screen.SANDBOX && !paused);
         double target = flying ? axis(KeyCode.LEFT, KeyCode.RIGHT) : 0;
         shipLean += (target - shipLean) * 0.2;
         // Blinks see-through while it can't be hit
