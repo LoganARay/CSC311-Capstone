@@ -274,6 +274,19 @@ public class SpaceInvadersController {
             FIZZLE_ORDER[i] = random.nextDouble();
         }
     }
+    /**
+     * Main menu background (ansimuz's Space Background, old version, CC0): the big red planet side of it,
+     * zoomed in. The stars and far planets drift slowly sideways (they repeat seamlessly) and the big
+     * planet floats a little.
+     */
+    private static final javafx.scene.image.Image MENU_BACK = loadImage("menu_bg_back.png");
+    private static final javafx.scene.image.Image MENU_STARS = loadImage("menu_bg_stars.png");
+    private static final javafx.scene.image.Image MENU_FAR_PLANETS = loadImage("menu_bg_far_planets.png");
+    private static final javafx.scene.image.Image MENU_BIG_PLANET = loadImage("menu_bg_big_planet.png");
+    private static final double MENU_PIXEL_SCALE = 4;
+    private static final double MENU_VIEW_X = 102, MENU_VIEW_Y = 10;    // top-left of the part shown, in picture pixels
+    private static final double MENU_BIG_PLANET_X = 128, MENU_BIG_PLANET_Y = 40; // where the big planet sits, in picture pixels
+    private static final double MENU_STAR_SPEED = 8, MENU_FAR_SPEED = 3; // screen pixels per second
     /** Frames per second for the twinkling background stars and passers. */
     private static final double BACKGROUND_FRAME_RATE = 8;
     /** Which background each stage uses, Stage 1 first. A stage past the end of the list is plain black. */
@@ -324,6 +337,94 @@ public class SpaceInvadersController {
         java.io.InputStream in = SpaceInvadersController.class.getResourceAsStream(
                 "/edu/farmingdale/csc311capstone/SpaceInvadersGraphics/" + name);
         return in == null ? null : new javafx.scene.image.Image(in);
+    }
+
+    /**
+     * Music (SKYETUNES by Skye Ash). The level song ("2-27-2016") plays on a loop while a stage is on, from
+     * the start of each stage; it pauses with the game and stops on the map, the name entry and when the
+     * run is left. The title song ("11-8-2012") plays on a loop on the main menu, the mode select and the
+     * scoreboard, and fades out with the fizzle when Extermination is picked.
+     */
+    private static final String TITLE_MUSIC = "title_music.mp3";
+    private static final double TITLE_MUSIC_VOLUME = 0.5;   // 0 to 1
+    private static final String LEVEL_MUSIC = "level_music.mp3";
+    private static final double LEVEL_MUSIC_VOLUME = 0.5;   // 0 to 1
+    /**
+     * The whole song plays, intro first; from then on it loops from the beat drop to the end: on reaching
+     * LOOP_END it jumps back to LOOP_START. They're 48 bars apart, and the song's last 2 bars blend into
+     * the build-up that leads into the drop, so the jump sounds like the song carries on.
+     */
+    private static final double LEVEL_MUSIC_LOOP_START = 32.579;  // s, the beat drop
+    private static final double LEVEL_MUSIC_LOOP_END = 130.208;   // s, the end of the song
+    private javafx.scene.media.MediaPlayer musicPlayer;
+    private String musicPlaying;   // which song musicPlayer has, TITLE_MUSIC or LEVEL_MUSIC
+    private final java.util.Set<String> musicFailed = new java.util.HashSet<>(); // songs that couldn't be loaded
+
+    /** Starts, switches, pauses, resumes or stops the songs to match what's on screen. Called every frame. */
+    private void updateMusic() {
+        String wanted = null;
+        if (screen == Screen.RUN && runPhase != RunPhase.MAP && runPhase != RunPhase.NAME) {
+            wanted = LEVEL_MUSIC;
+        } else if (screen == Screen.MENU || screen == Screen.MODE_SELECT || screen == Screen.SCORES) {
+            wanted = TITLE_MUSIC;
+        }
+        if (musicPlayer != null && !java.util.Objects.equals(wanted, musicPlaying)) {
+            musicPlayer.stop();
+            musicPlayer.dispose();
+            musicPlayer = null;
+            musicPlaying = null;
+        }
+        if (wanted == null) {
+            return;
+        }
+        if (musicPlayer == null) {
+            if (musicFailed.contains(wanted)) {
+                return;
+            }
+            try {
+                java.net.URL song = SpaceInvadersController.class.getResource(
+                        "/edu/farmingdale/csc311capstone/SpaceInvadersSounds/" + wanted);
+                if (song == null) {
+                    musicFailed.add(wanted);
+                    return;
+                }
+                javafx.scene.media.MediaPlayer player = new javafx.scene.media.MediaPlayer(new javafx.scene.media.Media(song.toExternalForm()));
+                if (wanted.equals(LEVEL_MUSIC)) {
+                    player.setVolume(LEVEL_MUSIC_VOLUME);
+                    player.setStopTime(javafx.util.Duration.seconds(LEVEL_MUSIC_LOOP_END));
+                    player.setOnEndOfMedia(() -> {
+                        player.seek(javafx.util.Duration.seconds(LEVEL_MUSIC_LOOP_START)); // back to the main part
+                        player.play();
+                    });
+                } else {
+                    player.setVolume(TITLE_MUSIC_VOLUME);
+                    player.setOnEndOfMedia(() -> {
+                        player.seek(javafx.util.Duration.ZERO); // the song ends on a full bar, so it starts over in time
+                        player.play();
+                    });
+                }
+                player.play();
+                musicPlayer = player;
+                musicPlaying = wanted;
+            } catch (RuntimeException e) {
+                musicFailed.add(wanted); // no sound on this computer; the game goes on without it
+                musicPlayer = null;
+                musicPlaying = null;
+            }
+            return;
+        }
+        if (wanted.equals(TITLE_MUSIC)) {
+            // Picking Extermination fizzles the screen out; the song fades out with it
+            double fade = screen == Screen.MODE_SELECT && modeFizzleLeft > 0 ? modeFizzleLeft / FIZZLE_TIME : 1;
+            musicPlayer.setVolume(TITLE_MUSIC_VOLUME * Math.max(0, Math.min(1, fade)));
+            return;
+        }
+        javafx.scene.media.MediaPlayer.Status status = musicPlayer.getStatus();
+        if (runPaused && status == javafx.scene.media.MediaPlayer.Status.PLAYING) {
+            musicPlayer.pause();
+        } else if (!runPaused && status == javafx.scene.media.MediaPlayer.Status.PAUSED) {
+            musicPlayer.play();
+        }
     }
 
     @FXML private BorderPane root;
@@ -581,9 +682,21 @@ public class SpaceInvadersController {
             lastFrame = now;
             // Cap the step so a slow frame doesn't teleport the cannon
             deltaSeconds = Math.min(deltaSeconds, 0.05);
+            updateMusic();
             switch (screen) {
                 case MENU -> drawMenu();
-                case MODE_SELECT -> drawModeSelect();
+                case MODE_SELECT -> {
+                    drawModeSelect();
+                    if (modeFizzleLeft > 0) {
+                        // Extermination was picked: the screen fizzles out, then the run starts (its map fizzles in)
+                        modeFizzleLeft -= deltaSeconds;
+                        drawFizzle(canvas.getGraphicsContext2D(), Math.min(1, 1 - modeFizzleLeft / FIZZLE_TIME));
+                        if (modeFizzleLeft <= 0) {
+                            modeFizzleLeft = 0;
+                            startRun();
+                        }
+                    }
+                }
                 case INTRO -> {
                     introTimeLeft -= deltaSeconds;
                     if (introTimeLeft <= 0) {
@@ -2584,6 +2697,9 @@ public class SpaceInvadersController {
 
     /** Up/Down move the yellow arrow between modes, Space picks one, Esc goes back to the menu. */
     private void onModeSelectKey(KeyCode code) {
+        if (modeFizzleLeft > 0) {
+            return; // already on the way into Extermination
+        }
         switch (code) {
             case UP -> selectedMode = (selectedMode + MODE_OPTIONS.length - 1) % MODE_OPTIONS.length;
             case DOWN -> selectedMode = (selectedMode + 1) % MODE_OPTIONS.length;
@@ -2592,7 +2708,7 @@ public class SpaceInvadersController {
                 waitForSpaceRelease = true;
                 switch (selectedMode) {
                     case PLANET_DEFENSE -> showIntro();
-                    case EXTERMINATION -> startRun();
+                    case EXTERMINATION -> modeFizzleLeft = FIZZLE_TIME; // fizzles out, then starts the run
                     case MODE_BACK -> showMenu();
                     default -> { }
                 }
@@ -2603,6 +2719,7 @@ public class SpaceInvadersController {
 
     private void showModeSelect() {
         screen = Screen.MODE_SELECT;
+        modeFizzleLeft = 0;
         selectedMode = PLANET_DEFENSE;
         drawModeSelect();
     }
@@ -2724,6 +2841,9 @@ public class SpaceInvadersController {
     private static final double CLEAR_RECOIL = 22;         // pixels it pulls back
     /** Where the ship was when the stage was cleared (it glides from here). */
     private double clearShipX, clearShipY;
+
+    /** Seconds left of the mode screen fizzling out after Extermination is picked (0 = not fizzling). */
+    private double modeFizzleLeft;
 
     /** Seconds left of the stage fizzling in from black after the map. */
     private double fizzleInLeft;
@@ -3040,6 +3160,9 @@ public class SpaceInvadersController {
         double w = canvas.getWidth();
         g.setFill(Color.BLACK);
         g.fillRect(0, 0, w, canvas.getHeight());
+        drawMenuBackground(g);
+        g.setFill(Color.color(0, 0, 0, 0.6)); // darker here so the table is easy to read
+        g.fillRect(0, 0, w, canvas.getHeight());
         g.setFill(TITLE);
         drawPixelTextCentered(g, "SCOREBOARD", 40, 6);
         double scale = 3;
@@ -3072,6 +3195,7 @@ public class SpaceInvadersController {
         double w = canvas.getWidth();
         g.setFill(Color.BLACK);
         g.fillRect(0, 0, w, canvas.getHeight());
+        drawMenuBackground(g);
 
         // Title: two lines of big blocky letters filling most of the screen
         g.setFill(TITLE);
@@ -3097,6 +3221,7 @@ public class SpaceInvadersController {
         double w = canvas.getWidth();
         g.setFill(Color.BLACK);
         g.fillRect(0, 0, w, canvas.getHeight());
+        drawMenuBackground(g);
 
         g.setFill(TITLE);
         drawPixelTextCentered(g, "SELECT MODE", 110, 7);
@@ -3142,6 +3267,34 @@ public class SpaceInvadersController {
     }
 
     /** A small right-pointing pixel arrow, as tall as one line of option text. */
+    /** The main menu's moving background, under the menu text. */
+    private void drawMenuBackground(GraphicsContext g) {
+        if (MENU_BACK == null) {
+            return;
+        }
+        double t = System.nanoTime() / 1e9;
+        double sc = MENU_PIXEL_SCALE;
+        g.save();
+        g.setImageSmoothing(false); // keeps pixel art sharp
+        g.drawImage(MENU_BACK, -MENU_VIEW_X * sc, -MENU_VIEW_Y * sc, MENU_BACK.getWidth() * sc, MENU_BACK.getHeight() * sc);
+        drawMenuDrift(g, MENU_FAR_PLANETS, t * MENU_FAR_SPEED);
+        drawMenuDrift(g, MENU_STARS, t * MENU_STAR_SPEED);
+        double floatX = 2 * Math.sin(t * 0.6), floatY = 6 * Math.sin(t * 0.8);
+        g.drawImage(MENU_BIG_PLANET, (MENU_BIG_PLANET_X - MENU_VIEW_X) * sc + floatX, (MENU_BIG_PLANET_Y - MENU_VIEW_Y) * sc + floatY,
+                MENU_BIG_PLANET.getWidth() * sc, MENU_BIG_PLANET.getHeight() * sc);
+        g.restore();
+    }
+
+    /** One menu layer moved left by offset pixels, repeated side by side so it never runs out. */
+    private void drawMenuDrift(GraphicsContext g, javafx.scene.image.Image layer, double offset) {
+        double lw = layer.getWidth() * MENU_PIXEL_SCALE;
+        double lh = layer.getHeight() * MENU_PIXEL_SCALE;
+        double start = -MENU_VIEW_X * MENU_PIXEL_SCALE - (offset % lw);
+        for (double x = start; x < canvas.getWidth(); x += lw) {
+            g.drawImage(layer, x, -MENU_VIEW_Y * MENU_PIXEL_SCALE, lw, lh);
+        }
+    }
+
     private void drawMenuArrow(GraphicsContext g, double x, double y, double scale) {
         g.setFill(MENU_ARROW);
         int[] rowLengths = {1, 2, 3, 4, 3, 2, 1};
@@ -3320,6 +3473,9 @@ public class SpaceInvadersController {
         g.setFill(Color.web("#ffe08a"));
         drawPixelTextCentered(g, "DESTINATION: " + here[0], y - 130, 4);
         g.restore();
+        if (shown < FIZZLE_TIME) {
+            drawFizzle(g, 1 - shown / FIZZLE_TIME); // fizzling in from black
+        }
         if (runTimer < FIZZLE_TIME) {
             drawFizzle(g, 1 - runTimer / FIZZLE_TIME); // squares going black
         }
