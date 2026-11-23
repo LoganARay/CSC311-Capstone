@@ -1435,8 +1435,11 @@ OCTOPUS start=594,-31 speed=400 count=1 repeats=0 gap=3.0 hp=1 formation=LINE sp
             dropBurst(boss.getX(), boss.getY(), ItemType.SMALL_POWER, BOSS_ATTACK_POWER_ITEMS, BOSS_ITEMS_FLY_TO_YOU);
         }
 
-        /** Drops items around a spot; a single one drops right there. */
+        /** Drops items around a spot; a single one drops right there. At full power, power items drop as point items. */
         private void dropBurst(double x, double y, ItemType type, int count, boolean flyToShip) {
+            if (power >= MAX_POWER && (type == ItemType.SMALL_POWER || type == ItemType.BIG_POWER)) {
+                type = ItemType.POINT;
+            }
             for (int i = 0; i < count; i++) {
                 double ix = x, iy = y;
                 if (count > 1 || type == ItemType.BIG_POWER && flyToShip) {
