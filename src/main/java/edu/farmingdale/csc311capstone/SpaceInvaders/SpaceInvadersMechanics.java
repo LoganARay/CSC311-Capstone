@@ -1229,6 +1229,11 @@ OCTOPUS start=594,-31 speed=400 count=1 repeats=0 gap=3.0 hp=1 formation=LINE sp
         /** When each wave started and was cleared this run, in level time; -1 for not yet. */
         private final List<Double> waveStartTimes = new ArrayList<>();
         private final List<Double> waveClearTimes = new ArrayList<>();
+        /** A wave that mustn't start yet even when its turn comes (the boss waiting for the asteroid to pass), or -1. */
+        private int heldWave = -1;
+        /** Each time the screen was cleared of tanks this run (all shot down or flown off), in level time. */
+        private final List<Double> tanksGoneTimes = new ArrayList<>();
+        private boolean tanksOnScreen;
         /** How many of each design's enemies have spawned so far this run. */
         private final Map<EnemyDesign, Integer> spawned = new HashMap<>();
         /** When each group was cleared this run (all spawned, none left flying). */
@@ -1321,6 +1326,11 @@ OCTOPUS start=594,-31 speed=400 count=1 repeats=0 gap=3.0 hp=1 formation=LINE sp
             shots.removeIf(this::hitEnemy);
             flaks.removeIf(flak -> (flak[2] += deltaSeconds) >= FLAK_TIME);
             deaths.removeIf(death -> (death[2] += deltaSeconds) >= ENEMY_DEATH_TIME);
+            boolean tanksNow = enemies.stream().anyMatch(enemy -> !enemy.getDesign().isBoss() && enemy.getDesign().getHealth() >= TANK_HEALTH);
+            if (tanksOnScreen && !tanksNow) {
+                tanksGoneTimes.add(levelTime);
+            }
+            tanksOnScreen = tanksNow;
             updateBombs(deltaSeconds);
             moveEnemyBullets(deltaSeconds);
             moveItems(deltaSeconds);
@@ -2042,6 +2052,9 @@ OCTOPUS start=594,-31 speed=400 count=1 repeats=0 gap=3.0 hp=1 formation=LINE sp
                 if (isWaveStarted(k)) {
                     continue;
                 }
+                if (k == heldWave) {
+                    break; // held back for now; it starts as soon as it's let go
+                }
                 Wave wave = waves.get(k);
                 double readyAt;
                 if (k == firstWave) {
@@ -2229,6 +2242,26 @@ OCTOPUS start=594,-31 speed=400 count=1 repeats=0 gap=3.0 hp=1 formation=LINE sp
             return wave < waveClearTimes.size() && waveClearTimes.get(wave) >= 0;
         }
 
+        /** The level time when the wave started this run, or -1 if it hasn't. */
+        public double getWaveStartTime(int wave) {
+            return isWaveStarted(wave) ? waveStartTimes.get(wave) : -1;
+        }
+
+        /** The level time when the wave was cleared this run, or -1 if it hasn't been. */
+        public double getWaveClearTime(int wave) {
+            return isWaveCleared(wave) ? waveClearTimes.get(wave) : -1;
+        }
+
+        /** Each time the screen was cleared of tanks this run (all shot down or flown off), in level time, in order. */
+        public List<Double> getTanksGoneTimes() {
+            return tanksGoneTimes;
+        }
+
+        /** Keeps a wave from starting until this is set back to -1 (or to another wave). */
+        public void setHeldWave(int wave) {
+            heldWave = wave;
+        }
+
         /** The latest wave that has started this run, or -1 before the first one starts. */
         public int getRunningWave() {
             int running = -1;
@@ -2278,7 +2311,7 @@ OCTOPUS start=594,-31 speed=400 count=1 repeats=0 gap=3.0 hp=1 formation=LINE sp
 
         /** Destroys the first enemy the shot touches. Returns true when it hit one, so the shot goes away. */
         /** Every enemy bullet and laser on screen vanishes, as when a boss attack ends. */
-        private void clearEnemyBullets() {
+        public void clearEnemyBullets() {
             enemyBullets.clear();
             lasers.clear();
         }
@@ -3103,6 +3136,8 @@ OCTOPUS start=594,-31 speed=400 count=1 repeats=0 gap=3.0 hp=1 formation=LINE sp
         public void playFromWave(int wave) {
             firstWave = Math.max(0, Math.min(wave, waves.size() - 1));
             waveStartTimes.clear();
+            tanksGoneTimes.clear();
+            tanksOnScreen = false;
             waveClearTimes.clear();
             levelTime = 0;
             enemies.clear();

@@ -289,8 +289,61 @@ public class SpaceInvadersController {
     private static final double MENU_STAR_SPEED = 8, MENU_FAR_SPEED = 3; // screen pixels per second
     /** Frames per second for the twinkling background stars and passers. */
     private static final double BACKGROUND_FRAME_RATE = 8;
+    /**
+     * The boss background (ansimuz's Space Backgrounds 3, "Ring"): the blue ringed planet over purple space,
+     * zoomed in, with the planet bobbing slowly up and down. It takes over while the asteroid covers the screen.
+     */
+    private static final javafx.scene.image.Image RING_BACK = loadImage("bg_ring_back.png");
+    private static final javafx.scene.image.Image RING_PLANET = loadImage("bg_ring_planet.png");
+    private static final double RING_PIXEL_SCALE = 4;
+    private static final double RING_VIEW_X = 100, RING_VIEW_Y = 10; // top-left of the part shown, in picture pixels
+    private static final double RING_BOB = 6;                        // screen pixels the planet drifts up and down
+    private static final double RING_BOB_TIME = 10;                  // seconds for one slow trip up and back down
+    /** Which stages have the boss background (after their asteroid passes), Stage 1 first. */
+    private static final boolean[] BOSS_BACKGROUNDS = {true, false};
     /** Which background each stage uses, Stage 1 first. A stage past the end of the list is plain black. */
     private static final StageBackground[] STAGE_BACKGROUNDS = {BLUE_SPACE, null};
+    /**
+     * The colossal asteroid (Dolkyns' Asteroid Pack, the rock asteroid, pixelated to match the game). On a stage
+     * with tanks before its boss, it creeps in from the top right when the first tank wave starts and comes closer
+     * each time the tanks on screen are all killed (a round; tanks that come back count again), until during the
+     * last round its edge is at the dead center.
+     * As soon as every enemy before the boss is gone it speeds up and slides on over the whole screen and off the bottom left,
+     * easing off a little while it covers the screen but never stopping, and only then does the boss come. It always speeds up
+     * and slows down gradually, like something that heavy would. The level song dips while it passes. While it
+     * creeps in it's behind everything (the ship, enemies, items and bullets are drawn over it); while it passes it
+     * goes over the ship and all, so the ship is hidden until it's gone (the score and lives stay on top). Enemy
+     * bullets left over vanish as it passes, so nothing hidden can hit the ship.
+     */
+    private static final javafx.scene.image.Image ASTEROID = loadImage("bg_rock_asteroid.png");
+    private static final int ASTEROID_FRAMES = 32;
+    private static final int ASTEROID_COLUMNS = 8;              // the frames are laid out 8 across, 4 down
+    private static final double ASTEROID_FRAME_RATE = 2;        // frames per second of its slow tumble (16 s a turn)
+    private static final double ASTEROID_PIXEL_SCALE = 11.5;    // screen pixels per asteroid pixel (enough to cover the screen)
+    // How far its center is from the screen's center, along the line to the top right corner (px; less than 0 = past it)
+    private static final double ASTEROID_OFF = 1320;            // out of sight
+    private static final double ASTEROID_START = 900;           // where it starts creeping in from, just out of sight
+    private static final double ASTEROID_PEEK = 740;            // just poking in at the corner
+    private static final double ASTEROID_EDGE_AT_MIDDLE = 470;  // its edge at the dead center
+    private static final double ASTEROID_CLOSEST = 400;         // it doesn't drift closer than this before it passes
+    // Creeping in: it drifts toward its spot, slower the closer it gets, and keeps drifting a little once there
+    private static final double ASTEROID_CREEP_MAX = 10;        // px/s, the fastest it creeps
+    private static final double ASTEROID_CREEP_MIN = 1.5;       // px/s, it always keeps drifting in at least this much
+    private static final double ASTEROID_CREEP_EASE = 0.06;     // creeping speed for each px it still has to go (px/s per px)
+    private static final double ASTEROID_CREEP_ACCEL = 2;       // px/s each second: how gradually its creeping speed changes
+    // Passing: a little slower while it's over the whole screen (a split second fully covered), faster farther away
+    private static final double ASTEROID_PASS_SLOW = 70;        // px/s at the middle
+    private static final double ASTEROID_PASS_FAST = 320;       // px/s this far or more from the middle:
+    private static final double ASTEROID_PASS_SPAN = 350;       // px
+    private static final double ASTEROID_PASS_ACCEL = 120;      // px/s each second: how quickly its passing speed changes
+    private static final double ASTEROID_MUSIC_SPAN = 700;      // px past the middle it takes for the boss song to fade all the way in
+    /** Where the asteroid is in the level it belongs to: its distance (as above), speed toward the bottom left, and how far along it is. */
+    private Extermination asteroidLevel;
+    private double asteroidLastTime;
+    private double asteroidDistance = ASTEROID_START;
+    private double asteroidSpeed;
+    private boolean asteroidPassing, asteroidPassed;
+    private double asteroidPassFrom; // where it was when it started passing
     /** How many screen pixels each background pixel takes. */
     private static final double BACKGROUND_PIXEL_SCALE = 3;
     /** How dark the background is made so bullets stand out (0 = as drawn, 1 = black). */
@@ -356,15 +409,73 @@ public class SpaceInvadersController {
      */
     private static final double LEVEL_MUSIC_LOOP_START = 32.579;  // s, the beat drop
     private static final double LEVEL_MUSIC_LOOP_END = 130.208;   // s, the end of the song
+    /**
+     * The boss song (SKYETUNES "4-1-2016 - 1"), for the boss part of a stage with an asteroid: it starts as the
+     * asteroid crosses the middle of the screen, fading in as the asteroid moves off, while the level song has
+     * faded away under the rumble. Its 27 s build-up plays once, then it loops from the drop to the end
+     * (65 bars at about 139 BPM); the last 2 bars blend into the build-up's last 2 bars, so the jump sounds like
+     * the song carries on.
+     */
+    private static final String BOSS_MUSIC = "boss_music.mp3";
+    private static final double BOSS_MUSIC_VOLUME = 0.5;     // 0 to 1
+    private static final double BOSS_MUSIC_LOOP_START = 27.696;  // s, the drop
+    private static final double BOSS_MUSIC_LOOP_END = 140.001;   // s, the end of the song
     private javafx.scene.media.MediaPlayer musicPlayer;
+    /**
+     * The asteroid's rumble ("Earthquake" by NoahBangs, freesound.org, CC BY 4.0, credit required): a 22 s
+     * stretch of it that loops, played while the asteroid passes, loud enough to mostly drown out the level song.
+     */
+    private static final String RUMBLE_SOUND = "asteroid_rumble.mp3";
+    private static final double RUMBLE_VOLUME = 0.9;   // 0 to 1, at its loudest
+    private static final double RUMBLE_SWELL = 200;    // px the asteroid moves after it starts passing while the rumble swells up
+    private javafx.scene.media.MediaPlayer rumblePlayer;
     private String musicPlaying;   // which song musicPlayer has, TITLE_MUSIC or LEVEL_MUSIC
     private final java.util.Set<String> musicFailed = new java.util.HashSet<>(); // songs that couldn't be loaded
 
+    /** Plays the asteroid's rumble while it passes (pausing with the game), at the loudness it should have now. */
+    private void updateRumble() {
+        double level = screen == Screen.RUN ? asteroidRumbleLevel() : 0;
+        if (level <= 0) {
+            if (rumblePlayer != null) {
+                rumblePlayer.stop();
+                rumblePlayer.dispose();
+                rumblePlayer = null;
+            }
+            return;
+        }
+        if (rumblePlayer == null) {
+            if (musicFailed.contains(RUMBLE_SOUND)) {
+                return;
+            }
+            try {
+                java.net.URL sound = SpaceInvadersController.class.getResource(
+                        "/edu/farmingdale/csc311capstone/SpaceInvadersSounds/" + RUMBLE_SOUND);
+                if (sound == null) {
+                    musicFailed.add(RUMBLE_SOUND);
+                    return;
+                }
+                rumblePlayer = new javafx.scene.media.MediaPlayer(new javafx.scene.media.Media(sound.toExternalForm()));
+                rumblePlayer.setCycleCount(javafx.scene.media.MediaPlayer.INDEFINITE);
+            } catch (RuntimeException e) {
+                musicFailed.add(RUMBLE_SOUND); // no sound on this computer; the game goes on without it
+                rumblePlayer = null;
+                return;
+            }
+        }
+        rumblePlayer.setVolume(RUMBLE_VOLUME * level);
+        if (runPaused) {
+            rumblePlayer.pause();
+        } else if (rumblePlayer.getStatus() != javafx.scene.media.MediaPlayer.Status.PLAYING) {
+            rumblePlayer.play();
+        }
+    }
+
     /** Starts, switches, pauses, resumes or stops the songs to match what's on screen. Called every frame. */
     private void updateMusic() {
+        updateRumble();
         String wanted = null;
         if (screen == Screen.RUN && runPhase != RunPhase.MAP && runPhase != RunPhase.NAME) {
-            wanted = LEVEL_MUSIC;
+            wanted = pastAsteroid() ? BOSS_MUSIC : LEVEL_MUSIC;
         } else if (screen == Screen.MENU || screen == Screen.MODE_SELECT || screen == Screen.SCORES) {
             wanted = TITLE_MUSIC;
         }
@@ -389,7 +500,14 @@ public class SpaceInvadersController {
                     return;
                 }
                 javafx.scene.media.MediaPlayer player = new javafx.scene.media.MediaPlayer(new javafx.scene.media.Media(song.toExternalForm()));
-                if (wanted.equals(LEVEL_MUSIC)) {
+                if (wanted.equals(BOSS_MUSIC)) {
+                    player.setVolume(0); // fades in (below)
+                    player.setStopTime(javafx.util.Duration.seconds(BOSS_MUSIC_LOOP_END));
+                    player.setOnEndOfMedia(() -> {
+                        player.seek(javafx.util.Duration.seconds(BOSS_MUSIC_LOOP_START)); // back to the drop
+                        player.play();
+                    });
+                } else if (wanted.equals(LEVEL_MUSIC)) {
                     player.setVolume(LEVEL_MUSIC_VOLUME);
                     player.setStopTime(javafx.util.Duration.seconds(LEVEL_MUSIC_LOOP_END));
                     player.setOnEndOfMedia(() -> {
@@ -412,6 +530,12 @@ public class SpaceInvadersController {
                 musicPlaying = null;
             }
             return;
+        }
+        if (wanted.equals(LEVEL_MUSIC)) {
+            musicPlayer.setVolume(LEVEL_MUSIC_VOLUME * asteroidMusicLevel());
+        }
+        if (wanted.equals(BOSS_MUSIC)) {
+            musicPlayer.setVolume(BOSS_MUSIC_VOLUME * bossMusicLevel());
         }
         if (wanted.equals(TITLE_MUSIC)) {
             // Picking Extermination fizzles the screen out; the song fades out with it
@@ -2936,9 +3060,16 @@ public class SpaceInvadersController {
 
     /** The same, and the arrow keys only move the ship when canMove (not while it flies itself out). */
     private void tickRun(double deltaSeconds, boolean canShoot, boolean canMove) {
+        // The boss waits until the asteroid has passed
+        double[] asteroid = asteroidState();
+        sandbox.setHeldWave(asteroid != null && asteroid[1] < 1 ? (int) asteroid[2] : -1);
+        if (asteroid != null && asteroid[1] == 0) {
+            sandbox.clearEnemyBullets(); // the ship is hidden under the rock, so nothing may hit it
+        }
         boolean fire = canShoot && heldKeys.contains(KeyCode.Z) && !waitForSpaceRelease;
         runTimeOwed += deltaSeconds;
         while (runTimeOwed >= Extermination.TICK) {
+            stepAsteroid(Extermination.TICK);
             sandbox.tick(canMove ? axis(KeyCode.LEFT, KeyCode.RIGHT) : 0, canMove ? axis(KeyCode.UP, KeyCode.DOWN) : 0,
                     heldKeys.contains(KeyCode.SHIFT), fire, bombQueued && canShoot);
             bombQueued = false;
@@ -3059,7 +3190,18 @@ public class SpaceInvadersController {
         }
         g.setFill(Color.BLACK);
         g.fillRect(0, 0, w, h);
-        drawStageBackground(g, runStage < STAGE_BACKGROUNDS.length ? STAGE_BACKGROUNDS[runStage] : null);
+        double[] asteroid = asteroidState();
+        // The boss background takes over once the asteroid is over the middle of the screen
+        boolean bossBackground = runStage < BOSS_BACKGROUNDS.length && BOSS_BACKGROUNDS[runStage] && pastAsteroid();
+        if (bossBackground) {
+            drawBossBackground(g);
+        } else {
+            drawStageBackground(g, runStage < STAGE_BACKGROUNDS.length ? STAGE_BACKGROUNDS[runStage] : null);
+        }
+        boolean asteroidPassing = asteroid != null && asteroid[1] == 0;
+        if (!asteroidPassing) {
+            drawAsteroid(g); // creeping in: behind everything
+        }
         for (Extermination.Enemy enemy : sandbox.getEnemies()) {
             if (enemy.isAppearing()) {
                 drawAppearing(g, enemy);
@@ -3076,6 +3218,9 @@ public class SpaceInvadersController {
         drawFlaks(g);
         drawPlayerShots(g);
         drawShip(g);
+        if (asteroidPassing) {
+            drawAsteroid(g); // passing: over the ship and all
+        }
         drawRunHud(g);
 
         String banner = null;
@@ -3545,6 +3690,200 @@ public class SpaceInvadersController {
                 new javafx.scene.paint.Stop(0, Color.color(0, 0, 0, 0.5)), new javafx.scene.paint.Stop(1, Color.TRANSPARENT)));
         g.fillRect(0, 0, w, h / 3);
         g.restore();
+    }
+
+    /** The boss background: the purple space, the ringed planet bobbing gently over it, then the same dim as the stages. */
+    private void drawBossBackground(GraphicsContext g) {
+        double w = canvas.getWidth();
+        double h = canvas.getHeight();
+        double bob = RING_BOB * Math.sin(2 * Math.PI * sandbox.getLevelTime() / RING_BOB_TIME);
+        double x = -RING_VIEW_X * RING_PIXEL_SCALE;
+        double y = -RING_VIEW_Y * RING_PIXEL_SCALE;
+        g.save();
+        g.setImageSmoothing(false); // keeps pixel art sharp
+        g.drawImage(RING_BACK, x, y, RING_BACK.getWidth() * RING_PIXEL_SCALE, RING_BACK.getHeight() * RING_PIXEL_SCALE);
+        g.drawImage(RING_PLANET, x, y + Math.round(bob), RING_PLANET.getWidth() * RING_PIXEL_SCALE, RING_PLANET.getHeight() * RING_PIXEL_SCALE);
+        g.setFill(Color.color(0, 0, 0, BACKGROUND_DIM));
+        g.fillRect(0, 0, w, h);
+        g.restore();
+    }
+
+    /** The colossal asteroid where it is now, tumbling slowly (nothing when it's out of sight or the stage has none). */
+    private void drawAsteroid(GraphicsContext g) {
+        double[] asteroid = asteroidState();
+        if (asteroid == null || Math.abs(asteroid[0]) >= ASTEROID_OFF) {
+            return;
+        }
+        double frameWidth = ASTEROID.getWidth() / ASTEROID_COLUMNS;
+        double frameHeight = ASTEROID.getHeight() / (ASTEROID_FRAMES / ASTEROID_COLUMNS);
+        double width = frameWidth * ASTEROID_PIXEL_SCALE;
+        double height = frameHeight * ASTEROID_PIXEL_SCALE;
+        double along = asteroid[0] / Math.sqrt(2);
+        double centerX = canvas.getWidth() / 2 + along;
+        double centerY = canvas.getHeight() / 2 - along;
+        int frame = Math.floorMod((int) (sandbox.getLevelTime() * ASTEROID_FRAME_RATE), ASTEROID_FRAMES);
+        // Only the part that's on screen is drawn (it's far bigger than the screen while it passes)
+        double left = centerX - width / 2;
+        double top = centerY - height / 2;
+        double fromX = Math.max(0, left);
+        double fromY = Math.max(0, top);
+        double toX = Math.min(canvas.getWidth(), left + width);
+        double toY = Math.min(canvas.getHeight(), top + height);
+        if (toX <= fromX || toY <= fromY) {
+            return;
+        }
+        g.save();
+        g.setImageSmoothing(false); // big chunky pixels, like the rest of the art
+        double frameX = frame % ASTEROID_COLUMNS * frameWidth;
+        double frameY = frame / ASTEROID_COLUMNS * frameHeight;
+        g.drawImage(ASTEROID, frameX + (fromX - left) / ASTEROID_PIXEL_SCALE, frameY + (fromY - top) / ASTEROID_PIXEL_SCALE,
+                (toX - fromX) / ASTEROID_PIXEL_SCALE, (toY - fromY) / ASTEROID_PIXEL_SCALE, fromX, fromY, toX - fromX, toY - fromY);
+        g.restore();
+    }
+
+    /**
+     * The stage's asteroid plan: {the boss's first wave (the waves at the end with only bosses), the first wave with
+     * tanks, how many rounds of tanks there are before the boss}; or null when the stage has no asteroid (no
+     * tanks, or no boss at the end).
+     */
+    private int[] asteroidPlan() {
+        List<Extermination.Wave> waves = sandbox.getWaves();
+        int count = waves.size();
+        boolean[] hasEnemies = new boolean[count];
+        boolean[] onlyBosses = new boolean[count];
+        int[] tankRounds = new int[count]; // how many times the wave's tanks come (they come back after they're killed)
+        java.util.Arrays.fill(onlyBosses, true);
+        for (Extermination.EnemyDesign design : sandbox.getLayout()) {
+            int wave = design.getWave();
+            if (wave < 0 || wave >= count) {
+                continue;
+            }
+            hasEnemies[wave] = true;
+            if (design.isBoss()) {
+                continue;
+            }
+            onlyBosses[wave] = false;
+            if (design.getHealth() >= Extermination.TANK_HEALTH) {
+                tankRounds[wave] = Math.max(tankRounds[wave], design.getRepeats() + 1);
+            }
+        }
+        int bossWave = count;
+        while (bossWave > 0 && hasEnemies[bossWave - 1] && onlyBosses[bossWave - 1]) {
+            bossWave--;
+        }
+        int firstTankWave = -1;
+        int rounds = 0;
+        for (int k = 0; k < bossWave; k++) {
+            if (tankRounds[k] > 0 && firstTankWave < 0) {
+                firstTankWave = k;
+            }
+            rounds += tankRounds[k];
+        }
+        if (bossWave == count || bossWave == 0 || rounds == 0) {
+            return null;
+        }
+        return new int[]{bossWave, firstTankWave, rounds};
+    }
+
+    /**
+     * Moves the asteroid on by one game tick. It creeps in once the first tanks come, heading for a spot that gets
+     * closer each time the tanks on screen are all killed (the edge at the dead center for the last round), and
+     * starts passing as soon as every enemy before the boss is gone (the wave before the boss is cleared). Its speed only ever changes gradually.
+     */
+    private void stepAsteroid(double seconds) {
+        if (asteroidLevel != sandbox || sandbox.getLevelTime() < asteroidLastTime) {
+            asteroidDistance = ASTEROID_START; // a new level, or the level started over
+            asteroidSpeed = 0;
+            asteroidPassing = false;
+            asteroidPassed = false;
+        }
+        asteroidLevel = sandbox;
+        asteroidLastTime = sandbox.getLevelTime();
+        int[] plan = asteroidPlan();
+        if (plan == null || asteroidPassed || sandbox.getWaveStartTime(plan[1]) < 0) {
+            return;
+        }
+        if (!asteroidPassing && sandbox.getWaveClearTime(plan[0] - 1) >= 0) {
+            asteroidPassing = true;
+            asteroidPassFrom = asteroidDistance;
+        }
+        if (asteroidPassing) {
+            double wanted = ASTEROID_PASS_SLOW + (ASTEROID_PASS_FAST - ASTEROID_PASS_SLOW)
+                    * Math.min(1, Math.abs(asteroidDistance) / ASTEROID_PASS_SPAN);
+            asteroidSpeed = approach(asteroidSpeed, wanted, ASTEROID_PASS_ACCEL * seconds);
+        } else {
+            int rounds = plan[2];
+            int killed = sandbox.getTanksGoneTimes().size();
+            double spot = killed == 0 ? ASTEROID_PEEK
+                    : killed >= rounds - 1 ? ASTEROID_EDGE_AT_MIDDLE
+                    : ASTEROID_PEEK + (ASTEROID_EDGE_AT_MIDDLE - ASTEROID_PEEK) * killed / (rounds - 1);
+            double wanted = Math.max(ASTEROID_CREEP_MIN, Math.min(ASTEROID_CREEP_MAX, (asteroidDistance - spot) * ASTEROID_CREEP_EASE));
+            if (asteroidDistance <= ASTEROID_CLOSEST) {
+                wanted = 0;
+            }
+            asteroidSpeed = approach(asteroidSpeed, wanted, ASTEROID_CREEP_ACCEL * seconds);
+        }
+        asteroidDistance -= asteroidSpeed * seconds;
+        if (asteroidDistance <= -ASTEROID_OFF) {
+            asteroidPassing = false;
+            asteroidPassed = true;
+        }
+    }
+
+    /**
+     * Where the asteroid is now: {distance from the screen's center toward the top right corner, -1 while creeping
+     * in / 0 while passing / 1 once it has passed, the boss's first wave}; or null when the stage has no asteroid.
+     */
+    private double[] asteroidState() {
+        int[] plan = asteroidPlan();
+        if (plan == null || asteroidLevel != sandbox) {
+            return null;
+        }
+        return new double[]{asteroidDistance, asteroidPassed ? 1 : asteroidPassing ? 0 : -1, plan[0]};
+    }
+
+    /** from moved toward to by at most step. */
+    private static double approach(double from, double to, double step) {
+        return from > to ? Math.max(to, from - step) : Math.min(to, from + step);
+    }
+
+    /**
+     * How loud the asteroid's rumble is (0 to 1): it swells as the asteroid starts passing, is loudest with the
+     * screen covered, and dies away as it moves off. Silent the rest of the time.
+     */
+    private double asteroidRumbleLevel() {
+        double[] asteroid = asteroidState();
+        if (asteroid == null || asteroid[1] != 0) {
+            return 0;
+        }
+        double distance = asteroid[0];
+        double swell = Math.min(1, (asteroidPassFrom - distance) / RUMBLE_SWELL);
+        double near = Math.pow(1 - Math.min(1, Math.abs(distance) / ASTEROID_OFF), 0.7); // fades to nothing as it leaves
+        return Math.max(0, swell) * near;
+    }
+
+    /** True once the stage's asteroid has crossed the middle of the screen: from then on it's the boss's part of the stage. */
+    private boolean pastAsteroid() {
+        double[] asteroid = asteroidState();
+        return asteroid != null && (asteroid[1] == 1 || asteroid[1] == 0 && asteroid[0] <= 0);
+    }
+
+    /** How loud the level song is because of the asteroid (times normal): it fades away as the asteroid covers the screen. */
+    private double asteroidMusicLevel() {
+        double[] asteroid = asteroidState();
+        if (asteroid == null || asteroid[1] != 0) {
+            return 1;
+        }
+        return Math.max(0, Math.min(1, asteroid[0] / ASTEROID_EDGE_AT_MIDDLE));
+    }
+
+    /** How loud the boss song is (times normal): it fades in as the asteroid moves off, then stays up. */
+    private double bossMusicLevel() {
+        double[] asteroid = asteroidState();
+        if (asteroid == null || asteroid[1] != 0) {
+            return 1;
+        }
+        return Math.max(0, Math.min(1, -asteroid[0] / ASTEROID_MUSIC_SPAN));
     }
 
     /**
