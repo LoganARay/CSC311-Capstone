@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<VBox xmlns:fx="http://javafx.com/fxml/1" minWidth="0" fx:controller="edu.farmingdale.csc311capstone.dashboard.LeaderboardController" spacing="22">
+    <HBox styleClass="profile-banner" alignment="CENTER_LEFT" spacing="20">
+        <VBox HBox.hgrow="ALWAYS" spacing="7">
+            <Label text="COMPETE. CLIMB. REPEAT." styleClass="eyebrow,purple"/>
+            <Label text="The highest scores live here." styleClass="section-heading"/>
+            <Label text="Challenge the best players across your favorite games." styleClass="secondary" wrapText="true"/>
+        </VBox>
+        <StackPane fx:id="trophy"/>
+    </HBox>
+    <FlowPane minWidth="0" fx:id="filterBar" hgap="12" vgap="12"/>
+    <Label text="Rankings will appear when the leaderboard service is connected. Overall ranking needs a shared scoring policy." styleClass="notice" wrapText="true"/>
+    <TilePane minWidth="0" fx:id="podium" hgap="16" vgap="16" prefColumns="3"/>
+    <VBox spacing="12">
+        <HBox>
+            <Label text="The rankings" styleClass="section-title"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label text="No player data connected" styleClass="small,muted"/>
+        </HBox>
+        <TableView fx:id="rankings" prefHeight="180"/>
+        <HBox alignment="CENTER_LEFT" spacing="8">
+            <Label text="0 rankings" styleClass="small,muted" HBox.hgrow="ALWAYS"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="← Previous" disable="true"/>
+            <Label text="—"/>
+            <Button text="Next →" disable="true"/>
+        </HBox>
+    </VBox>
+    <HBox styleClass="panel" spacing="20" alignment="CENTER_LEFT">
+        <VBox spacing="6" HBox.hgrow="ALWAYS">
+            <Label text="YOUR STANDING" styleClass="eyebrow,purple"/>
+            <Label text="Unranked" styleClass="section-title"/>
+            <Label text="Sign in when accounts are available to find your place." styleClass="secondary" wrapText="true"/>
+        </VBox>
+        <Button text="Your statistics  →" onAction="#statistics" styleClass="text-button"/>
+    </HBox>
+</VBox>

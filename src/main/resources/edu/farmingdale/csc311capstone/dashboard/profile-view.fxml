@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<VBox xmlns:fx="http://javafx.com/fxml/1" minWidth="0" fx:controller="edu.farmingdale.csc311capstone.dashboard.ProfileController" spacing="22">
+    <HBox minWidth="0" fx:id="identity" styleClass="profile-banner" spacing="22" alignment="CENTER_LEFT">
+        <Label text="G" styleClass="avatar"/>
+        <VBox spacing="8" minWidth="0" HBox.hgrow="ALWAYS">
+            <Label text="Guest player" styleClass="page-title"/>
+            <Label text="Your arcade story is just beginning." styleClass="secondary"/>
+            <Label text="Sign in when accounts are available to keep your records and build a player profile." styleClass="secondary" wrapText="true" minHeight="40"/>
+            <Label text="Member since  —" styleClass="small,muted"/>
+        </VBox>
+        <VBox spacing="12">
+            <Button text="Sign in  →" onAction="#signIn" styleClass="primary"/>
+            <Button text="Edit profile" disable="true"/>
+        </VBox>
+    </HBox>
+    <TilePane minWidth="0" fx:id="summary" hgap="16" vgap="16" prefColumns="4"/>
+    <TilePane minWidth="0" fx:id="recordsAndFavorites" hgap="20" vgap="20" prefColumns="2"/>
+    <VBox styleClass="panel" spacing="16">
+        <HBox>
+            <Label text="Recent Activity" styleClass="section-title"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="Game history  →" onAction="#history" styleClass="text-button"/>
+        </HBox>
+        <VBox fx:id="recent"/>
+    </VBox>
+</VBox>

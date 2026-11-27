@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<ScrollPane xmlns:fx="http://javafx.com/fxml/1" fx:controller="edu.farmingdale.csc311capstone.dashboard.LoginController" fx:id="root" styleClass="auth-root" stylesheets="@arcade-theme.css" fitToWidth="true" hbarPolicy="NEVER" prefWidth="1440" prefHeight="900">
+    <content>
+        <HBox minWidth="0" fx:id="layout" fillHeight="true">
+            <VBox minWidth="0" fx:id="copy" styleClass="auth-copy" spacing="18" prefWidth="720">
+                <HBox fx:id="brand" spacing="12" alignment="CENTER_LEFT"/>
+                <Label text="THE CLASSICS. RELOADED." styleClass="tagline"/>
+                <Region prefHeight="15"/>
+                <Label text="Eight classic games." styleClass="auth-headline" wrapText="true"/>
+                <Label text="One arcade." styleClass="auth-headline,purple" wrapText="true"/>
+                <Label text="Play, compete, track your progress, and chase new high scores." styleClass="auth-subtitle" wrapText="true"/>
+                <StackPane fx:id="artwork" prefHeight="410" minHeight="270" VBox.vgrow="ALWAYS"/>
+            </VBox>
+            <VBox minWidth="0" fx:id="formArea" styleClass="auth-form-area" prefWidth="720">
+                <VBox styleClass="auth-card" spacing="19">
+                    <Label text="Welcome back" styleClass="auth-title" wrapText="true"/>
+                    <Label text="Log in to your Arcade account." styleClass="auth-subtitle" wrapText="true"/>
+                    <Region prefHeight="6"/>
+                    <VBox spacing="9">
+                        <Label text="Username" labelFor="$username" styleClass="field-label"/>
+                        <TextField fx:id="username" promptText="Enter your username" onAction="#submit"/>
+                    </VBox>
+                    <VBox spacing="9">
+                        <Label text="Password" labelFor="$password" styleClass="field-label"/>
+                        <HBox styleClass="password-box">
+                            <StackPane HBox.hgrow="ALWAYS">
+                                <PasswordField fx:id="password" promptText="Enter your password" onAction="#submit"/>
+                                <TextField fx:id="visiblePassword" promptText="Enter your password" visible="false" managed="false" onAction="#submit"/>
+                            </StackPane>
+                            <Button fx:id="showPassword" text="Show" styleClass="visibility-button"/>
+                        </HBox>
+                    </VBox>
+                    <Label text="Accounts are not connected yet. Guest play is available now." styleClass="notice" wrapText="true"/>
+                    <ProgressIndicator fx:id="loading" visible="false" managed="false" prefWidth="24" prefHeight="24" maxWidth="24" maxHeight="24" accessibleText="Signing in"/>
+                    <Label fx:id="feedback" styleClass="feedback" wrapText="true" minHeight="35"/>
+                    <Button fx:id="submitButton" text="Log in  →" onAction="#submit" styleClass="primary" maxWidth="Infinity" defaultButton="true"/>
+                    <Button text="Continue as guest" onAction="#guest" maxWidth="Infinity"/>
+                    <Separator/>
+                    <Label text="New to the arcade?" styleClass="secondary"/>
+                    <Button text="Create an account  →" onAction="#register" styleClass="text-button"/>
+                </VBox>
+            </VBox>
+        </HBox>
+    </content>
+</ScrollPane>

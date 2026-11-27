@@ -1,0 +1,121 @@
+/* Theme is attached only to dashboard/auth roots, never to game scenes. */
+.arcade-root, .auth-root {
+ -fx-background-color: #0D1017; -fx-font-family: "System"; -fx-font-size: 13px;
+ -fx-base: #191C29; -fx-accent: #A78BFA; -fx-focus-color: #B798FF; -fx-faint-focus-color: transparent;
+ -fx-text-background-color: #F2F2F7; -fx-control-inner-background: #191C29;
+}
+.arcade-root .label, .auth-root .label { -fx-text-fill: #F2F2F7; }
+.arcade-root .secondary, .auth-root .secondary { -fx-text-fill: #A0A3B6; -fx-font-size: 13px; -fx-line-spacing: 3; }
+.arcade-root .muted, .auth-root .muted { -fx-text-fill: #74788E; }
+.arcade-root .small, .auth-root .small { -fx-font-size: 11px; }
+.arcade-root .purple, .auth-root .purple { -fx-text-fill: #B799FC; }
+.arcade-root .eyebrow, .auth-root .eyebrow { -fx-font-size: 11px; -fx-font-weight: bold; }
+.arcade-root .page-title { -fx-font-size: 27px; -fx-font-weight: bold; }
+.arcade-root .section-heading { -fx-font-size: 22px; -fx-font-weight: bold; }
+.arcade-root .section-title, .auth-root .section-title { -fx-font-size: 16px; -fx-font-weight: bold; }
+.arcade-root .sidebar { -fx-background-color: linear-gradient(to bottom, #121421, #0F121D); -fx-border-color: transparent #2B2E40 transparent transparent; -fx-border-width: 0 1 0 0; }
+.arcade-root .brand-name, .auth-root .brand-name { -fx-font-size: 31px; -fx-font-weight: bold; }
+.arcade-root .brand-icon, .auth-root .brand-icon { -fx-background-color: linear-gradient(to bottom right,#C49BFF,#9962E6); -fx-background-radius: 11; -fx-padding: 10; }
+.arcade-root .brand-icon .line-icon, .auth-root .brand-icon .line-icon { -fx-stroke: #24143B; }
+.arcade-root .tagline, .auth-root .tagline { -fx-font-size: 9px; -fx-text-fill: #BBB9CA; }
+.arcade-root .button, .arcade-root .toggle-button, .auth-root .button { -fx-cursor: hand; -fx-background-color: #1B1E2C; -fx-text-fill: #E0DFED; -fx-background-radius: 9; -fx-border-radius: 9; -fx-border-color: #303345; -fx-padding: 9 14; -fx-font-size: 12px; }
+.arcade-root .button:hover, .arcade-root .toggle-button:hover, .auth-root .button:hover { -fx-background-color: #2C263F; -fx-border-color: #7A609F; }
+.arcade-root .button:focused, .arcade-root .toggle-button:focused, .auth-root .button:focused { -fx-border-color: #C7AEFF; -fx-effect: dropshadow(gaussian, #A78BFA44, 6, 0, 0, 0); }
+.arcade-root .button:pressed, .auth-root .button:pressed { -fx-background-color: #5A4080; }
+.arcade-root .button:disabled, .arcade-root .combo-box:disabled, .auth-root .button:disabled { -fx-opacity: .5; -fx-cursor: default; }
+.arcade-root .nav-button { -fx-background-color: transparent; -fx-border-color: transparent; -fx-alignment: center-left; -fx-padding: 13 15; -fx-graphic-text-gap: 18; -fx-font-size: 14px; }
+.arcade-root .nav-button.selected { -fx-background-color: #302544; -fx-border-color: transparent transparent transparent #BA8CF7; -fx-border-width: 0 0 0 3; -fx-font-weight: bold; }
+.arcade-root .nav-button.selected .line-icon { -fx-stroke: #C8A3FF; }
+.arcade-root .info-card { -fx-background-color: #1B1E2C; -fx-background-radius: 12; -fx-border-radius: 12; -fx-border-color: #2B2E40; -fx-padding: 16; }
+.arcade-root .info-title { -fx-font-size: 13px; -fx-font-weight: bold; }
+.arcade-root .account-button { -fx-background-color: transparent; -fx-border-color: transparent; -fx-padding: 8 0; -fx-alignment: center-left; -fx-graphic-text-gap: 11; -fx-font-size: 11px; }
+.arcade-root .small-avatar { -fx-background-color: #473263; -fx-text-fill: #CFACFF; -fx-background-radius: 13; -fx-padding: 10 13; -fx-font-size: 22px; -fx-font-weight: bold; }
+.arcade-root .separator .line { -fx-border-color: #2B2E40; -fx-border-width: 1 0 0 0; }
+.arcade-root .scroll-pane, .arcade-root .scroll-pane > .viewport, .auth-root .scroll-pane, .auth-root .scroll-pane > .viewport { -fx-background-color: transparent; }
+.arcade-root .scroll-pane { -fx-padding: 0; -fx-background-insets: 0; }
+.arcade-root .scroll-bar:vertical, .auth-root .scroll-bar:vertical { -fx-background-color: transparent; -fx-pref-width: 9; }
+.arcade-root .scroll-bar .thumb, .auth-root .scroll-bar .thumb { -fx-background-color: #373148; -fx-background-radius: 6; }
+.arcade-root .scroll-bar .increment-button, .arcade-root .scroll-bar .decrement-button, .auth-root .scroll-bar .increment-button, .auth-root .scroll-bar .decrement-button { -fx-pref-height: 0; -fx-padding: 0; }
+.arcade-root .status-pill { -fx-background-color: #191D2A; -fx-background-radius: 30; -fx-padding: 10 18; -fx-text-fill: #5DDDD3; -fx-font-size: 11px; }
+.arcade-root .featured { -fx-background-color: linear-gradient(to right,#181329,#0D1020); -fx-background-radius: 14; -fx-border-color: #493A64; -fx-border-radius: 14; }
+.arcade-root .featured-copy { -fx-padding: 22 0 22 24; -fx-min-width: 265; }
+.arcade-root .hero-title { -fx-font-size: 35px; -fx-font-weight: bold; }
+.arcade-root .primary, .auth-root .primary { -fx-background-color: linear-gradient(to bottom,#B88BFF,#A06EEB); -fx-border-color: #BE93FF; -fx-text-fill: #170D27; -fx-font-weight: bold; -fx-padding: 11 22; -fx-font-size: 13px; }
+.arcade-root .primary:hover, .auth-root .primary:hover { -fx-background-color: #C2A2FF; }
+.arcade-root .stat-card, .arcade-root .panel { -fx-background-color: linear-gradient(to bottom right,#1B1E2C,#171B27); -fx-background-radius: 13; -fx-border-color: #2B2E40; -fx-border-radius: 13; -fx-padding: 18; }
+.arcade-root .stat-card .line-icon { -fx-stroke: #B18FF4; }
+.arcade-root .stat-value { -fx-font-size: 27px; -fx-font-weight: bold; -fx-text-fill: #C2A4F7; }
+.arcade-root .count-badge { -fx-background-color: #242738; -fx-padding: 3 10; -fx-background-radius: 8; -fx-font-size: 13px; -fx-text-fill: #C3B8DA; }
+.arcade-root .search-box { -fx-max-height: 40; -fx-background-color: #191C29; -fx-border-color: #303345; -fx-border-radius: 9; -fx-background-radius: 9; -fx-padding: 0 8 0 12; }
+.arcade-root .search-box .text-field { -fx-background-color: transparent; -fx-border-color: transparent; -fx-padding: 10 0; }
+.arcade-root .clear-button { -fx-background-color: transparent; -fx-border-color: transparent; -fx-padding: 4 7; -fx-font-size: 18px; }
+.arcade-root .filter { -fx-border-color: transparent; -fx-padding: 9 13; }
+.arcade-root .filter:selected { -fx-background-color: #392B51; -fx-border-color: #AD80EC; -fx-text-fill: #E3D3FF; }
+.arcade-root .combo-box, .auth-root .combo-box { -fx-background-color: #1D2030; -fx-background-radius: 8; -fx-border-radius: 8; -fx-border-color: #36384B; -fx-padding: 3 5; }
+.arcade-root .combo-box .list-cell, .auth-root .combo-box .list-cell { -fx-text-fill: #DBD8E8; -fx-background-color: transparent; -fx-font-size: 12px; }
+.arcade-root .combo-box-popup .list-view { -fx-background-color: #202335; -fx-border-color: #5F4C7E; }
+.arcade-root .combo-box-popup .list-cell { -fx-background-color: #202335; -fx-text-fill: #F2F2F7; -fx-padding: 9 12; }
+.arcade-root .combo-box-popup .list-cell:hover, .arcade-root .combo-box-popup .list-cell:selected { -fx-background-color: #45325D; }
+.arcade-root .game-card { -fx-background-color: #191C29; -fx-border-color: #3D3B50; -fx-border-radius: 13; -fx-background-radius: 13; -fx-padding: 1; }
+.arcade-root .game-card:hover, .arcade-root .game-card:focus-within { -fx-border-color: #B18DEA; -fx-effect: dropshadow(gaussian, #A78BFA22, 12, 0, 0, 2); }
+.arcade-root .card-copy { -fx-padding: 11 13 12; }
+.arcade-root .game-title { -fx-font-size: 16px; -fx-font-weight: bold; }
+.arcade-root .category-label { -fx-font-size: 9px; -fx-text-fill: #A197B6; }
+.arcade-root .card-description { -fx-font-size: 11px; -fx-text-fill: #B4B4C7; -fx-min-height: 29; }
+.arcade-root .play-button { -fx-background-color: #503A70; -fx-border-color: #7B5B9F; -fx-padding: 6 9; -fx-font-size: 11px; }
+.arcade-root .text-button, .auth-root .text-button { -fx-background-color: transparent; -fx-border-color: transparent; -fx-text-fill: #BD97F7; -fx-padding: 4 0; }
+.arcade-root .empty-state { -fx-padding: 26 18; -fx-min-height: 145; }
+.arcade-root .empty-state .label { -fx-alignment: center; -fx-text-alignment: center; -fx-max-width: 540; }
+.arcade-root .empty-title { -fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #D9D4E7; }
+.arcade-root .table-view { -fx-background-color: transparent; -fx-border-color: #303345; -fx-border-radius: 9; -fx-padding: 1; }
+.arcade-root .table-view .column-header-background, .arcade-root .table-view .column-header, .arcade-root .table-view .filler { -fx-background-color: #242637; -fx-size: 37; }
+.arcade-root .table-view .column-header .label { -fx-text-fill: #ACADBF; -fx-font-size: 11px; -fx-alignment: center-left; }
+.arcade-root .table-row-cell { -fx-background-color: #191C29; -fx-border-color: transparent transparent #282B3C transparent; -fx-cell-size: 40; }
+.arcade-root .table-cell { -fx-text-fill: #E4DEEF; -fx-alignment: center-left; -fx-border-color: transparent; }
+.arcade-root .table-view .placeholder .label { -fx-text-fill: #A0A3B6; }
+.arcade-root .podium { -fx-background-color: #211E2E; -fx-border-color: #5B526A; -fx-border-radius: 12; -fx-background-radius: 12; -fx-padding: 20; -fx-alignment: center; }
+.arcade-root .podium.gold { -fx-border-color: #8C7041; -fx-background-color: linear-gradient(to bottom,#302737,#1C1C29); }
+.arcade-root .podium.bronze { -fx-border-color: #72534C; }
+.arcade-root .podium-number { -fx-font-size: 26px; -fx-text-fill: #BA9BEC; -fx-font-weight: bold; }
+.arcade-root .profile-banner { -fx-background-color: linear-gradient(to right,#2B2140,#191C29); -fx-background-radius: 13; -fx-border-radius: 13; -fx-border-color: #443654; -fx-padding: 24; }
+.arcade-root .avatar { -fx-background-color: linear-gradient(to bottom right,#70439D,#3F2D58); -fx-background-radius: 18; -fx-padding: 20 28; -fx-font-size: 44px; -fx-text-fill: #D9BAFF; -fx-font-weight: bold; }
+.arcade-root .setting-row { -fx-padding: 17 0; -fx-border-color: transparent transparent #2B2E40 transparent; }
+.arcade-root .setting-name { -fx-font-size: 14px; -fx-font-weight: bold; }
+.arcade-root .toggle-switch { -fx-background-radius: 30; -fx-border-radius: 30; -fx-padding: 5 10; -fx-min-width: 65; -fx-background-color: #303345; }
+.arcade-root .toggle-switch:selected { -fx-background-color: #8858CA; -fx-border-color: #B18CEA; -fx-text-fill: white; }
+.arcade-root .feedback, .auth-root .feedback { -fx-text-fill: #5DDDD3; -fx-font-size: 12px; }
+.arcade-root .error, .auth-root .error { -fx-text-fill: #F87185; }
+.arcade-root .notice, .auth-root .notice { -fx-background-color: #252036; -fx-background-radius: 9; -fx-padding: 12 16; -fx-text-fill: #B8ABC9; -fx-font-size: 12px; }
+.arcade-root .chart-plot-background { -fx-background-color: transparent; }
+.arcade-root .chart-vertical-grid-lines { -fx-stroke: transparent; }
+.arcade-root .chart-horizontal-grid-lines { -fx-stroke: #303345; }
+.arcade-root .axis { -fx-tick-label-fill: #83879E; }
+.arcade-root .axis-label { -fx-text-fill: #A0A3B6; }
+.arcade-root .chart-series-area-fill { -fx-fill: #A78BFA22; }
+.arcade-root .chart-series-area-line { -fx-stroke: #A78BFA; -fx-stroke-width: 2; }
+.arcade-root .record-row { -fx-padding: 10 0; -fx-border-color: transparent transparent #2B2E40 transparent; }
+.auth-root .auth-copy { -fx-background-color: #131121; -fx-padding: 28 36; }
+.auth-root .auth-form-area { -fx-padding: 32 40; -fx-alignment: center; }
+.auth-root .auth-card { -fx-background-color: linear-gradient(to bottom right,#181927,#111522); -fx-background-radius: 20; -fx-border-color: #303044; -fx-border-radius: 20; -fx-padding: 36; -fx-max-width: 540; }
+.auth-root .auth-title { -fx-font-size: 32px; -fx-font-weight: bold; }
+.auth-root .auth-headline { -fx-font-size: 37px; -fx-font-weight: bold; }
+.auth-root .auth-subtitle { -fx-font-size: 15px; -fx-text-fill: #AAA8BE; }
+.auth-root .text-field { -fx-background-color: #202133; -fx-border-color: #3A3B50; -fx-border-radius: 9; -fx-background-radius: 9; -fx-text-fill: #F2F2F7; -fx-prompt-text-fill: #797C93; -fx-padding: 13 14; -fx-font-size: 14px; }
+.auth-root .text-field:focused { -fx-border-color: #B48AF5; }
+.auth-root .field-label { -fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #D4D1E2; }
+.auth-root .password-box { -fx-spacing: 8; -fx-alignment: center-left; }
+.auth-root .visibility-button { -fx-min-width: 58; -fx-padding: 13 8; }
+.auth-root .feature-chip { -fx-background-color: #211C32; -fx-background-radius: 10; -fx-padding: 12; -fx-text-fill: #BA9AF0; -fx-font-size: 12px; }
+.arcade-root .text-field { -fx-text-fill: #E0DEEB; -fx-prompt-text-fill: #85869B; }
+.arcade-root .search-box .text-field:focused { -fx-border-color: transparent transparent #AD85EC transparent; }
+.arcade-root .quick-stats .stat-card { -fx-padding: 13 16; -fx-spacing: 6; }
+.arcade-root .quick-stats .stat-value { -fx-font-size: 23px; }
+.arcade-root .quick-stats .small { -fx-font-size: 10px; }
+.auth-root > .viewport { -fx-background-color: #0D1017; }
+.auth-root .auth-form-area { -fx-background-color: #0D1017; }
+.arcade-root .notice { -fx-max-width: infinity; }
+.arcade-root .avatar { -fx-min-width: 96; -fx-max-width: 96; -fx-alignment: center; }
+.arcade-root .record-row { -fx-padding: 6 0; }
+.arcade-root .podium.gold .podium-number { -fx-text-fill: #F4C65D; }
+.arcade-root .podium.silver .podium-number { -fx-text-fill: #CCD1E5; }
+.arcade-root .podium.bronze .podium-number { -fx-text-fill: #DAA078; }

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<VBox xmlns:fx="http://javafx.com/fxml/1" minWidth="0" fx:controller="edu.farmingdale.csc311capstone.dashboard.SettingsController" spacing="22">
+    <FlowPane minWidth="0" fx:id="tabs" hgap="10" vgap="10"/>
+    <VBox fx:id="body" styleClass="panel" spacing="8"/>
+    <FlowPane minWidth="0" alignment="CENTER_RIGHT" hgap="14" vgap="12">
+        <Label fx:id="feedback" text="All changes saved" styleClass="feedback"/>
+        <Button fx:id="reset" text="Reset Defaults" onAction="#resetDefaults"/>
+        <Button fx:id="save" text="✓  Save Changes" onAction="#saveChanges" styleClass="primary"/>
+    </FlowPane>
+</VBox>

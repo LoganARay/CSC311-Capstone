@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<VBox xmlns:fx="http://javafx.com/fxml/1" minWidth="0" fx:controller="edu.farmingdale.csc311capstone.dashboard.StatisticsController" spacing="22">
+    <TilePane minWidth="0" fx:id="summary" hgap="16" vgap="16" prefColumns="4"/>
+    <FlowPane minWidth="0" fx:id="filters" hgap="12" vgap="12"/>
+    <FlowPane minWidth="0" fx:id="charts" hgap="20" vgap="20"/>
+    <TilePane minWidth="0" fx:id="details" hgap="20" vgap="20" prefColumns="2"/>
+    <VBox styleClass="panel" spacing="15">
+        <Label text="Individual Game Statistics" styleClass="section-title"/>
+        <FlowPane minWidth="0" fx:id="individualFilters" hgap="12" vgap="10"/>
+        <TilePane minWidth="0" fx:id="individualStats" hgap="16" vgap="16" prefColumns="4"/>
+    </VBox>
+    <VBox styleClass="panel" spacing="14">
+        <Label text="Recent Match History" styleClass="section-title"/>
+        <TableView fx:id="history" prefHeight="185"/>
+    </VBox>
+</VBox>
