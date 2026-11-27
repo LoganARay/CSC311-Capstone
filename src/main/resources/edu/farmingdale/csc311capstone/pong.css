@@ -1,0 +1,16 @@
+.pong-root { -fx-background-color: #080e20; -fx-font-family: 'Monospaced'; -fx-font-size: 13px; }
+.pong-root .label { -fx-text-fill: #eaf1ff; }
+.pong-root .brand { -fx-font-size: 21px; -fx-font-weight: bold; -fx-text-fill: #55f4ed; }
+.pong-root .eyebrow { -fx-font-size: 12px; -fx-text-fill: #a1b4cf; }
+.pong-root .score { -fx-font-size: 44px; -fx-font-weight: bold; }
+.pong-root .cyan { -fx-text-fill: #55f4ed; }
+.pong-root .pink { -fx-text-fill: #ff70ba; }
+.pong-root .panel { -fx-background-color: rgba(12,22,43,.97); -fx-border-color: #355878; -fx-border-radius: 18; -fx-background-radius: 18; }
+.pong-root .panel-title { -fx-font-size: 29px; -fx-font-weight: bold; -fx-text-fill: #55f4ed; }
+.pong-root .description { -fx-font-size: 12px; -fx-text-fill: #adbed5; -fx-line-spacing: 4; -fx-text-alignment: center; }
+.pong-root .controls { -fx-font-size: 11px; -fx-text-fill: #8fa6c6; }
+.pong-root .button { -fx-background-color: #172b48; -fx-text-fill: #edf8ff; -fx-border-color: #345575; -fx-border-radius: 7; -fx-background-radius: 7; -fx-padding: 10 18; -fx-cursor: hand; }
+.pong-root .button:hover { -fx-background-color: #244365; -fx-border-color: #55f4ed; }
+.pong-root .button:focused { -fx-border-color: #55f4ed; -fx-effect: dropshadow(gaussian, rgba(85,244,237,.3), 10, 0, 0, 0); }
+.pong-root .button:disabled { -fx-opacity: .4; }
+.pong-root .combo-box { -fx-background-color: #d5e9f5; -fx-padding: 5; }

@@ -44,6 +44,10 @@ The rest are from [Pixabay](https://pixabay.com) under the Pixabay Content Licen
 | `door-creak.mp3` | Reaching the black market door | DRAGON-STUDIO | 472357 |
 
 
+## Pong
+
+The neon court, paddles, ball, particles and interface are original JavaFX drawings made for this project. All eight cues in `PongSounds/` are original, mathematically synthesized sine-wave melodies and effects made for this project. No third-party game artwork or audio is used.
+
 ## Pac-Man
 
 The maze treatment, vector characters, fruit, animations and interface are original JavaFX drawings made for this project. The ten WAV cues in `PacmanSounds/` are original mathematically synthesized sine-wave melodies and effects. No proprietary Pac-Man artwork, recordings or fonts are included.

@@ -1,344 +1,394 @@
 package edu.farmingdale.csc311capstone.Pong;
 
+import static edu.farmingdale.csc311capstone.Pong.PongConfig.*;
+
 import edu.farmingdale.csc311capstone.SceneSwitcher;
+
 import javafx.animation.AnimationTimer;
+import javafx.beans.value.ChangeListener;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.control.*;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.Pane;
-import javafx.scene.shape.Circle;
-import javafx.scene.shape.Rectangle;
+import javafx.scene.layout.*;
+import javafx.stage.Window;
 
+import java.util.EnumSet;
+
+/** Presentation and lifecycle only; the model owns every match rule. */
 public class PongController {
-
-    @FXML
-    private Pane gamePane;
-
-    @FXML
-    private Rectangle leftPaddle;
-
-    @FXML
-    private Rectangle rightPaddle;
-
-    @FXML
-    private Circle ball;
-
-    @FXML
-    private Label player1Score;
-
-    @FXML
-    private Label player2Score;
-
-    @FXML
-    private Label statusLabel;
-
-    @FXML
-    private Button pauseButton;
-
-    private final PongMechanics mechanics = new PongMechanics();
-
-    private boolean wPressed;
-    private boolean sPressed;
-    private boolean upPressed;
-    private boolean downPressed;
-    private boolean paused = false;
-
-    private AnimationTimer gameLoop;
-    private long lastFrameTime = 0;
+    @FXML private BorderPane root;
+    @FXML private StackPane court;
+    @FXML private Canvas canvas;
+    @FXML private VBox overlay;
+    @FXML private Label leftScore, rightScore, modeLabel, detailLabel, rightLabel;
+    @FXML private Button pauseButton, restartButton, muteButton;
+    private final EnumSet<KeyCode> keys = EnumSet.noneOf(KeyCode.class);
+    private final PongAudio audio = new PongAudio();
+    private PongMechanics mechanics = new PongMechanics();
+    private PongRenderer renderer;
+    private boolean menu = true, showingResult;
+    private long last;
+    private double animationTime, scorePulse;
+    private Window window;
+    private Scene attachedScene;
+    private final EventHandler<KeyEvent> pressed = this::keyPressed;
+    private final EventHandler<KeyEvent> released = e -> keys.remove(e.getCode());
+    private final ChangeListener<Boolean> focus =
+            (o, a, b) -> {
+                if (!b) {
+                    keys.clear();
+                    if (!menu
+                            && mechanics.getState() != PongMechanics.State.PAUSED
+                            && !mechanics.isGameOver()) togglePause();
+                }
+            };
+    private final ChangeListener<Window> windowListener = (o, a, b) -> attachWindow(b);
+    private final ChangeListener<Scene> stageSceneListener =
+            (o, a, b) -> {
+                if (b != attachedScene) detach();
+            };
+    private final ChangeListener<Boolean> showingListener =
+            (o, a, b) -> {
+                if (!b) detach();
+            };
+    private final AnimationTimer loop =
+            new AnimationTimer() {
+                public void handle(long now) {
+                    double dt = last == 0 ? 0 : (now - last) / 1e9;
+                    last = now;
+                    animationTime += dt;
+                    if (!menu)
+                        mechanics.update(
+                                dt,
+                                (keys.contains(KeyCode.S) ? 1 : 0)
+                                        - (keys.contains(KeyCode.W) ? 1 : 0),
+                                (keys.contains(KeyCode.DOWN) ? 1 : 0)
+                                        - (keys.contains(KeyCode.UP) ? 1 : 0));
+                    for (var e : mechanics.drainEvents()) {
+                        renderer.effect(e, mechanics);
+                        if (e == PongMechanics.Event.SCORE) scorePulse = .35;
+                        audio.play(
+                                switch (e) {
+                                    case PADDLE -> "paddle";
+                                    case WALL -> "wall";
+                                    case SCORE -> "score";
+                                    case START -> "start";
+                                    case COUNTDOWN -> "countdown";
+                                    case FINISH ->
+                                            mechanics.getWinner() == 2 ? "defeat" : "victory";
+                                });
+                    }
+                    scorePulse = Math.max(0, scorePulse - dt);
+                    leftScore.setScaleX(1 + scorePulse * .5);
+                    leftScore.setScaleY(1 + scorePulse * .5);
+                    rightScore.setScaleX(1 + scorePulse * .5);
+                    rightScore.setScaleY(1 + scorePulse * .5);
+                    updateHud();
+                    renderer.draw(mechanics, animationTime, dt, menu);
+                    if (!menu && mechanics.isGameOver() && !showingResult) showResults();
+                }
+            };
 
     @FXML
     private void initialize() {
-
-        gamePane.setFocusTraversable(true);
-
-        gameLoop = new AnimationTimer() {
-            @Override
-            public void handle(long now) {
-
-                if (lastFrameTime == 0) {
-                    lastFrameTime = now;
-                    return;
-                }
-
-                double deltaTime = Math.min(
-                        (now - lastFrameTime) / 1_000_000_000.0,
-                        0.05
-                );
-
-                lastFrameTime = now;
-
-                if (paused || mechanics.isGameOver()) {
-                    return;
-                }
-
-                updatePaddles(deltaTime);
-                updateBall(deltaTime);
-            }
-        };
-
-        gamePane.sceneProperty().addListener(
-                (observable, oldScene, newScene) -> {
-
-                    if (newScene == null) {
-                        gameLoop.stop();
-                        resetKeys();
-                        return;
-                    }
-
-                    newScene.addEventFilter(
-                            KeyEvent.KEY_PRESSED,
-                            this::handleKeyPressed
-                    );
-
-                    newScene.addEventFilter(
-                            KeyEvent.KEY_RELEASED,
-                            this::handleKeyReleased
-                    );
-
-                    newScene.windowProperty().addListener(
-                            (obs, oldWindow, newWindow) -> {
-
-                                if (newWindow == null) {
-                                    gameLoop.stop();
-                                    resetKeys();
-                                } else {
-                                    lastFrameTime = 0;
-                                    gameLoop.start();
-                                    gamePane.requestFocus();
-                                }
-                            }
-                    );
-
-                    if (newScene.getWindow() != null) {
-                        lastFrameTime = 0;
-                        gameLoop.start();
-                        gamePane.requestFocus();
-                    }
-                }
-        );
-
-        updateScores();
+        renderer = new PongRenderer(canvas);
+        canvas.widthProperty().bind(court.widthProperty());
+        canvas.heightProperty().bind(court.heightProperty());
+        root.sceneProperty()
+                .addListener(
+                        (o, oldScene, newScene) -> {
+                            detach();
+                            if (newScene != null) attach(newScene);
+                        });
+        showMenu();
     }
 
-    private void handleKeyPressed(KeyEvent event) {
+    private void attach(Scene scene) {
+        attachedScene = scene;
+        scene.addEventFilter(KeyEvent.KEY_PRESSED, pressed);
+        scene.addEventFilter(KeyEvent.KEY_RELEASED, released);
+        scene.windowProperty().addListener(windowListener);
+        attachWindow(scene.getWindow());
+    }
 
-        switch (event.getCode()) {
-            case SPACE -> {
-                togglePause();
-                event.consume();
-            }
+    private void attachWindow(Window next) {
+        if (window != null) {
+            window.focusedProperty().removeListener(focus);
+            window.sceneProperty().removeListener(stageSceneListener);
+            window.showingProperty().removeListener(showingListener);
+        }
+        window = next;
+        if (next == null) {
+            loop.stop();
+            keys.clear();
+            audio.stop();
+            return;
+        }
+        next.focusedProperty().addListener(focus);
+        next.sceneProperty().addListener(stageSceneListener);
+        next.showingProperty().addListener(showingListener);
+        last = 0;
+        loop.start();
+    }
 
-            case W -> {
-                if (!paused && !mechanics.isGameOver()) {
-                    wPressed = true;
-                }
-                event.consume();
-            }
+    private void detach() {
+        loop.stop();
+        keys.clear();
+        audio.stop();
+        if (attachedScene != null) {
+            attachedScene.removeEventFilter(KeyEvent.KEY_PRESSED, pressed);
+            attachedScene.removeEventFilter(KeyEvent.KEY_RELEASED, released);
+            attachedScene.windowProperty().removeListener(windowListener);
+        }
+        attachWindow(null);
+        attachedScene = null;
+    }
 
-            case S -> {
-                if (!paused && !mechanics.isGameOver()) {
-                    sPressed = true;
-                }
-                event.consume();
+    private void keyPressed(KeyEvent e) {
+        if (menu) {
+            if (e.getCode() == KeyCode.ESCAPE) {
+                showMenu();
+                e.consume();
             }
-
-            case UP -> {
-                if (!paused && !mechanics.isGameOver()) {
-                    upPressed = true;
-                }
-                event.consume();
+            return;
+        }
+        switch (e.getCode()) {
+            case W, S, UP, DOWN -> {
+                if (mechanics.getState() != PongMechanics.State.PAUSED) keys.add(e.getCode());
+                e.consume();
             }
-
-            case DOWN -> {
-                if (!paused && !mechanics.isGameOver()) {
-                    downPressed = true;
-                }
-                event.consume();
+            case SPACE, P, ESCAPE -> {
+                if (keys.add(e.getCode())) togglePause();
+                e.consume();
             }
-
-            default -> {
+            case R -> {
+                if (keys.add(KeyCode.R)) restartGame();
+                e.consume();
             }
+            default -> {}
         }
     }
 
-    private void handleKeyReleased(KeyEvent event) {
+    private Button button(String text, Runnable action) {
+        Button b = new Button(text);
+        b.setMaxWidth(Double.MAX_VALUE);
+        b.setOnAction(
+                e -> {
+                    audio.play("menu");
+                    action.run();
+                });
+        return b;
+    }
 
-        switch (event.getCode()) {
-            case W -> {
-                wPressed = false;
-                event.consume();
-            }
-            case S -> {
-                sPressed = false;
-                event.consume();
-            }
-            case UP -> {
-                upPressed = false;
-                event.consume();
-            }
-            case DOWN -> {
-                downPressed = false;
-                event.consume();
-            }
-            default -> {
-            }
+    private Label text(String text, String style) {
+        Label l = new Label(text);
+        l.getStyleClass().add(style);
+        l.setWrapText(true);
+        l.setAlignment(Pos.CENTER);
+        l.setMaxWidth(430);
+        return l;
+    }
+
+    private void panel(String title, String subtitle) {
+        overlay.setVisible(true);
+        overlay.getChildren().setAll(text(title, "panel-title"), text(subtitle, "description"));
+    }
+
+    @FXML
+    private void showMenu() {
+        menu = true;
+        keys.clear();
+        audio.stop();
+        renderer.clear();
+        showingResult = false;
+        panel("P O N G", "NEON CIRCUIT  /  THREE WAYS TO RALLY");
+        overlay.getChildren()
+                .addAll(
+                        button("Player vs AI", () -> showSetup(Mode.PLAYER_VS_AI)),
+                        button("Local Multiplayer", () -> start(PongConfig.local())),
+                        button("Blitz · 60 seconds", () -> showSetup(Mode.BLITZ)),
+                        button("How to Play", this::showHelp));
+        overlay.getChildren()
+                .add(
+                        text(
+                                "First to 7 in standard play. Blitz: highest score wins; ties are a"
+                                        + " draw.",
+                                "description"));
+        pauseButton.setDisable(true);
+        restartButton.setDisable(true);
+    }
+
+    private void showSetup(Mode mode) {
+        panel(
+                mode == Mode.BLITZ ? "BLITZ" : "CHOOSE YOUR RIVAL",
+                mode == Mode.BLITZ
+                        ? "60 seconds. Every point counts. Tied scores end in a draw."
+                        : "First to seven. Aim with the edges of your paddle.");
+        ComboBox<Opponent> opponent = new ComboBox<>();
+        opponent.getItems().setAll(Opponent.values());
+        opponent.setValue(Opponent.CPU);
+        opponent.setMaxWidth(Double.MAX_VALUE);
+        ComboBox<Difficulty> difficulty = new ComboBox<>();
+        difficulty.getItems().setAll(Difficulty.values());
+        difficulty.setValue(Difficulty.MEDIUM);
+        difficulty.setMaxWidth(Double.MAX_VALUE);
+        if (mode == Mode.BLITZ) {
+            overlay.getChildren()
+                    .addAll(text("Opponent: HUMAN = local two-player", "description"), opponent);
+            opponent.valueProperty()
+                    .addListener((o, a, b) -> difficulty.setDisable(b == Opponent.HUMAN));
         }
+        overlay.getChildren()
+                .addAll(
+                        text("AI difficulty · Easy / Medium / Hard", "description"),
+                        difficulty,
+                        text(
+                                "Easy: forgiving tracking. Medium: balanced. Hard: predicts wall"
+                                        + " bounces.",
+                                "description"),
+                        button(
+                                "Start match",
+                                () ->
+                                        start(
+                                                new PongConfig(
+                                                        mode,
+                                                        opponent.getValue(),
+                                                        difficulty.getValue()))),
+                        button("Back", this::showMenu));
     }
 
-    private void updatePaddles(double deltaTime) {
-
-        int leftDirection =
-                (sPressed ? 1 : 0) - (wPressed ? 1 : 0);
-
-        int rightDirection =
-                (downPressed ? 1 : 0) - (upPressed ? 1 : 0);
-
-        double gameHeight = gamePane.getPrefHeight();
-
-        leftPaddle.setY(
-                PongMechanics.movePaddle(
-                        leftPaddle.getY(),
-                        leftPaddle.getHeight(),
-                        gameHeight,
-                        leftDirection,
-                        deltaTime
-                )
-        );
-
-        rightPaddle.setY(
-                PongMechanics.movePaddle(
-                        rightPaddle.getY(),
-                        rightPaddle.getHeight(),
-                        gameHeight,
-                        rightDirection,
-                        deltaTime
-                )
-        );
+    private void showHelp() {
+        panel(
+                "HOW TO PLAY",
+                "W / S moves Player One. Up / Down moves Player Two. In AI modes, you control the"
+                        + " left paddle.");
+        overlay.getChildren()
+                .addAll(
+                        text(
+                                "Hit near a paddle's edge to angle your shot. Rallies get faster."
+                                        + " Space / P / Esc pauses; R restarts. Losing focus pauses"
+                                        + " safely. Tab and Enter navigate menus.",
+                                "description"),
+                        button("Back to Pong", this::showMenu));
     }
 
-    private void updateBall(double deltaTime) {
-
-        mechanics.moveBall(deltaTime);
-
-        mechanics.checkWallCollision(
-                gamePane.getPrefHeight(),
-                ball.getRadius()
-        );
-
-        mechanics.checkPaddleCollision(
-                leftPaddle.getX(),
-                leftPaddle.getY(),
-                leftPaddle.getWidth(),
-                leftPaddle.getHeight(),
-                ball.getRadius(),
-                true
-        );
-
-        mechanics.checkPaddleCollision(
-                rightPaddle.getX(),
-                rightPaddle.getY(),
-                rightPaddle.getWidth(),
-                rightPaddle.getHeight(),
-                ball.getRadius(),
-                false
-        );
-
-        boolean scored = mechanics.checkScore(
-                gamePane.getPrefWidth(),
-                gamePane.getPrefHeight(),
-                ball.getRadius()
-        );
-
-        ball.setCenterX(mechanics.getBallX());
-        ball.setCenterY(mechanics.getBallY());
-
-        if (scored) {
-            updateScores();
-
-            if (mechanics.isGameOver()) {
-                statusLabel.setText(
-                        "Player " + mechanics.getWinner() + " wins!"
-                );
-
-                pauseButton.setDisable(true);
-                gameLoop.stop();
-                resetKeys();
-            }
-        }
-    }
-
-    private void updateScores() {
-        player1Score.setText(
-                String.valueOf(mechanics.getPlayer1Score())
-        );
-
-        player2Score.setText(
-                String.valueOf(mechanics.getPlayer2Score())
-        );
+    private void start(PongConfig config) {
+        mechanics = new PongMechanics(config, System.nanoTime());
+        menu = false;
+        showingResult = false;
+        keys.clear();
+        renderer.clear();
+        overlay.setVisible(false);
+        pauseButton.setDisable(false);
+        restartButton.setDisable(false);
+        last = 0;
+        root.requestFocus();
+        audio.play("start");
     }
 
     @FXML
     private void togglePause() {
-
-        if (mechanics.isGameOver()) {
-            return;
-        }
-
-        paused = !paused;
-        resetKeys();
-
-        if (paused) {
-            gameLoop.stop();
-            statusLabel.setText("Paused");
-            pauseButton.setText("Resume");
+        if (menu || mechanics.isGameOver()) return;
+        mechanics.togglePause();
+        keys.removeIf(
+                k -> k == KeyCode.W || k == KeyCode.S || k == KeyCode.UP || k == KeyCode.DOWN);
+        audio.stop();
+        if (mechanics.getState() == PongMechanics.State.PAUSED) {
+            panel("PAUSED", "The court will be here when you are ready.");
+            overlay.getChildren()
+                    .addAll(
+                            button("Resume", this::togglePause),
+                            button("Restart match", this::restartGame),
+                            button("Pong menu", this::showMenu));
         } else {
-            lastFrameTime = 0;
-            gameLoop.start();
-            statusLabel.setText("First to 7");
-            pauseButton.setText("Pause");
+            overlay.setVisible(false);
+            root.requestFocus();
+            last = 0;
         }
-
-        gamePane.requestFocus();
     }
 
     @FXML
     private void restartGame() {
-
+        if (menu) return;
         mechanics.resetGame();
+        showingResult = false;
+        keys.clear();
+        renderer.clear();
+        overlay.setVisible(false);
+        last = 0;
+        root.requestFocus();
+        audio.stop();
+    }
 
-        leftPaddle.setY(170);
-        rightPaddle.setY(170);
+    private void showResults() {
+        showingResult = true;
+        keys.clear();
+        var result = mechanics.getResult().orElseThrow();
+        String winner =
+                mechanics.getWinner() == 0
+                        ? "DRAW"
+                        : mechanics.getWinner() == 1
+                                ? "PLAYER ONE WINS"
+                                : mechanics.getConfig().opponent() == Opponent.CPU
+                                        ? "CPU WINS"
+                                        : "PLAYER TWO WINS";
+        panel(
+                winner,
+                result.playerScore()
+                        + "  :  "
+                        + result.opponentScore()
+                        + "  ·  "
+                        + mechanics.getConfig().title());
+        overlay.getChildren()
+                .addAll(
+                        text(
+                                mechanics.getConfig().opponentLabel()
+                                        + " · "
+                                        + result.paddleHits()
+                                        + " hits · best rally "
+                                        + result.longestRally()
+                                        + " · "
+                                        + Math.round(result.durationSeconds())
+                                        + "s",
+                                "description"),
+                        button("Play Again", this::restartGame),
+                        button("Pong menu", this::showMenu),
+                        button("Back to Arcade", this::backToArcade));
+        pauseButton.setDisable(true);
+    }
 
-        ball.setCenterX(mechanics.getBallX());
-        ball.setCenterY(mechanics.getBallY());
+    private void updateHud() {
+        leftScore.setText(String.format("%02d", mechanics.getPlayer1Score()));
+        rightScore.setText(String.format("%02d", mechanics.getPlayer2Score()));
+        rightLabel.setText(mechanics.getConfig().opponentLabel());
+        modeLabel.setText(menu ? "SELECT YOUR CIRCUIT" : mechanics.getConfig().title());
+        detailLabel.setText(
+                menu
+                        ? "PRECISION / PACE / PLAY"
+                        : mechanics.getConfig().mode() == Mode.BLITZ
+                                ? String.format(
+                                        "%02d SECONDS",
+                                        (int) Math.ceil(mechanics.getRemainingSeconds()))
+                                : "FIRST TO 7");
+        pauseButton.setText(
+                mechanics.getState() == PongMechanics.State.PAUSED ? "Resume" : "Pause");
+        if (!menu) pauseButton.setDisable(mechanics.isGameOver());
+    }
 
-        paused = false;
-        lastFrameTime = 0;
-        resetKeys();
-
-        statusLabel.setText("First to 7");
-        pauseButton.setText("Pause");
-        pauseButton.setDisable(false);
-
-        updateScores();
-
-        gameLoop.start();
-        gamePane.requestFocus();
+    @FXML
+    private void toggleMute() {
+        audio.toggleMute();
+        muteButton.setText(audio.isMuted() ? "Sound: off" : "Sound: on");
     }
 
     @FXML
     private void backToArcade() {
-        gameLoop.stop();
-        resetKeys();
-
-        SceneSwitcher.showMenu(gamePane);
-    }
-
-    private void resetKeys() {
-        wPressed = false;
-        sPressed = false;
-        upPressed = false;
-        downPressed = false;
+        detach();
+        SceneSwitcher.showMenu(root);
     }
 }
