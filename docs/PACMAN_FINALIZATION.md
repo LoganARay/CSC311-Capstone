@@ -74,7 +74,9 @@ Desktop automation could inspect IntelliJ but could not target the standalone Ja
 - A 250 ms frame test confirmed that slow frames preserve all elapsed time. Separate 600×680 menu/gameplay snapshots verified wrapping descriptions, scrollable mode choices, wrapped toolbar buttons and the complete scaled maze.
 - Visual review corrected maze-corner overshoots, excessive overlay whitespace and small-window description ellipses. Gameplay review corrected movement remainder handling and counting a just-cleared maze when time expires during its level transition.
 - One discarded verification run lost a class while a clean build replaced `target/classes`. Final checks used an isolated compiled snapshot and passed; the discarded failure was a harness setup error.
-- Both finalized games were assembled in a temporary source copy and compiled/packaged together: **108 tests passed (41 Pong + 67 Pac-Man), 0 failures/errors/skips**. Git's merge simulation confirmed only `CREDITS.md` conflicts; preserve both appended game sections. No real branch merge was made.
+- Both finalized games were assembled in a temporary source copy and compiled/packaged together: **109 tests passed (42 Pong + 67 Pac-Man), 0 failures/errors/skips**. Git's merge simulation confirmed only `CREDITS.md` conflicts; preserve both appended game sections. No real branch merge was made.
 - IntelliJ's configured Liberica executable was checked directly and reports OpenJDK 25.0.4.1. Terminal verification used Oracle Java 25.0.4.1 and Maven 3.10.0. IDE configuration remained unchanged.
 
 Manual physical-keyboard gameplay, subjective AI/ghost balance and audible sound quality remain acceptance checks. The programmatic scenarios and rendered screenshots do not substitute for those human checks.
+
+The final combined check was repeated after adding Pong's seeded Hard-AI fairness regression: 109 tests passed. Pac-Man gameplay source was unchanged by that Pong refinement.
