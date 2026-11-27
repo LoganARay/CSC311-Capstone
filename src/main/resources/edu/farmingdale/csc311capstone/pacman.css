@@ -15,7 +15,7 @@
 .pacman-root .button:hover { -fx-background-color: #293e6c; -fx-border-color: #ffe66b; }
 .pacman-root .button:focused { -fx-border-color: #ffe66b; }
 .pacman-root .button:disabled { -fx-opacity: .4; }
-.pacman-root .mode-card { -fx-alignment: center-left; -fx-font-size: 12px; -fx-padding: 10 16; -fx-min-height: 58; }
+.pacman-root .mode-card { -fx-alignment: center-left; -fx-font-size: 12px; -fx-padding: 10 16; }
 .pacman-root .blinky { -fx-text-fill: #ff5c72; -fx-font-size: 11px; }
 .pacman-root .pinky { -fx-text-fill: #ff9cdb; -fx-font-size: 11px; }
 .pacman-root .inky { -fx-text-fill: #5ce7e5; -fx-font-size: 11px; }

@@ -11,7 +11,7 @@
  </VBox></top>
  <center><StackPane fx:id="board" minWidth="0" minHeight="0"><BorderPane.margin><Insets left="24" right="24"/></BorderPane.margin>
   <Canvas fx:id="canvas" width="912" height="560"/>
-  <ScrollPane fx:id="menuScroll" fitToWidth="true" hbarPolicy="NEVER" maxWidth="650" maxHeight="600" minWidth="0" minHeight="0" styleClass="panel-scroll">
+  <ScrollPane fx:id="menuScroll" fitToWidth="true" fitToHeight="true" hbarPolicy="NEVER" maxWidth="650" maxHeight="600" minWidth="0" minHeight="0" styleClass="panel-scroll">
    <content><VBox fx:id="overlay" alignment="CENTER" spacing="10" styleClass="panel"><padding><Insets top="22" right="26" bottom="22" left="26"/></padding></VBox></content>
   </ScrollPane>
  </StackPane></center>
