@@ -1,111 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.Pane?>
-<?import javafx.scene.shape.Circle?>
-<?import javafx.scene.shape.Line?>
-<?import javafx.scene.shape.Rectangle?>
-<?import javafx.scene.text.Font?>
-
-<AnchorPane xmlns="http://javafx.com/javafx/25"
-            xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="edu.farmingdale.csc311capstone.Pong.PongController"
-            prefWidth="800.0"
-            prefHeight="555.0"
-            style="-fx-background-color: black;">
-
-    <children>
-
-        <Label fx:id="statusLabel"
-               layoutX="20" layoutY="35"
-               text="First to 7"
-               textFill="WHITE"/>
-
-        <Label layoutX="220" layoutY="15"
-               text="PLAYER 1"
-               textFill="WHITE"/>
-
-        <Label layoutX="530" layoutY="15"
-               text="PLAYER 2"
-               textFill="WHITE"/>
-
-        <Label fx:id="player1Score"
-               layoutX="275" layoutY="35"
-               text="0" textFill="WHITE">
-            <font>
-                <Font size="28"/>
-            </font>
-        </Label>
-
-        <Label fx:id="player2Score"
-               layoutX="585" layoutY="35"
-               text="0" textFill="WHITE">
-            <font>
-                <Font size="28"/>
-            </font>
-        </Label>
-
-        <Pane fx:id="gamePane"
-              layoutY="80"
-              prefWidth="800"
-              prefHeight="420">
-
-            <children>
-
-                <Line startX="400" startY="0"
-                      endX="400" endY="420"
-                      stroke="GRAY"
-                      strokeWidth="2"/>
-
-                <Rectangle fx:id="leftPaddle"
-                           x="25" y="170"
-                           width="12" height="80"
-                           fill="WHITE"/>
-
-                <Rectangle fx:id="rightPaddle"
-                           x="763" y="170"
-                           width="12" height="80"
-                           fill="WHITE"/>
-
-                <Circle fx:id="ball"
-                        centerX="400"
-                        centerY="210"
-                        radius="8"
-                        fill="WHITE"/>
-
-            </children>
-
-        </Pane>
-
-        <Button layoutX="20"
-                layoutY="510"
-                prefWidth="135"
-                prefHeight="32"
-                text="Back to Arcade"
-                onAction="#backToArcade"/>
-
-        <Button fx:id="pauseButton"
-                layoutX="170"
-                layoutY="510"
-                prefWidth="90"
-                prefHeight="32"
-                text="Pause"
-                onAction="#togglePause"/>
-
-        <Button layoutX="275"
-                layoutY="510"
-                prefWidth="100"
-                prefHeight="32"
-                text="Restart"
-                onAction="#restartGame"/>
-
-        <Label layoutX="415"
-               layoutY="518"
-               text="P1: W/S   P2: Arrows   Space: Pause"
-               textFill="WHITE"/>
-
-    </children>
-
-</AnchorPane>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.canvas.Canvas?>
+<?import javafx.geometry.Insets?>
+<BorderPane fx:id="root" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="edu.farmingdale.csc311capstone.Pong.PongController" prefWidth="1000" prefHeight="780" minWidth="580" minHeight="620" focusTraversable="true" styleClass="pong-root" stylesheets="@pong.css">
+ <top><VBox spacing="14"><padding><Insets top="22" right="28" bottom="14" left="28"/></padding>
+  <HBox alignment="CENTER_LEFT" spacing="16"><Label text="PONG / NEON CIRCUIT" styleClass="brand"/><Pane HBox.hgrow="ALWAYS"/><Label text="CSC311 ARCADE" styleClass="eyebrow"/></HBox>
+  <HBox alignment="CENTER" spacing="40">
+   <VBox alignment="CENTER"><Label text="PLAYER ONE" styleClass="cyan"/><Label fx:id="leftScore" text="00" styleClass="score, cyan"/></VBox>
+   <VBox alignment="CENTER" spacing="8" HBox.hgrow="ALWAYS"><Label fx:id="modeLabel" styleClass="eyebrow"/><Label fx:id="detailLabel" styleClass="description"/></VBox>
+   <VBox alignment="CENTER"><Label fx:id="rightLabel" text="PLAYER TWO" styleClass="pink"/><Label fx:id="rightScore" text="00" styleClass="score, pink"/></VBox>
+  </HBox>
+ </VBox></top>
+ <center><StackPane fx:id="court" minWidth="0" minHeight="0"><BorderPane.margin><Insets left="24" right="24"/></BorderPane.margin>
+  <Canvas fx:id="canvas" width="952" height="520"/>
+  <VBox fx:id="overlay" alignment="CENTER" spacing="10" maxWidth="480" maxHeight="530" styleClass="panel"><padding><Insets top="22" right="30" bottom="22" left="30"/></padding></VBox>
+ </StackPane></center>
+ <bottom><VBox spacing="12"><padding><Insets top="16" right="24" bottom="20" left="24"/></padding>
+  <FlowPane alignment="CENTER" hgap="10" vgap="8"><Button fx:id="pauseButton" text="Pause" onAction="#togglePause"/><Button fx:id="restartButton" text="Restart" onAction="#restartGame"/><Button text="Pong menu" onAction="#showMenu"/><Button fx:id="muteButton" text="Sound: on" onAction="#toggleMute"/><Button text="Back to Arcade" onAction="#backToArcade"/></FlowPane>
+  <Label text="P1: W / S     P2: ↑ / ↓     SPACE: PAUSE     R: RESTART" styleClass="controls" maxWidth="Infinity" alignment="CENTER"/>
+ </VBox></bottom>
+</BorderPane>
