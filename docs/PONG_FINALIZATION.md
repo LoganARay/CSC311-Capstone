@@ -49,3 +49,9 @@ Desktop automation could inspect IntelliJ but could not address the standalone J
 - Final fixes included continuous Blitz timing across serves, priority for result sounds over score-cue throttling, and additional score/result animations.
 
 Final review also removed controller frame-delta clipping so slow rendering frames cannot silently extend Blitz. Physics still sub-step safely. Opening/serve countdowns now last exactly three/one seconds, and the match-start cue takes priority over the last countdown tick. The additional minimum-horizontal-speed regression brings the final suite to 41 tests.
+
+The final isolated JavaFX run passed after the clock/countdown refinements: Blitz versus Hard ended 0–12 at 60.0 seconds, with 14 hits and best rally 7. Complete fixed-time simulations also reached first-to-seven results against Easy, Medium and Hard; these used an unattended left paddle and do not establish human difficulty balance. A direct 250 ms animation-frame check confirmed that all 250 ms reached the clock. Final resized rendering and timer cleanup checks passed.
+
+A temporary combined source build containing both finalized games compiled and packaged with **108 tests passed (41 Pong + 67 Pac-Man), zero failures/errors/skips**. A Git merge simulation found only an end-of-file conflict in `CREDITS.md`; retain both original-asset sections. No actual branch merge was performed. Shared navigation, the production module, IDE files and teammates' games were unchanged.
+
+The executable named by IntelliJ's existing SDK configuration was also checked directly: `liberica-25.0.4.1/bin/java -version` reports OpenJDK 25.0.4.1. The terminal builds used Oracle Java 25.0.4.1 and Maven 3.10.0.
