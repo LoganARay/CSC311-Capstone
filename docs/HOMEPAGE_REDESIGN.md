@@ -126,7 +126,7 @@ The subprocess log is:
 <java.io.tmpdir>/arcade-redesign-scene-probe.log
 ```
 
-The delivered local review folder includes an HTML gallery and the seven primary screen screenshots, all Settings tabs, smaller layouts, search/no-results, backend empty states, full-page captures, and the dashboard after a game return. Screenshot binaries are intentionally not committed. Re-run `mvn test` on a desktop to regenerate them.
+The delivered local review folder includes an HTML gallery and the seven primary screen screenshots, all Settings tabs, smaller layouts, search/no-results, backend empty states, full-page captures, and the dashboard after a game return. The seven primary screen captures are intentionally included under `docs/screenshots/` for pull-request review. The remaining captures stay outside the source tree. Re-run `mvn test` on a desktop to regenerate them.
 
 ## Backend and authentication handoff
 
