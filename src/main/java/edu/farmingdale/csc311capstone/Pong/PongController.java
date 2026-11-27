@@ -217,7 +217,7 @@ public class PongController {
                 .add(
                         text(
                                 "First to 7 in standard play. Blitz: highest score wins; ties are a"
-                                    + " draw.",
+                                        + " draw.",
                                 "description"));
         pauseButton.setDisable(true);
         restartButton.setDisable(true);
@@ -249,7 +249,7 @@ public class PongController {
                         difficulty,
                         text(
                                 "Easy: forgiving tracking. Medium: balanced. Hard: predicts wall"
-                                    + " bounces.",
+                                        + " bounces.",
                                 "description"),
                         button(
                                 "Start match",
@@ -266,13 +266,13 @@ public class PongController {
         panel(
                 "HOW TO PLAY",
                 "W / S moves Player One. Up / Down moves Player Two. In AI modes, you control the"
-                    + " left paddle.");
+                        + " left paddle.");
         overlay.getChildren()
                 .addAll(
                         text(
                                 "Hit near a paddle's edge to angle your shot. Rallies get faster."
-                                    + " Space / P / Esc pauses; R restarts. Losing focus pauses"
-                                    + " safely. Tab and Enter navigate menus.",
+                                        + " Space / P / Esc pauses; R restarts. Losing focus pauses"
+                                        + " safely. Tab and Enter navigate menus.",
                                 "description"),
                         button("Back to Pong", this::showMenu));
     }

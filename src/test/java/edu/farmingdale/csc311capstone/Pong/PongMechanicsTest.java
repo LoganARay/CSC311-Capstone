@@ -398,6 +398,22 @@ class PongMechanicsTest {
     }
 
     @Test
+    void hardOpponentCanConcedeWithoutTeleportingOrPerfectPrediction() {
+        var m = ai(Difficulty.HARD);
+        int conceded = 0;
+        for (int trial = 0; trial < 80; trial++) {
+            m.resetGame();
+            m.update(READY_SECONDS, 0, 0);
+            ball(m, 52, 240, MAX_SPEED, 0);
+            m.update(1.1, 0, 0);
+            conceded += m.getPlayer1Score();
+            assertTrue(m.getRightY() >= 0 && m.getRightY() <= HEIGHT - PADDLE_HEIGHT);
+        }
+        assertTrue(conceded > 0, "Hard must sometimes misread a trajectory and concede");
+        assertTrue(conceded < 40, "Hard should still defend most incoming shots");
+    }
+
+    @Test
     void invalidDeltaIsRejected() {
         assertThrows(IllegalArgumentException.class, () -> playing().update(Double.NaN, 0, 0));
     }

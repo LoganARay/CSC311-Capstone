@@ -29,7 +29,8 @@ public class PongMechanics {
     private final Random random;
     private final List<Event> events = new ArrayList<>();
     private double ballX, ballY, velocityX, velocityY, leftY, rightY;
-    private double ready, elapsed, aiDelay, aiTarget;
+    private double ready, elapsed, aiDelay, aiTarget, aiRallyError;
+    private boolean aiTrackingIncoming;
     private int player1Score, player2Score, hits, rally, longestRally, serve;
     private State state, beforePause;
     private PongResult result;
@@ -89,6 +90,17 @@ public class PongMechanics {
     }
 
     private void updateAI(double dt) {
+        boolean incoming = velocityX > 0;
+        if (incoming && !aiTrackingIncoming) {
+            // A rare trajectory misread lasts for this incoming leg. Bounded jitter alone
+            // always fits inside a paddle, making a perfect predictor effectively unbeatable.
+            aiRallyError =
+                    random.nextDouble() < config.difficulty().misreadChance
+                            ? (random.nextBoolean() ? 1 : -1) * config.difficulty().misreadOffset
+                            : 0;
+        }
+        if (!incoming) aiRallyError = 0;
+        aiTrackingIncoming = incoming;
         aiDelay -= dt;
         if (aiDelay <= 0) {
             aiDelay += config.difficulty().reactionSeconds;
@@ -101,7 +113,10 @@ public class PongMechanics {
                                 (RIGHT_X - BALL_RADIUS - ballX) / velocityX,
                                 HEIGHT,
                                 BALL_RADIUS);
-            aiTarget = target + (random.nextDouble() * 2 - 1) * config.difficulty().error;
+            aiTarget =
+                    target
+                            + aiRallyError
+                            + (random.nextDouble() * 2 - 1) * config.difficulty().error;
         }
         double distance = aiTarget - (rightY + PADDLE_HEIGHT / 2);
         double movement =
@@ -194,6 +209,8 @@ public class PongMechanics {
         velocityX = (++serve % 2 == 0 ? -1 : 1) * INITIAL_SPEED * .94;
         velocityY = (serve % 3 == 0 ? -1 : 1) * INITIAL_SPEED * Math.sqrt(1 - .94 * .94);
         aiTarget = HEIGHT / 2;
+        aiTrackingIncoming = false;
+        aiRallyError = 0;
         aiDelay = config.difficulty().reactionSeconds;
     }
 

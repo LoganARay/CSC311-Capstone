@@ -16,15 +16,22 @@ public record PongConfig(Mode mode, Opponent opponent, Difficulty difficulty) {
     }
 
     public enum Difficulty {
-        EASY(215, .34, 75),
-        MEDIUM(300, .19, 34),
-        HARD(385, .10, 15);
-        public final double speed, reactionSeconds, error;
+        EASY(215, .34, 75, 0, 0),
+        MEDIUM(300, .19, 34, 0, 0),
+        HARD(385, .10, 15, .12, 72);
+        public final double speed, reactionSeconds, error, misreadChance, misreadOffset;
 
-        Difficulty(double speed, double reactionSeconds, double error) {
+        Difficulty(
+                double speed,
+                double reactionSeconds,
+                double error,
+                double misreadChance,
+                double misreadOffset) {
             this.speed = speed;
             this.reactionSeconds = reactionSeconds;
             this.error = error;
+            this.misreadChance = misreadChance;
+            this.misreadOffset = misreadOffset;
         }
     }
 
