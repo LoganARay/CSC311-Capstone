@@ -33,7 +33,7 @@ mvn javafx:run
 
 The checked-in wrapper is not executable on this checkout; installed Maven is equivalent. `sh mvnw` is another option. No IntelliJ configuration was changed.
 
-Forty deterministic JUnit tests cover movement, paddle bounds, wall and paddle collisions, angles, speed caps, tunnelling, score/reset/serve rules, first-to-seven, pause/restart, AI timing/differences/bounds/prediction, Blitz timers/outcomes and single-delivery results. Scene probes additionally exercise FXML construction, every mode and difficulty, overlays, mute toggles, restart and arcade navigation. Verification screenshots are kept outside the source tree in `/private/tmp/csc311-verification/`.
+Forty-one deterministic JUnit tests cover movement, paddle bounds, wall and paddle collisions, angles, speed caps, tunnelling, score/reset/serve rules, first-to-seven, pause/restart, AI timing/differences/bounds/prediction, Blitz timers/outcomes and single-delivery results. Scene probes additionally exercise FXML construction, every mode and difficulty, overlays, mute toggles, restart and arcade navigation. Verification screenshots are kept outside the source tree in `/private/tmp/csc311-verification/`.
 
 For manual acceptance, play a standard local match to seven with simultaneous keys, replay, try each CPU difficulty, and run Blitz against both opponent types. Pause midway and check the clock; restart and verify 60 seconds. Resize the window, tab through menus, leave and reopen repeatedly, switch focus while holding movement, and listen to each cue with sound on/off.
 
@@ -42,8 +42,10 @@ Desktop automation could inspect IntelliJ but could not address the standalone J
 ## Recorded verification (2026-11-27)
 
 - `mvn clean compile`: success.
-- `mvn test` and `mvn clean package`: 40 discovered/executed/passed, 0 failures/errors/skipped; packaging success.
+- `mvn test` and `mvn clean package`: 41 discovered/executed/passed, 0 failures/errors/skipped; packaging success.
 - Baseline and finalized application launches succeeded. No FXML or application exceptions occurred in the scene probe. JavaFX emits JDK native-access warnings with the existing Maven launcher; these are baseline warnings.
 - Real animation-timer Blitz versus Hard ran to completion: 0–12, 60.0 active seconds, 13 paddle hits, best rally 5. The left paddle was unattended; this confirms timing/results, not human difficulty balance.
 - Programmatic JavaFX checks passed every mode/difficulty, pause/resume, restart, mute toggles, stable result display and arcade cleanup. Snapshots of menu, difficulty, local, all CPU difficulties, both Blitz opponents, pause and results were reviewed. Separate 660×660 menu/gameplay snapshots confirmed the court remains visible and buttons wrap correctly.
 - Final fixes included continuous Blitz timing across serves, priority for result sounds over score-cue throttling, and additional score/result animations.
+
+Final review also removed controller frame-delta clipping so slow rendering frames cannot silently extend Blitz. Physics still sub-step safely. Opening/serve countdowns now last exactly three/one seconds, and the match-start cue takes priority over the last countdown tick. The additional minimum-horizontal-speed regression brings the final suite to 41 tests.
