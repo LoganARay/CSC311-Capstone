@@ -64,3 +64,17 @@ Desktop automation could inspect IntelliJ but could not target the standalone Ja
 - Hard: verify two lives, faster ghosts and shorter power windows; assess difficulty with a human player.
 - Ghost Challenge: use replenishing power pellets, capture six ghosts, inspect success; separately exhaust lives or time for failure.
 - All modes: mute/unmute, Tab/Enter navigation, resize, switch focus while steering, reopen and restart repeatedly, and return to the arcade. Listen for cue clarity and comfortable volume.
+
+## Recorded verification (2026-11-27)
+
+- Final clean compilation and packaging succeeded. Final JUnit count: **67 discovered/executed/passed, 0 failures, 0 errors, 0 skipped**.
+- Standard Maven application launch succeeded. JavaFX's native-access warning is inherited from the existing launcher; no production module or launcher configuration changes were needed.
+- Final JavaFX scenarios passed all five modes, pause/resume, restart, mute controls, frightened/returning graphics, next-level transition, game-over/challenge-success results and arcade cleanup. All ten arcade FXML resources loaded successfully.
+- A real animation-timer Time Attack run with ghosts held at spawn by the test fixture ended at exactly 60.0 active seconds with `TIME_EXPIRED`. This isolates clock behavior and is not a human survival/balance test. Focus-paused runs were explicitly resumed in the harness.
+- A 250 ms frame test confirmed that slow frames preserve all elapsed time. Separate 600×680 menu/gameplay snapshots verified wrapping descriptions, scrollable mode choices, wrapped toolbar buttons and the complete scaled maze.
+- Visual review corrected maze-corner overshoots, excessive overlay whitespace and small-window description ellipses. Gameplay review corrected movement remainder handling and counting a just-cleared maze when time expires during its level transition.
+- One discarded verification run lost a class while a clean build replaced `target/classes`. Final checks used an isolated compiled snapshot and passed; the discarded failure was a harness setup error.
+- Both finalized games were assembled in a temporary source copy and compiled/packaged together: **108 tests passed (41 Pong + 67 Pac-Man), 0 failures/errors/skips**. Git's merge simulation confirmed only `CREDITS.md` conflicts; preserve both appended game sections. No real branch merge was made.
+- IntelliJ's configured Liberica executable was checked directly and reports OpenJDK 25.0.4.1. Terminal verification used Oracle Java 25.0.4.1 and Maven 3.10.0. IDE configuration remained unchanged.
+
+Manual physical-keyboard gameplay, subjective AI/ghost balance and audible sound quality remain acceptance checks. The programmatic scenarios and rendered screenshots do not substitute for those human checks.
