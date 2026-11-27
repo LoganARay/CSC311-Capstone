@@ -1,0 +1,22 @@
+.pacman-root { -fx-background-color: #080b1a; -fx-font-family: 'Monospaced'; -fx-font-size: 13px; }
+.pacman-root .label { -fx-text-fill: #f0f0ff; }
+.pacman-root .brand { -fx-font-size: 29px; -fx-font-weight: bold; -fx-text-fill: #ffe66b; }
+.pacman-root .eyebrow { -fx-font-size: 12px; -fx-text-fill: #a7b6d8; }
+.pacman-root .score { -fx-font-size: 30px; -fx-font-weight: bold; -fx-text-fill: #ffe66b; }
+.pacman-root .gold { -fx-text-fill: #ffe66b; }
+.pacman-root .objective { -fx-font-size: 13px; -fx-text-fill: #b9c9ed; }
+.pacman-root .panel-scroll { -fx-background-color: #0f1630; -fx-border-color: #385699; -fx-border-radius: 15; -fx-background-radius: 15; -fx-padding: 4; }
+.pacman-root .panel-scroll > .viewport { -fx-background-color: transparent; }
+.pacman-root .panel { -fx-background-color: #0f1630; }
+.pacman-root .panel-title { -fx-font-size: 27px; -fx-font-weight: bold; -fx-text-fill: #ffe66b; }
+.pacman-root .description { -fx-font-size: 12px; -fx-text-fill: #b8c4e4; -fx-text-alignment: center; -fx-line-spacing: 5; }
+.pacman-root .controls { -fx-font-size: 11px; -fx-text-fill: #8e9fc2; }
+.pacman-root .button { -fx-background-color: #1a2950; -fx-text-fill: #faf4d6; -fx-border-color: #354d80; -fx-border-radius: 7; -fx-background-radius: 7; -fx-padding: 10 14; -fx-cursor: hand; }
+.pacman-root .button:hover { -fx-background-color: #293e6c; -fx-border-color: #ffe66b; }
+.pacman-root .button:focused { -fx-border-color: #ffe66b; }
+.pacman-root .button:disabled { -fx-opacity: .4; }
+.pacman-root .mode-card { -fx-alignment: center-left; -fx-font-size: 12px; -fx-padding: 10 16; -fx-min-height: 58; }
+.pacman-root .blinky { -fx-text-fill: #ff5c72; -fx-font-size: 11px; }
+.pacman-root .pinky { -fx-text-fill: #ff9cdb; -fx-font-size: 11px; }
+.pacman-root .inky { -fx-text-fill: #5ce7e5; -fx-font-size: 11px; }
+.pacman-root .clyde { -fx-text-fill: #ffb55b; -fx-font-size: 11px; }

@@ -42,3 +42,8 @@ The rest are from [Pixabay](https://pixabay.com) under the Pixabay Content Licen
 | `not-enough.mp3` | Not enough apples to buy | turning_pages | 608634 |
 | `creepy-laugh.mp3` (made 9 dB louder) | Buying something in the black market | freesound_community | 36864 |
 | `door-creak.mp3` | Reaching the black market door | DRAGON-STUDIO | 472357 |
+
+
+## Pac-Man
+
+The maze treatment, vector characters, fruit, animations and interface are original JavaFX drawings made for this project. The ten WAV cues in `PacmanSounds/` are original mathematically synthesized sine-wave melodies and effects. No proprietary Pac-Man artwork, recordings or fonts are included.

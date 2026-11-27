@@ -1,95 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.Pane?>
-<?import javafx.scene.text.Font?>
-
-<AnchorPane xmlns="http://javafx.com/javafx/25"
-            xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="edu.farmingdale.csc311capstone.Pacman.PacmanController"
-            prefWidth="600.0"
-            prefHeight="540.0"
-            style="-fx-background-color: black;">
-
-    <children>
-
-        <Label layoutX="62"
-               layoutY="18"
-               text="PAC-MAN"
-               textFill="YELLOW">
-            <font>
-                <Font size="26"/>
-            </font>
-        </Label>
-
-        <Label layoutX="375"
-               layoutY="28"
-               text="ARROW KEYS TO MOVE"
-               textFill="WHITE"/>
-
-        <Pane fx:id="mazePane"
-              layoutX="62"
-              layoutY="70"
-              prefWidth="476"
-              prefHeight="364"
-              style="-fx-background-color: black;"/>
-
-        <Label fx:id="scoreLabel"
-               layoutX="62"
-               layoutY="450"
-               text="Score: 0"
-               textFill="WHITE">
-            <font>
-                <Font size="16"/>
-            </font>
-        </Label>
-
-        <Label fx:id="pelletsLabel"
-               layoutX="205"
-               layoutY="450"
-               text="Pellets Left: 109"
-               textFill="WHITE">
-            <font>
-                <Font size="16"/>
-            </font>
-        </Label>
-
-        <Label fx:id="livesLabel"
-               layoutX="365"
-               layoutY="450"
-               text="Lives: 3"
-               textFill="YELLOW">
-            <font>
-                <Font size="16"/>
-            </font>
-        </Label>
-
-        <Button layoutX="445"
-                layoutY="446"
-                prefWidth="95"
-                prefHeight="32"
-                text="Restart"
-                onAction="#restartGame"/>
-
-        <Button layoutX="405"
-                layoutY="490"
-                prefWidth="135"
-                prefHeight="32"
-                text="Back to Arcade"
-                onAction="#backToArcade"/>
-
-        <Label fx:id="statusLabel"
-               layoutX="62"
-               layoutY="495"
-               text="Avoid ghosts and collect all pellets!"
-               textFill="YELLOW">
-            <font>
-                <Font size="14"/>
-            </font>
-        </Label>
-
-    </children>
-
-</AnchorPane>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.canvas.Canvas?>
+<?import javafx.geometry.Insets?>
+<BorderPane fx:id="root" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="edu.farmingdale.csc311capstone.Pacman.PacmanController" prefWidth="960" prefHeight="880" minWidth="560" minHeight="620" focusTraversable="true" styleClass="pacman-root" stylesheets="@pacman.css">
+ <top><VBox spacing="12"><padding><Insets top="20" right="28" bottom="14" left="28"/></padding>
+  <HBox alignment="CENTER_LEFT" spacing="15"><Label text="PAC-MAN" styleClass="brand"/><Pane HBox.hgrow="ALWAYS"/><Label fx:id="modeLabel" styleClass="eyebrow"/></HBox>
+  <HBox alignment="CENTER" spacing="22"><VBox><Label text="SCORE" styleClass="eyebrow"/><Label fx:id="scoreLabel" text="000000" styleClass="score"/></VBox><Pane HBox.hgrow="ALWAYS"/><VBox alignment="CENTER_RIGHT" spacing="7"><Label fx:id="livesLabel" styleClass="gold"/><Label fx:id="levelLabel" styleClass="eyebrow"/></VBox></HBox>
+  <Label fx:id="objectiveLabel" text="COLLECT / OUTSMART / REPEAT" styleClass="objective" wrapText="true"/>
+ </VBox></top>
+ <center><StackPane fx:id="board" minWidth="0" minHeight="0"><BorderPane.margin><Insets left="24" right="24"/></BorderPane.margin>
+  <Canvas fx:id="canvas" width="912" height="560"/>
+  <ScrollPane fx:id="menuScroll" fitToWidth="true" hbarPolicy="NEVER" maxWidth="650" maxHeight="600" minWidth="0" minHeight="0" styleClass="panel-scroll">
+   <content><VBox fx:id="overlay" alignment="CENTER" spacing="10" styleClass="panel"><padding><Insets top="22" right="26" bottom="22" left="26"/></padding></VBox></content>
+  </ScrollPane>
+ </StackPane></center>
+ <bottom><VBox spacing="12"><padding><Insets top="14" right="24" bottom="18" left="24"/></padding>
+  <FlowPane alignment="CENTER" hgap="18" vgap="4"><Label text="● BLINKY" styleClass="blinky"/><Label text="● PINKY" styleClass="pinky"/><Label text="● INKY" styleClass="inky"/><Label text="● CLYDE" styleClass="clyde"/></FlowPane>
+  <FlowPane alignment="CENTER" hgap="9" vgap="8"><Button fx:id="pauseButton" text="Pause" onAction="#togglePause"/><Button fx:id="restartButton" text="Restart" onAction="#restartGame"/><Button text="Pac-Man menu" onAction="#showMenu"/><Button fx:id="muteButton" text="Sound: on" onAction="#toggleMute"/><Button text="Back to Arcade" onAction="#backToArcade"/></FlowPane>
+  <Label text="ARROWS / WASD: MOVE    SPACE: PAUSE    R: RESTART" styleClass="controls" maxWidth="Infinity" alignment="CENTER"/>
+ </VBox></bottom>
+</BorderPane>
