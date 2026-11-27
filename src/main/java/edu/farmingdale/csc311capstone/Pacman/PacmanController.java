@@ -1,514 +1,390 @@
 package edu.farmingdale.csc311capstone.Pacman;
 
+import static edu.farmingdale.csc311capstone.Pacman.PacmanMechanics.*;
+
 import edu.farmingdale.csc311capstone.SceneSwitcher;
+
 import javafx.animation.AnimationTimer;
+import javafx.beans.value.ChangeListener;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
-import javafx.scene.Group;
-import javafx.scene.control.Label;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.control.*;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.Pane;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
-import javafx.scene.shape.Rectangle;
-import javafx.scene.shape.SVGPath;
+import javafx.scene.layout.*;
+import javafx.stage.Window;
 
+import java.util.EnumSet;
+
+/** Input, screen composition, sound and lifecycle; all rules remain in PacmanMechanics. */
 public class PacmanController {
-
-    private static final double TILE_SIZE = 28;
-
-    private static final long MOVE_INTERVAL = 140_000_000L;
-    private static final long GHOST_INTERVAL = 400_000_000L;
-
-    @FXML
-    private Pane mazePane;
-
-    @FXML
-    private Label scoreLabel;
-
-    @FXML
-    private Label pelletsLabel;
-
-    @FXML
-    private Label livesLabel;
-
-    @FXML
-    private Label statusLabel;
-
-    private final PacmanMechanics mechanics = new PacmanMechanics();
-
-    private Circle pacman;
-    private Circle[][] pelletNodes;
-    private Group[] ghostNodes;
-
-    private AnimationTimer gameLoop;
-
-    private int rowDirection = 0;
-    private int colDirection = 0;
-
-    private long lastMoveTime = 0;
-    private long lastGhostTime = 0;
-
-    private final EventHandler<KeyEvent> keyPressedHandler =
-            this::handleKeyPressed;
-
-    private final EventHandler<KeyEvent> keyReleasedHandler =
-            this::handleKeyReleased;
+    @FXML private BorderPane root;
+    @FXML private StackPane board;
+    @FXML private Canvas canvas;
+    @FXML private ScrollPane menuScroll;
+    @FXML private VBox overlay;
+    @FXML private Label scoreLabel, livesLabel, levelLabel, modeLabel, objectiveLabel;
+    @FXML private Button pauseButton, restartButton, muteButton;
+    private final PacmanAudio audio = new PacmanAudio();
+    private final EnumSet<KeyCode> held = EnumSet.noneOf(KeyCode.class);
+    private PacmanMechanics mechanics = new PacmanMechanics();
+    private PacmanRenderer renderer;
+    private boolean menu = true, showingResult;
+    private long last;
+    private double time, scorePulse;
+    private Scene scene;
+    private Window window;
+    private final EventHandler<KeyEvent> pressed = this::keyPressed;
+    private final EventHandler<KeyEvent> released = e -> held.remove(e.getCode());
+    private final ChangeListener<Boolean> focus =
+            (o, a, b) -> {
+                if (!b) {
+                    held.clear();
+                    mechanics.clearInput();
+                    if (!menu && mechanics.getState() != State.PAUSED && !mechanics.isFinished())
+                        togglePause();
+                }
+            };
+    private final ChangeListener<Window> windowListener = (o, a, b) -> attachWindow(b);
+    private final ChangeListener<Scene> sceneListener =
+            (o, a, b) -> {
+                if (b != scene) detach();
+            };
+    private final ChangeListener<Boolean> showingListener =
+            (o, a, b) -> {
+                if (!b) detach();
+            };
+    private final AnimationTimer loop =
+            new AnimationTimer() {
+                @Override
+                public void handle(long now) {
+                    double dt = last == 0 ? 0 : (now - last) / 1e9;
+                    last = now;
+                    time += dt;
+                    if (!menu) mechanics.update(dt);
+                    for (Event event : mechanics.drainEvents()) {
+                        renderer.effect(event, mechanics);
+                        if (event == Event.PELLET
+                                || event == Event.POWER
+                                || event == Event.CAPTURE
+                                || event == Event.FRUIT) scorePulse = .25;
+                        audio.play(
+                                switch (event) {
+                                    case PELLET -> "pellet";
+                                    case POWER -> "power";
+                                    case CAPTURE -> "capture";
+                                    case FRUIT -> "fruit";
+                                    case LIFE_LOST -> "life";
+                                    case LEVEL -> "level";
+                                    case START -> "start";
+                                    case FINISH -> mechanics.isGameWon() ? "win" : "gameover";
+                                });
+                    }
+                    scorePulse = Math.max(0, scorePulse - dt);
+                    scoreLabel.setScaleX(1 + scorePulse * .3);
+                    scoreLabel.setScaleY(1 + scorePulse * .3);
+                    updateHud();
+                    if (menu) renderer.drawAttract(time);
+                    else renderer.draw(mechanics, time, dt, false);
+                    if (!menu && mechanics.isFinished() && !showingResult) showResults();
+                }
+            };
 
     @FXML
     private void initialize() {
-
-        mazePane.setFocusTraversable(true);
-
-        renderMaze();
-        createPacman();
-        createGhosts();
-        updateLabels();
-
-        gameLoop = new AnimationTimer() {
-
-            @Override
-            public void handle(long now) {
-
-                if (mechanics.isFinished()) {
-                    return;
-                }
-
-                if ((rowDirection != 0 || colDirection != 0) &&
-                        now - lastMoveTime >= MOVE_INTERVAL) {
-
-                    lastMoveTime = now;
-                    movePacman();
-                }
-
-                if (mechanics.isFinished()) {
-                    return;
-                }
-
-                if (lastGhostTime == 0) {
-                    lastGhostTime = now;
-                }
-
-                if (now - lastGhostTime >= GHOST_INTERVAL) {
-
-                    lastGhostTime = now;
-
-                    mechanics.moveGhosts();
-                    updateGhostPositions();
-                    checkCollision();
-                }
-            }
-        };
-
-        mazePane.sceneProperty().addListener(
-                (observable, oldScene, newScene) -> {
-
-                    if (oldScene != null) {
-
-                        oldScene.removeEventFilter(
-                                KeyEvent.KEY_PRESSED,
-                                keyPressedHandler
-                        );
-
-                        oldScene.removeEventFilter(
-                                KeyEvent.KEY_RELEASED,
-                                keyReleasedHandler
-                        );
-
-                        gameLoop.stop();
-                        resetDirection();
-                    }
-
-                    if (newScene == null) {
-                        return;
-                    }
-
-                    newScene.addEventFilter(
-                            KeyEvent.KEY_PRESSED,
-                            keyPressedHandler
-                    );
-
-                    newScene.addEventFilter(
-                            KeyEvent.KEY_RELEASED,
-                            keyReleasedHandler
-                    );
-
-                    newScene.windowProperty().addListener(
-                            (obs, oldWindow, newWindow) -> {
-
-                                if (newWindow == null) {
-
-                                    gameLoop.stop();
-                                    resetDirection();
-
-                                } else {
-
-                                    lastMoveTime = 0;
-                                    lastGhostTime = 0;
-
-                                    if (!mechanics.isFinished()) {
-                                        gameLoop.start();
-                                    }
-
-                                    mazePane.requestFocus();
-                                }
-                            }
-                    );
-
-                    if (newScene.getWindow() != null) {
-
-                        lastMoveTime = 0;
-                        lastGhostTime = 0;
-
-                        if (!mechanics.isFinished()) {
-                            gameLoop.start();
-                        }
-
-                        mazePane.requestFocus();
-                    }
-                }
-        );
+        renderer = new PacmanRenderer(canvas);
+        canvas.widthProperty().bind(board.widthProperty());
+        canvas.heightProperty().bind(board.heightProperty());
+        root.sceneProperty()
+                .addListener(
+                        (o, a, b) -> {
+                            detach();
+                            if (b != null) attach(b);
+                        });
+        showMenu();
     }
 
-    private void renderMaze() {
+    private void attach(Scene next) {
+        scene = next;
+        next.addEventFilter(KeyEvent.KEY_PRESSED, pressed);
+        next.addEventFilter(KeyEvent.KEY_RELEASED, released);
+        next.windowProperty().addListener(windowListener);
+        attachWindow(next.getWindow());
+    }
 
-        mazePane.getChildren().clear();
-
-        mazePane.setPrefSize(
-                mechanics.getColumns() * TILE_SIZE,
-                mechanics.getRows() * TILE_SIZE
-        );
-
-        pelletNodes = new Circle[
-                mechanics.getRows()
-                ][
-                mechanics.getColumns()
-                ];
-
-        for (int row = 0; row < mechanics.getRows(); row++) {
-
-            for (int col = 0; col < mechanics.getColumns(); col++) {
-
-                char tile = mechanics.getTile(row, col);
-
-                double x = col * TILE_SIZE;
-                double y = row * TILE_SIZE;
-
-                if (tile == PacmanMechanics.WALL) {
-
-                    Rectangle wall = new Rectangle(
-                            x, y, TILE_SIZE, TILE_SIZE
-                    );
-
-                    wall.setFill(Color.DARKBLUE);
-                    wall.setStroke(Color.DODGERBLUE);
-                    wall.setStrokeWidth(1);
-
-                    mazePane.getChildren().add(wall);
-
-                } else if (tile == PacmanMechanics.PELLET) {
-
-                    Circle pellet = new Circle(
-                            x + TILE_SIZE / 2,
-                            y + TILE_SIZE / 2,
-                            3
-                    );
-
-                    pellet.setFill(Color.LIGHTYELLOW);
-
-                    pelletNodes[row][col] = pellet;
-                    mazePane.getChildren().add(pellet);
-                }
-            }
+    private void attachWindow(Window next) {
+        if (window != null) {
+            window.focusedProperty().removeListener(focus);
+            window.sceneProperty().removeListener(sceneListener);
+            window.showingProperty().removeListener(showingListener);
         }
-    }
-
-    private void createPacman() {
-
-        pacman = new Circle(10, Color.YELLOW);
-
-        updatePacmanPosition();
-
-        mazePane.getChildren().add(pacman);
-    }
-
-    private void createGhosts() {
-
-        ghostNodes = new Group[mechanics.getGhostCount()];
-
-        for (int i = 0; i < ghostNodes.length; i++) {
-
-            Color color = i == 0 ? Color.RED : Color.HOTPINK;
-
-            SVGPath body = new SVGPath();
-
-            body.setContent(
-                    "M 4 24 L 4 12 " +
-                            "C 4 2 24 2 24 12 " +
-                            "L 24 24 L 20 20 " +
-                            "L 16 24 L 12 20 " +
-                            "L 8 24 Z"
-            );
-
-            body.setFill(color);
-
-            Circle leftEye = new Circle(11, 12, 4, Color.WHITE);
-            Circle rightEye = new Circle(19, 12, 4, Color.WHITE);
-
-            Circle leftPupil = new Circle(12, 12, 2, Color.BLUE);
-            Circle rightPupil = new Circle(20, 12, 2, Color.BLUE);
-
-            Group ghost = new Group(
-                    body,
-                    leftEye,
-                    rightEye,
-                    leftPupil,
-                    rightPupil
-            );
-
-            ghostNodes[i] = ghost;
-            mazePane.getChildren().add(ghost);
-        }
-
-        updateGhostPositions();
-    }
-
-    private void updatePacmanPosition() {
-
-        pacman.setCenterX(
-                mechanics.getPlayerCol() * TILE_SIZE + TILE_SIZE / 2
-        );
-
-        pacman.setCenterY(
-                mechanics.getPlayerRow() * TILE_SIZE + TILE_SIZE / 2
-        );
-    }
-
-    private void updateGhostPositions() {
-
-        for (int i = 0; i < ghostNodes.length; i++) {
-
-            ghostNodes[i].setLayoutX(
-                    mechanics.getGhostCol(i) * TILE_SIZE
-            );
-
-            ghostNodes[i].setLayoutY(
-                    mechanics.getGhostRow(i) * TILE_SIZE
-            );
-        }
-    }
-
-    private void handleKeyPressed(KeyEvent event) {
-
-        if (mechanics.isFinished()) {
+        window = next;
+        if (next == null) {
+            loop.stop();
+            held.clear();
+            audio.stop();
             return;
         }
-
-        switch (event.getCode()) {
-
-            case UP -> {
-                rowDirection = -1;
-                colDirection = 0;
-            }
-
-            case DOWN -> {
-                rowDirection = 1;
-                colDirection = 0;
-            }
-
-            case LEFT -> {
-                rowDirection = 0;
-                colDirection = -1;
-            }
-
-            case RIGHT -> {
-                rowDirection = 0;
-                colDirection = 1;
-            }
-
-            default -> {
-                return;
-            }
-        }
-
-        event.consume();
+        next.focusedProperty().addListener(focus);
+        next.sceneProperty().addListener(sceneListener);
+        next.showingProperty().addListener(showingListener);
+        last = 0;
+        loop.start();
     }
 
-    private void handleKeyReleased(KeyEvent event) {
-
-        switch (event.getCode()) {
-
-            case UP -> {
-                if (rowDirection == -1) {
-                    resetDirection();
-                }
-            }
-
-            case DOWN -> {
-                if (rowDirection == 1) {
-                    resetDirection();
-                }
-            }
-
-            case LEFT -> {
-                if (colDirection == -1) {
-                    resetDirection();
-                }
-            }
-
-            case RIGHT -> {
-                if (colDirection == 1) {
-                    resetDirection();
-                }
-            }
-
-            default -> {
-                return;
-            }
+    private void detach() {
+        loop.stop();
+        held.clear();
+        audio.stop();
+        mechanics.clearInput();
+        if (scene != null) {
+            scene.removeEventFilter(KeyEvent.KEY_PRESSED, pressed);
+            scene.removeEventFilter(KeyEvent.KEY_RELEASED, released);
+            scene.windowProperty().removeListener(windowListener);
         }
-
-        event.consume();
+        attachWindow(null);
+        scene = null;
     }
 
-    private void movePacman() {
-
-        boolean moved = mechanics.movePlayer(
-                rowDirection,
-                colDirection
-        );
-
-        if (!moved) {
+    private void keyPressed(KeyEvent event) {
+        KeyCode code = event.getCode();
+        if (menu) {
+            if (code == KeyCode.ESCAPE) {
+                showMenu();
+                event.consume();
+            }
             return;
         }
-
-        int row = mechanics.getPlayerRow();
-        int col = mechanics.getPlayerCol();
-
-        Circle pellet = pelletNodes[row][col];
-
-        if (pellet != null &&
-                mechanics.getTile(row, col) == PacmanMechanics.EMPTY) {
-
-            mazePane.getChildren().remove(pellet);
-            pelletNodes[row][col] = null;
-        }
-
-        updatePacmanPosition();
-        updateLabels();
-
-        if (mechanics.isGameWon()) {
-
-            finishGame(
-                    "Maze cleared! Final score: " + mechanics.getScore()
-            );
-
+        Direction direction =
+                switch (code) {
+                    case UP, W -> Direction.UP;
+                    case DOWN, S -> Direction.DOWN;
+                    case LEFT, A -> Direction.LEFT;
+                    case RIGHT, D -> Direction.RIGHT;
+                    default -> Direction.NONE;
+                };
+        if (direction != Direction.NONE) {
+            if (mechanics.getState() != State.PAUSED) mechanics.queueDirection(direction);
+            event.consume();
             return;
         }
-
-        checkCollision();
+        if (code == KeyCode.P || code == KeyCode.SPACE || code == KeyCode.ESCAPE) {
+            if (held.add(code)) togglePause();
+            event.consume();
+        } else if (code == KeyCode.R) {
+            if (held.add(code)) restartGame();
+            event.consume();
+        }
     }
 
-    private void checkCollision() {
+    private Label text(String value, String style) {
+        Label label = new Label(value);
+        label.getStyleClass().add(style);
+        label.setWrapText(true);
+        label.setMaxWidth(530);
+        label.setAlignment(Pos.CENTER);
+        return label;
+    }
 
-        if (!mechanics.checkGhostCollision()) {
-            return;
+    private Button button(String value, Runnable action) {
+        Button button = new Button(value);
+        button.setMaxWidth(Double.MAX_VALUE);
+        button.setWrapText(true);
+        button.setMinHeight(Region.USE_PREF_SIZE);
+        button.setOnAction(
+                e -> {
+                    audio.play("menu");
+                    action.run();
+                });
+        return button;
+    }
+
+    private void panel(String title, String description, double height) {
+        menuScroll.setVisible(true);
+        menuScroll.setMaxHeight(height);
+        menuScroll.setVvalue(0);
+        overlay.getChildren().setAll(text(title, "panel-title"), text(description, "description"));
+    }
+
+    @FXML
+    private void showMenu() {
+        menu = true;
+        showingResult = false;
+        held.clear();
+        audio.stop();
+        renderer.clear();
+        panel("P A C - M A N", "MAZE RUNNER / FIVE ARCADE CHALLENGES", 600);
+        for (PacmanMode mode : PacmanMode.values()) {
+            Button b =
+                    button(mode.title.toUpperCase() + "\n" + mode.description, () -> start(mode));
+            b.getStyleClass().add("mode-card");
+            overlay.getChildren().add(b);
         }
+        overlay.getChildren()
+                .addAll(
+                        button("How to Play", this::showHelp),
+                        text(
+                                "Tab + Enter to choose. Sound and Arcade controls are below.",
+                                "description"));
+        pauseButton.setDisable(true);
+        restartButton.setDisable(true);
+    }
 
-        updatePacmanPosition();
-        updateGhostPositions();
-        updateLabels();
+    private void showHelp() {
+        panel(
+                "HOW TO PLAY",
+                "Arrow keys or WASD steer. Tap once to keep moving. Queue turns just before"
+                        + " intersections.",
+                500);
+        overlay.getChildren()
+                .addAll(
+                        text(
+                                "Small pellets: 10. Power pellets: 50, then capture ghosts for 200"
+                                    + " / 400 / 800 / 1,600. Blue ghosts are edible; flashing means"
+                                    + " power is ending. Eyes return safely to spawn. Fruit: 300 ×"
+                                    + " level.",
+                                "description"),
+                        text(
+                                "Blinky pursues. Pinky aims ahead. Inky uses a vector from Blinky."
+                                        + " Clyde retreats when close. Ghosts alternate chase and"
+                                        + " scatter. Use the side tunnels to escape.",
+                                "description"),
+                        text(
+                                "Space / P / Esc pauses. R restarts. Focus loss pauses. Time Attack"
+                                        + " and Ghost Challenge clocks include life and level"
+                                        + " transitions; the opening ready countdown is free.",
+                                "description"),
+                        button("Back to Pac-Man", this::showMenu));
+    }
 
-        resetDirection();
-        lastMoveTime = 0;
-        lastGhostTime = 0;
+    private void start(PacmanMode mode) {
+        mechanics = new PacmanMechanics(mode, System.nanoTime());
+        menu = false;
+        showingResult = false;
+        held.clear();
+        renderer.clear();
+        menuScroll.setVisible(false);
+        pauseButton.setDisable(false);
+        restartButton.setDisable(false);
+        last = 0;
+        root.requestFocus();
+        audio.play("start");
+    }
 
-        if (mechanics.isGameOver()) {
-
-            finishGame(
-                    "GAME OVER! Final score: " + mechanics.getScore()
-            );
-
+    @FXML
+    private void togglePause() {
+        if (menu || mechanics.isFinished()) return;
+        mechanics.togglePause();
+        audio.stop();
+        if (mechanics.getState() == State.PAUSED) {
+            panel("PAUSED", "All movement, power timers and match clocks are frozen.", 350);
+            overlay.getChildren()
+                    .addAll(
+                            button("Resume", this::togglePause),
+                            button("Restart run", this::restartGame),
+                            button("Pac-Man menu", this::showMenu));
         } else {
-
-            statusLabel.setText(
-                    "Caught! Lives left: " + mechanics.getLives()
-            );
+            menuScroll.setVisible(false);
+            last = 0;
+            root.requestFocus();
         }
-    }
-
-    private void finishGame(String message) {
-
-        gameLoop.stop();
-        resetDirection();
-
-        statusLabel.setText(message);
-    }
-
-    private void updateLabels() {
-
-        scoreLabel.setText(
-                "Score: " + mechanics.getScore()
-        );
-
-        pelletsLabel.setText(
-                "Pellets Left: " + mechanics.getRemainingPellets()
-        );
-
-        livesLabel.setText(
-                "Lives: " + mechanics.getLives()
-        );
     }
 
     @FXML
     private void restartGame() {
-
-        gameLoop.stop();
-
+        if (menu) return;
         mechanics.resetGame();
+        showingResult = false;
+        held.clear();
+        renderer.clear();
+        menuScroll.setVisible(false);
+        last = 0;
+        root.requestFocus();
+        audio.stop();
+    }
 
-        resetDirection();
-        lastMoveTime = 0;
-        lastGhostTime = 0;
+    private void showResults() {
+        showingResult = true;
+        held.clear();
+        var result = mechanics.getResult().orElseThrow();
+        String title =
+                switch (result.outcome()) {
+                    case CHALLENGE_COMPLETED -> "CHALLENGE COMPLETE";
+                    case CHALLENGE_FAILED -> "CHALLENGE OVER";
+                    case TIME_EXPIRED -> "TIME'S UP";
+                    case GAME_OVER -> "GAME OVER";
+                };
+        panel(
+                title,
+                mechanics.getMode().title.toUpperCase() + " / " + result.score() + " POINTS",
+                450);
+        overlay.getChildren()
+                .addAll(
+                        text(
+                                "Level "
+                                        + result.levelReached()
+                                        + " · "
+                                        + result.levelsCompleted()
+                                        + " cleared · "
+                                        + result.pelletsCollected()
+                                        + " pellets · "
+                                        + result.powerPelletsCollected()
+                                        + " power pellets",
+                                "description"),
+                        text(
+                                result.ghostsCaptured()
+                                        + " ghosts captured"
+                                        + (result.captureTarget() > 0
+                                                ? " / target " + result.captureTarget()
+                                                : "")
+                                        + " · "
+                                        + Math.round(result.durationSeconds())
+                                        + " seconds",
+                                "description"),
+                        button("Play Again", this::restartGame),
+                        button("Pac-Man menu", this::showMenu),
+                        button("Back to Arcade", this::backToArcade));
+    }
 
-        renderMaze();
-        createPacman();
-        createGhosts();
-        updateLabels();
+    private void updateHud() {
+        scoreLabel.setText(String.format("%06d", mechanics.getScore()));
+        livesLabel.setText("LIVES  " + "● ".repeat(Math.max(0, mechanics.getLives())));
+        levelLabel.setText("LEVEL " + String.format("%02d", mechanics.getLevel()));
+        modeLabel.setText(menu ? "CHOOSE YOUR CHALLENGE" : mechanics.getMode().title.toUpperCase());
+        String objective = mechanics.getRemainingPellets() + " PELLETS";
+        if (mechanics.getMode().duration > 0)
+            objective =
+                    String.format("%02ds", (int) Math.ceil(mechanics.getRemainingSeconds()))
+                            + "  /  "
+                            + objective;
+        if (mechanics.getMode() == PacmanMode.GHOST_CHALLENGE)
+            objective =
+                    String.format("%02ds", (int) Math.ceil(mechanics.getRemainingSeconds()))
+                            + " / GHOSTS "
+                            + mechanics.getCaptures()
+                            + " OF "
+                            + PacmanMode.CAPTURE_TARGET;
+        if (mechanics.getMode() == PacmanMode.SPEED_UP)
+            objective = String.format("%.2f× SPEED / ", mechanics.getSpeedMultiplier()) + objective;
+        if (mechanics.getFrightenedSeconds() > 0)
+            objective += String.format(" / POWER %.1fs", mechanics.getFrightenedSeconds());
+        objectiveLabel.setText(menu ? "COLLECT / OUTSMART / REPEAT" : objective);
+        pauseButton.setText(mechanics.getState() == State.PAUSED ? "Resume" : "Pause");
+        if (!menu) pauseButton.setDisable(mechanics.isFinished());
+    }
 
-        statusLabel.setText("Avoid ghosts and collect all pellets!");
-
-        gameLoop.start();
-        mazePane.requestFocus();
+    @FXML
+    private void toggleMute() {
+        audio.toggleMute();
+        muteButton.setText(audio.isMuted() ? "Sound: off" : "Sound: on");
     }
 
     @FXML
     private void backToArcade() {
-
-        gameLoop.stop();
-
-        resetDirection();
-
-        lastMoveTime = 0;
-        lastGhostTime = 0;
-
-        if (mazePane.getScene() != null) {
-
-            mazePane.getScene().removeEventFilter(
-                    KeyEvent.KEY_PRESSED,
-                    keyPressedHandler
-            );
-
-            mazePane.getScene().removeEventFilter(
-                    KeyEvent.KEY_RELEASED,
-                    keyReleasedHandler
-            );
-        }
-
-        SceneSwitcher.showMenu(mazePane);
-    }
-
-    private void resetDirection() {
-        rowDirection = 0;
-        colDirection = 0;
+        detach();
+        SceneSwitcher.showMenu(root);
     }
 }
