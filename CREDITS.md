@@ -42,3 +42,8 @@ The rest are from [Pixabay](https://pixabay.com) under the Pixabay Content Licen
 | `not-enough.mp3` | Not enough apples to buy | turning_pages | 608634 |
 | `creepy-laugh.mp3` (made 9 dB louder) | Buying something in the black market | freesound_community | 36864 |
 | `door-creak.mp3` | Reaching the black market door | DRAGON-STUDIO | 472357 |
+
+
+## Pong
+
+The neon court, paddles, ball, particles and interface are original JavaFX drawings made for this project. All eight cues in `PongSounds/` are original, mathematically synthesized sine-wave melodies and effects made for this project. No third-party game artwork or audio is used.
