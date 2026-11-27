@@ -55,6 +55,15 @@ final class PongRenderer {
         particles.removeIf(p->p.life<=0);
         for(Particle p:particles){p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;g.setFill(Color.rgb(125,241,255,Math.max(0,p.life/.4)));g.fillRect(p.x,p.y,3,3);}
         if(flash>0){g.setFill(Color.rgb(85,244,237,flash*.18));g.fillRect(0,0,WIDTH,HEIGHT);flash=Math.max(0,flash-dt);}
+        if (!menu && model.isGameOver()) {
+            g.setStroke(model.getWinner()==2?PINK:CYAN);g.setLineWidth(2);
+            for(int n=0;n<3;n++) {
+                double radius=((time*75+n*90)%280);
+                g.setGlobalAlpha(1-radius/280);
+                g.strokeOval(WIDTH/2-radius,HEIGHT/2-radius,radius*2,radius*2);
+            }
+            g.setGlobalAlpha(1);
+        }
         if (!menu && model.getState()==PongMechanics.State.READY) {
             g.setFill(Color.rgb(8,14,32,.70));g.fillRoundRect(WIDTH/2-80,HEIGHT/2-70,160,140,20,20);
             g.setTextAlign(javafx.scene.text.TextAlignment.CENTER);g.setFill(CYAN);g.setFont(Font.font("Monospaced",52));

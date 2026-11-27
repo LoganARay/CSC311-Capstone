@@ -10,7 +10,7 @@ final class PongAudio {
     private boolean muted;
     private long lastCue;
     void play(String name) {
-        if (muted || System.nanoTime() - lastCue < 45_000_000) return;
+        if (muted || (!name.equals("victory") && !name.equals("defeat") && System.nanoTime() - lastCue < 45_000_000)) return;
         lastCue = System.nanoTime();
         try {
             if (!clips.containsKey(name)) {

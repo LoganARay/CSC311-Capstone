@@ -2,7 +2,6 @@ package edu.farmingdale.csc311capstone.Pong;
 
 import edu.farmingdale.csc311capstone.SceneSwitcher;
 import javafx.animation.AnimationTimer;
-import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -31,7 +30,7 @@ public class PongController {
     private PongRenderer renderer;
     private boolean menu = true, showingResult;
     private long last;
-    private double animationTime;
+    private double animationTime, scorePulse;
     private Window window;
     private Scene attachedScene;
     private final EventHandler<KeyEvent> pressed = this::keyPressed;
@@ -47,8 +46,12 @@ public class PongController {
                     (keys.contains(KeyCode.DOWN)?1:0)-(keys.contains(KeyCode.UP)?1:0));
             for(var e:mechanics.drainEvents()) {
                 renderer.effect(e,mechanics);
+                if(e==PongMechanics.Event.SCORE)scorePulse=.35;
                 audio.play(switch(e){case PADDLE->"paddle";case WALL->"wall";case SCORE->"score";case START->"start";case COUNTDOWN->"countdown";case FINISH->mechanics.getWinner()==2?"defeat":"victory";});
             }
+            scorePulse=Math.max(0,scorePulse-dt);
+            leftScore.setScaleX(1+scorePulse*.5);leftScore.setScaleY(1+scorePulse*.5);
+            rightScore.setScaleX(1+scorePulse*.5);rightScore.setScaleY(1+scorePulse*.5);
             updateHud(); renderer.draw(mechanics,animationTime,dt,menu);
             if(!menu && mechanics.isGameOver() && !showingResult) showResults();
         }
