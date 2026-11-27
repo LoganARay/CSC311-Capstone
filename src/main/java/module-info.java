@@ -2,9 +2,12 @@ module edu.farmingdale.csc311capstone {
     requires javafx.controls;
     requires javafx.fxml;
     requires javafx.media;
+    requires java.prefs;
 
 
     opens edu.farmingdale.csc311capstone to javafx.fxml;
+    opens edu.farmingdale.csc311capstone.dashboard to javafx.fxml;
+    exports edu.farmingdale.csc311capstone.dashboard;
     opens edu.farmingdale.csc311capstone.Pacman to javafx.fxml;
     opens edu.farmingdale.csc311capstone.Pong to javafx.fxml;
     opens edu.farmingdale.csc311capstone.BlackJack to javafx.fxml;

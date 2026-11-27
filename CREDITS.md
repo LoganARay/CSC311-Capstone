@@ -51,3 +51,16 @@ The neon court, paddles, ball, particles and interface are original JavaFX drawi
 ## Pac-Man
 
 The maze treatment, vector characters, fruit, animations and interface are original JavaFX drawings made for this project. The ten WAV cues in `PacmanSounds/` are original mathematically synthesized sine-wave melodies and effects. No proprietary Pac-Man artwork, recordings or fonts are included.
+
+## Arcade application dashboard
+
+The shared dashboard, login and registration illustrations are original, locally
+rendered JavaFX Canvas artwork in `dashboard/ArcadeArt.java`. All eight game
+thumbnails and the arcade cabinet were drawn for this project from geometric
+shapes and original pixel masks. No mockup screenshots were cropped or embedded.
+The navigation line icons in `dashboard/Icons.java` are original SVG path drawings.
+
+The cabinet marquee reuses the project's existing **Press Start 2P** font,
+licensed under the SIL Open Font License (see `SnakeFonts/OFL.txt`). All other
+dashboard text uses the platform's system font. Existing individual game assets
+and their credits are unchanged.

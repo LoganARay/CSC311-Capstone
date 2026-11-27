@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<ScrollPane xmlns:fx="http://javafx.com/fxml/1" fx:controller="edu.farmingdale.csc311capstone.dashboard.RegistrationController" fx:id="root" styleClass="auth-root" stylesheets="@arcade-theme.css" fitToWidth="true" hbarPolicy="NEVER" prefWidth="1440" prefHeight="900">
+    <content>
+        <HBox minWidth="0" fx:id="layout" fillHeight="true">
+            <VBox minWidth="0" fx:id="copy" styleClass="auth-copy" spacing="16" prefWidth="720">
+                <HBox fx:id="brand" spacing="12" alignment="CENTER_LEFT"/>
+                <Label text="THE CLASSICS. RELOADED." styleClass="tagline"/>
+                <StackPane fx:id="artwork" prefHeight="350" minHeight="240" VBox.vgrow="ALWAYS"/>
+                <Label text="Join the arcade." styleClass="auth-headline,purple" wrapText="true"/>
+                <Label text="A home for your scores, your progress, and your next personal best." styleClass="auth-subtitle" wrapText="true"/>
+                <FlowPane minWidth="0" hgap="10" vgap="10">
+                    <Label text="Compete" styleClass="feature-chip"/>
+                    <Label text="Track progress" styleClass="feature-chip"/>
+                    <Label text="Set new records" styleClass="feature-chip"/>
+                </FlowPane>
+            </VBox>
+            <VBox minWidth="0" fx:id="formArea" styleClass="auth-form-area" prefWidth="720">
+                <VBox styleClass="auth-card" spacing="17">
+                    <Label text="Create your account" styleClass="auth-title" wrapText="true"/>
+                    <Label text="Your next chapter starts here." styleClass="auth-subtitle" wrapText="true"/>
+                    <VBox spacing="8">
+                        <Label text="Username" labelFor="$username" styleClass="field-label"/>
+                        <TextField fx:id="username" promptText="Choose a username" onAction="#submit"/>
+                    </VBox>
+                    <VBox spacing="8">
+                        <Label text="Password" labelFor="$password" styleClass="field-label"/>
+                        <HBox styleClass="password-box">
+                            <StackPane HBox.hgrow="ALWAYS">
+                                <PasswordField fx:id="password" promptText="Create a password" onAction="#submit"/>
+                                <TextField fx:id="visiblePassword" promptText="Create a password" visible="false" managed="false" onAction="#submit"/>
+                            </StackPane>
+                            <Button fx:id="showPassword" text="Show" styleClass="visibility-button"/>
+                        </HBox>
+                    </VBox>
+                    <VBox spacing="8">
+                        <Label text="Confirm password" labelFor="$confirm" styleClass="field-label"/>
+                        <HBox styleClass="password-box">
+                            <StackPane HBox.hgrow="ALWAYS">
+                                <PasswordField fx:id="confirm" promptText="Confirm your password" onAction="#submit"/>
+                                <TextField fx:id="visibleConfirm" promptText="Confirm your password" visible="false" managed="false" onAction="#submit"/>
+                            </StackPane>
+                            <Button fx:id="showConfirm" text="Show" styleClass="visibility-button"/>
+                        </HBox>
+                    </VBox>
+                    <Label text="All fields are required. Passwords must match. Account services, email requirements, and password policy will follow the team’s backend." styleClass="small,muted" wrapText="true"/>
+                    <ProgressIndicator fx:id="loading" visible="false" managed="false" prefWidth="24" prefHeight="24" maxWidth="24" maxHeight="24" accessibleText="Signing in"/>
+                    <Label fx:id="feedback" styleClass="feedback" wrapText="true" minHeight="35"/>
+                    <Button fx:id="submitButton" text="Create account  →" onAction="#submit" styleClass="primary" maxWidth="Infinity" defaultButton="true"/>
+                    <Button text="Continue as guest" onAction="#guest" maxWidth="Infinity"/>
+                    <Separator/>
+                    <HBox alignment="CENTER" spacing="10">
+                        <Label text="Already a player?" styleClass="secondary"/>
+                        <Button text="Log in" onAction="#login" styleClass="text-button"/>
+                    </HBox>
+                </VBox>
+            </VBox>
+        </HBox>
+    </content>
+</ScrollPane>

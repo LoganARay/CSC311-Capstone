@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<VBox xmlns:fx="http://javafx.com/fxml/1" minWidth="0" fx:controller="edu.farmingdale.csc311capstone.dashboard.HomeController" spacing="24">
+    <FlowPane minWidth="0" fx:id="heroRow" hgap="20" vgap="16">
+        <StackPane fx:id="featured" styleClass="featured" prefHeight="210">
+            <HBox alignment="CENTER_LEFT">
+                <VBox spacing="9" styleClass="featured-copy" HBox.hgrow="ALWAYS">
+                    <Label text="FEATURED GAME" styleClass="eyebrow,purple"/>
+                    <Label text="Pac-Man" styleClass="hero-title"/>
+                    <Label text="Chase the dots. Dodge the ghosts.&#10;A timeless arcade classic." styleClass="secondary" wrapText="true"/>
+                    <FlowPane minWidth="0" hgap="10" vgap="8">
+                        <Button fx:id="featuredPlay" text="▶  Play Now" onAction="#playFeatured" styleClass="primary"/>
+                        <Button fx:id="surprise" text="↝  Surprise Me" onAction="#surprise"/>
+                    </FlowPane>
+                </VBox>
+                <StackPane fx:id="featuredArt" prefWidth="420" minWidth="0" HBox.hgrow="ALWAYS"/>
+            </HBox>
+        </StackPane>
+        <TilePane minWidth="0" fx:id="quickStats" styleClass="quick-stats" hgap="12" vgap="12" prefColumns="2"/>
+    </FlowPane>
+    <VBox spacing="16">
+        <HBox alignment="CENTER_LEFT" spacing="10">
+            <VBox HBox.hgrow="ALWAYS" spacing="3">
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label text="Your Library" styleClass="section-heading"/>
+                    <Label text="8" styleClass="count-badge"/>
+                </HBox>
+                <Label text="The classics you know and love." styleClass="secondary"/>
+            </VBox>
+            <Label fx:id="resultCount" styleClass="small,muted"/>
+        </HBox>
+        <FlowPane minWidth="0" hgap="12" vgap="12" alignment="CENTER_LEFT">
+            <HBox styleClass="search-box" alignment="CENTER_LEFT" spacing="8">
+                <StackPane fx:id="searchIcon"/>
+                <TextField fx:id="search" promptText="Search games…" prefWidth="174"/>
+                <Button text="×" onAction="#clearSearch" accessibleText="Clear game search" styleClass="clear-button"/>
+            </HBox>
+            <FlowPane minWidth="0" fx:id="filters" prefWrapLength="470" prefWidth="470" hgap="8" vgap="8"/>
+            <ComboBox fx:id="sort" prefWidth="145"/>
+        </FlowPane>
+        <TilePane minWidth="0" fx:id="library" hgap="18" vgap="18" prefColumns="4"/>
+        <VBox fx:id="noResults" visible="false" managed="false"/>
+    </VBox>
+    <VBox spacing="16">
+        <HBox alignment="CENTER_LEFT">
+            <Label text="Recent Activity" styleClass="section-heading"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="View history  →" onAction="#viewHistory" styleClass="text-button"/>
+        </HBox>
+        <VBox fx:id="recent"/>
+    </VBox>
+</VBox>
